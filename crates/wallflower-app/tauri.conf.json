@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/niclas-niclas/tauri-v2-schema/main/schema.json",
+  "productName": "Wallflower",
+  "version": "0.1.0",
+  "identifier": "com.wallflower.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../../out"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Wallflower",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}
