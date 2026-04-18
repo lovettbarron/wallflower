@@ -10,11 +10,11 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Storage & File Management
 
 - [ ] **STOR-01**: User can import audio files (WAV, FLAC, MP3) via atomic copy-first import with temp-then-rename for sync-folder safety
-- [ ] **STOR-02**: Application stores metadata in SQLite database located in ~/Library/Application Support/wallflower (never in sync folders)
+- [x] **STOR-02**: Application stores metadata in SQLite database located in ~/Library/Application Support/wallflower (never in sync folders)
 - [ ] **STOR-03**: Application watches a configurable folder (default ~/wallflower) for new audio files and auto-imports them
 - [ ] **STOR-04**: Application detects connected USB audio recorders (e.g., Zoom F3) and prompts to import new recordings
 - [ ] **STOR-05**: Application processes 32-bit float WAV files and can downsample to 24-bit for DAW compatibility
-- [ ] **STOR-06**: SQLite database is a single portable file that can be backed up by copying
+- [x] **STOR-06**: SQLite database is a single portable file that can be backed up by copying
 - [ ] **STOR-07**: File writes use atomic operations (temp-then-rename) to prevent corruption in Dropbox/iCloud sync folders
 
 ### Recording
@@ -88,9 +88,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **INFRA-04**: README updated at end of every phase with current progress
 - [ ] **INFRA-05**: Release generated at end of each milestone
 - [ ] **INFRA-06**: agents.md maintained at repo top level capturing feedback and codified skills
-- [ ] **INFRA-07**: MIT license, all dependencies open source or creative commons (no GPL in core, LGPL acceptable)
+- [x] **INFRA-07**: MIT license, all dependencies open source or creative commons (no GPL in core, LGPL acceptable)
 - [ ] **INFRA-08**: Documentation accessible for open source contributors
-- [ ] **INFRA-09**: Application is a native macOS app built with Tauri v2 — launches instantly, lives in dock
+- [x] **INFRA-09**: Application is a native macOS app built with Tauri v2 — launches instantly, lives in dock
 - [ ] **INFRA-10**: Application has a menubar/system tray icon showing recording status and quick actions
 - [ ] **INFRA-11**: Application uses native macOS notifications for events (device connected, analysis complete, etc.)
 - [ ] **INFRA-12**: Global keyboard shortcuts work even when the app is not focused (e.g., start/stop recording)
@@ -149,11 +149,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | STOR-01 | Phase 1 | Pending |
-| STOR-02 | Phase 1 | Pending |
+| STOR-02 | Phase 1 | Complete |
 | STOR-03 | Phase 1 | Pending |
 | STOR-04 | Phase 1 | Pending |
 | STOR-05 | Phase 1 | Pending |
-| STOR-06 | Phase 1 | Pending |
+| STOR-06 | Phase 1 | Complete |
 | STOR-07 | Phase 1 | Pending |
 | INFRA-01 | Phase 1 | Pending |
 | INFRA-02 | Phase 1 | Pending |
@@ -161,9 +161,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-04 | Phase 1 | Pending |
 | INFRA-05 | Phase 1 | Pending |
 | INFRA-06 | Phase 1 | Pending |
-| INFRA-07 | Phase 1 | Pending |
+| INFRA-07 | Phase 1 | Complete |
 | INFRA-08 | Phase 1 | Pending |
-| INFRA-09 | Phase 1 | Pending |
+| INFRA-09 | Phase 1 | Complete |
 | PLAY-01 | Phase 2 | Pending |
 | PLAY-02 | Phase 2 | Pending |
 | PLAY-03 | Phase 2 | Pending |
