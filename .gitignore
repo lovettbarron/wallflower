@@ -20,6 +20,9 @@ target/
 .env
 .env.local
 
+# TypeScript
+tsconfig.tsbuildinfo
+
 # IDE
 .idea/
 .vscode/
