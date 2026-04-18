@@ -50,13 +50,14 @@ Plans:
   4. User can drag-and-drop photos (patch photos, sketches) into a jam's metadata
   5. All metadata changes save immediately without explicit save actions
   6. User receives native macOS notifications for key events (e.g., device connected, import complete)
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
-- [ ] 02-03: TBD
+- [ ] 02-01-PLAN.md -- Backend foundation: SQLite V2 migration, metadata CRUD, peak generation, photo storage, design tokens, Tauri commands
+- [ ] 02-02-PLAN.md -- Timeline browser with date-grouped jam cards, waveform viewer, transport bar, audio playback
+- [ ] 02-03-PLAN.md -- Metadata editor: tag/collaborator/instrument chips, text fields with live-save, photo gallery with drag-drop
+- [ ] 02-04-PLAN.md -- Patches folder watcher, native notifications, full Phase 2 verification checkpoint
 
 ### Phase 3: Recording Engine & System Integration
 **Goal**: Users can record audio from any connected interface with crash safety, dropout recovery, live metadata editing, menubar status, and global hotkeys for hands-free control
@@ -138,7 +139,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Tauri App Shell, Storage & API Foundation | 1/3 | In progress | - |
-| 2. Playback, Metadata, Design System & Notifications | 0/3 | Not started | - |
+| 2. Playback, Metadata, Design System & Notifications | 0/4 | Not started | - |
 | 3. Recording Engine & System Integration | 0/3 | Not started | - |
 | 4. ML Analysis Pipeline | 0/3 | Not started | - |
 | 5. Source Separation & Export | 0/3 | Not started | - |
