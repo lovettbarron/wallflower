@@ -50,17 +50,17 @@ Exceptions: none
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px | 400 (regular) | 1.5 |
-| Label | 12px | 500 (medium) | 1.4 |
+| Label | 12px | 400 (regular) | 1.4 |
 | Heading | 20px | 600 (semibold) | 1.2 |
 | Display | 28px | 600 (semibold) | 1.2 |
 
 **Phase 1 usage:**
 - Body (14px): File list rows, settings descriptions, toast messages, dialog body text
-- Label (12px): Table column headers, form labels, metadata labels (format, duration), tab labels
+- Label (12px): Table column headers, form labels, metadata labels (format, duration), tab labels. Differentiated from body by size alone (12px vs 14px), not weight.
 - Heading (20px): Page titles ("Library", "Settings"), dialog titles ("Import from Device")
 - Display (28px): Empty state heading only
 
-**Note:** 3 weights declared (400, 500, 600) — Label uses 500 to differentiate from body text at smaller size. Phase 2 may consolidate to 2 weights when the design language is finalized.
+**2 weights only:** 400 (regular) for body and label text, 600 (semibold) for headings and display. Label text is distinguished from body text by its smaller size (12px vs 14px), not by weight.
 
 ---
 
@@ -70,14 +70,20 @@ Exceptions: none
 |------|-------|-------|
 | Dominant (60%) | hsl(0 0% 100%) / #FFFFFF | Page background, content area |
 | Secondary (30%) | hsl(0 0% 97%) / #F7F7F7 | Tab bar background, settings sections, table header row, drag-drop zone |
-| Accent (10%) | hsl(173 58% 39%) / #29A08A | Import button, active tab indicator, progress bar fill, file count badge |
+| Accent (10%) | hsl(173 58% 39%) / #29A08A | Import button, active tab indicator, progress bar fill, file count badge, drag-drop zone hover tint |
 | Destructive | hsl(0 72% 51%) / #D93636 | Remove file action only |
 
-Accent reserved for: import button (primary CTA), active tab underline/indicator, import progress bar fill, file count badge in tab
+Accent reserved for: import button (primary CTA), active tab underline/indicator, import progress bar fill, file count badge in tab, drag-drop zone hover tint (10% opacity)
 
 **Color rationale:** The teal accent is a starting point inspired by Mutable Instruments' palette. Phase 2 will finalize the exact accent color as part of the full design language. All other surfaces use neutral grays to avoid committing to a palette prematurely.
 
 **Dark mode:** Not in scope for Phase 1. Phase 2 design system will establish light/dark tokens via shadcn CSS variables.
+
+---
+
+## Focal Point
+
+**Primary visual anchor:** Import Files button, accent background, top-right of Library tab. This is the single strongest visual element on the default view and the primary call to action for new users.
 
 ---
 
@@ -213,7 +219,7 @@ Components needed for Phase 1 UI. All sourced from shadcn official registry unle
 |-------|--------|
 | Trigger | Dialog opens automatically when Zoom F3 or compatible USB recorder is mounted |
 | Content | Title: "Import from [Device Name]". List of new audio files with checkboxes. Select all / deselect all. |
-| Actions | "Import Selected" (primary/accent), "Skip" (ghost/secondary) |
+| Actions | "Import Selected" (primary/accent), "Skip Import" (ghost/secondary) |
 
 ### Sync Folder Warning Dialog
 | State | Visual |
@@ -248,7 +254,7 @@ Components needed for Phase 1 UI. All sourced from shadcn official registry unle
 | USB dialog title | "Import from {device name}" |
 | USB dialog body | "{count} new recordings found on {device name}" |
 | USB primary action | "Import Selected" |
-| USB secondary action | "Skip" |
+| USB secondary action | "Skip Import" |
 | Sync warning title | "Sync Folder Detected" |
 | Sync warning body | "Your watch folder is inside {Dropbox/iCloud}. Cloud sync can cause file corruption during import. We recommend using a local folder instead." |
 | Sync warning primary | "Change Folder" |
