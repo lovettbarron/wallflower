@@ -47,7 +47,7 @@ A musician can go from "I just finished a 2-hour jam" to "here's the interesting
 
 ### Out of Scope
 
-- Mobile app — web-first, local-first desktop experience
+- Mobile app — macOS-first native desktop experience
 - Cloud sync of audio files — local storage only, though metadata DB is portable
 - Real-time collaboration — this is a personal tool with sharing via export
 - Commercial features (payments, accounts, multi-user) — open source, single-user
@@ -68,7 +68,7 @@ A musician can go from "I just finished a 2-hour jam" to "here's the interesting
 
 ## Constraints
 
-- **Tech stack**: Rust backend (performance-critical audio I/O, API, recording) + React/Next.js frontend (waveform UI, spatial explorer) + Python sidecar (ML models — demucs, analysis)
+- **Tech stack**: Tauri v2 native macOS app with Rust backend (audio I/O, API, recording) + React/Next.js frontend (static export in webview, waveform UI, spatial explorer) + Python sidecar (ML models — demucs, analysis)
 - **Database**: SQLite — single file, portable, fast queries for metadata
 - **AI/ML**: All models run locally. Models downloaded at runtime, cached in user data directory, versioned for update-safe reuse. Model interface abstracted for forward compatibility.
 - **Recording priority**: Active recording preempts ALL other processing. Task scheduler must support pause/resume of ML workloads.
@@ -89,6 +89,7 @@ A musician can go from "I just finished a 2-hour jam" to "here's the interesting
 | Runtime model downloads | Keep repo lean, allow model updates independent of code updates, version-check before re-download | — Pending |
 | Export-to-folder before drag-and-drop | Browser-to-DAW drag-and-drop is technically complex; folder export is reliable and sufficient for v1 | — Pending |
 | Recording priority over analysis | Musician flow state must never be interrupted by background processing | — Pending |
+| Tauri v2 native app over web app | Zero-lag launch, menubar presence, native notifications, no browser sandboxing for USB/filesystem access, global hotkeys | — Pending |
 
 ## Evolution
 
