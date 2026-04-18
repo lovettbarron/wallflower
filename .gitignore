@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+out/
+.next/
+
+# Rust build output
+target/
+
+# macOS
+.DS_Store
+
+# SQLite database files
+*.db
+*.db-wal
+*.db-shm
+
+# Environment
+.env
+.env.local
+
+# TypeScript
+tsconfig.tsbuildinfo
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
