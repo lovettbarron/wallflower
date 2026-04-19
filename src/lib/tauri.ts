@@ -5,6 +5,7 @@ import type {
   AppSettings,
   AppStatus,
   DeviceInfo,
+  PeakData,
 } from "./types";
 
 // --- Jam operations ---
@@ -17,6 +18,11 @@ export async function listJams(): Promise<JamRecord[]> {
 /** Get a single jam by its ID. */
 export async function getJam(id: string): Promise<JamRecord | null> {
   return invoke("get_jam", { id });
+}
+
+/** Get pre-computed waveform peaks for a jam. */
+export async function getPeaks(jamId: string): Promise<PeakData> {
+  return invoke("get_peaks", { jamId });
 }
 
 // --- Import operations ---
