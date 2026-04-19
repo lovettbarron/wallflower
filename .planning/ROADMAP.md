@@ -32,12 +32,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Application detects a connected Zoom F3 (USB mass storage) and prompts to import new recordings
   5. SQLite database is stored in ~/Library/Application Support/wallflower, not in any sync folder, and can be backed up by copying the single file
   6. All API endpoints are accessible via CLI for debugging and scripting
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [x] 01-01-PLAN.md -- Project scaffolding: Tauri v2 + Cargo workspace + SQLite + Next.js + shadcn
 - [x] 01-02-PLAN.md -- Import pipeline, Tauri IPC commands, CLI subcommands, settings module
 - [x] 01-03-PLAN.md -- Folder watcher, device detection, documentation, release verification
+- [ ] 01-04-PLAN.md -- Gap closure: 32-bit float downsampling utility, release build, v0.1.0 tag
 
 ### Phase 2: Playback, Metadata, Design System & Notifications
 **Goal**: Users can see waveforms, play and scrub audio, browse their library chronologically, edit metadata, experience the Wallflower design language, and receive native macOS notifications for key events
@@ -138,7 +139,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Tauri App Shell, Storage & API Foundation | 1/3 | In progress | - |
+| 1. Tauri App Shell, Storage & API Foundation | 3/4 | In progress | - |
 | 2. Playback, Metadata, Design System & Notifications | 0/4 | Not started | - |
 | 3. Recording Engine & System Integration | 0/3 | Not started | - |
 | 4. ML Analysis Pipeline | 0/3 | Not started | - |
