@@ -3,7 +3,8 @@ pub mod schema;
 use crate::error::{Result, WallflowerError};
 use rusqlite::{params, Connection};
 use schema::{
-    JamCollaborator, JamInstrument, JamMetadata, JamPhoto, JamRecord, JamTag, NewJam,
+    AnalysisResults, AnalysisStatus, JamCollaborator, JamInstrument, JamMetadata, JamPhoto,
+    JamRecord, JamTag, KeyResult, LoopRecord, NewJam, SectionRecord, TempoResult,
 };
 use std::collections::HashMap;
 use std::path::Path;
@@ -17,6 +18,9 @@ const MIGRATION_V2: &str = include_str!("../../../../migrations/V2__metadata_tab
 
 /// V3: Recording support tables (gap tracking for device disconnects).
 const MIGRATION_V3: &str = include_str!("../../../../migrations/V3__recording_tables.sql");
+
+/// V4: Analysis result tables for ML pipeline.
+const MIGRATION_V4: &str = include_str!("../../../../migrations/V4__analysis_tables.sql");
 
 /// Database wrapper around a SQLite connection.
 pub struct Database {
@@ -129,6 +133,17 @@ impl Database {
             info!("Running V3 migration: recording tables");
             self.conn.execute_batch(MIGRATION_V3)?;
             self.conn.execute_batch("PRAGMA user_version = 3;")?;
+        }
+
+        // Re-read version after V3 migration may have bumped it
+        let current_version: i32 = self
+            .conn
+            .query_row("PRAGMA user_version", [], |row| row.get(0))?;
+
+        // V4: Analysis result tables for ML pipeline
+        if current_version < 4 {
+            info!("Running V4 migration: analysis tables");
+            self.conn.execute_batch(MIGRATION_V4)?;
         }
 
         Ok(())
@@ -583,6 +598,282 @@ pub fn list_photos_for_jam(conn: &Connection, jam_id: &str) -> Result<Vec<JamPho
 /// Delete a photo record by ID.
 pub fn delete_photo(conn: &Connection, id: &str) -> Result<()> {
     conn.execute("DELETE FROM jam_photos WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+// ── Analysis CRUD (V4) ──────────────────────────────────────
+
+/// Get the analysis status for a jam.
+pub fn get_analysis_status(conn: &Connection, jam_id: &str) -> Result<Option<AnalysisStatus>> {
+    let mut stmt = conn.prepare(
+        "SELECT jam_id, status, current_step, analysis_profile, error_message,
+                retry_count, started_at, completed_at, updated_at
+         FROM jam_analysis WHERE jam_id = ?1",
+    )?;
+    let mut rows = stmt.query_map(params![jam_id], |row| {
+        Ok(AnalysisStatus {
+            jam_id: row.get(0)?,
+            status: row.get(1)?,
+            current_step: row.get(2)?,
+            analysis_profile: row.get(3)?,
+            error_message: row.get(4)?,
+            retry_count: row.get(5)?,
+            started_at: row.get(6)?,
+            completed_at: row.get(7)?,
+            updated_at: row.get(8)?,
+        })
+    })?;
+    match rows.next() {
+        Some(row) => Ok(Some(row?)),
+        None => Ok(None),
+    }
+}
+
+/// Upsert the analysis status for a jam.
+pub fn set_analysis_status(
+    conn: &Connection,
+    jam_id: &str,
+    status: &str,
+    step: Option<&str>,
+) -> Result<()> {
+    conn.execute(
+        "INSERT INTO jam_analysis (jam_id, status, current_step, updated_at)
+         VALUES (?1, ?2, ?3, datetime('now'))
+         ON CONFLICT(jam_id) DO UPDATE SET
+           status = excluded.status,
+           current_step = excluded.current_step,
+           updated_at = excluded.updated_at",
+        params![jam_id, status, step],
+    )?;
+    Ok(())
+}
+
+/// Save tempo result. Respects manual_override (D-18).
+pub fn save_tempo_result(conn: &Connection, jam_id: &str, bpm: f64, confidence: f64) -> Result<()> {
+    // Check if manual override is set -- if so, skip the write
+    let is_manual: bool = conn
+        .query_row(
+            "SELECT COALESCE(manual_override, 0) FROM jam_tempo WHERE jam_id = ?1",
+            params![jam_id],
+            |row| row.get::<_, i32>(0),
+        )
+        .map(|v| v != 0)
+        .unwrap_or(false);
+
+    if is_manual {
+        return Ok(());
+    }
+
+    conn.execute(
+        "INSERT OR REPLACE INTO jam_tempo (jam_id, bpm, confidence, manual_override, created_at)
+         VALUES (?1, ?2, ?3, 0, datetime('now'))",
+        params![jam_id, bpm, confidence],
+    )?;
+    Ok(())
+}
+
+/// Save key result. Respects manual_override (D-18).
+pub fn save_key_result(
+    conn: &Connection,
+    jam_id: &str,
+    key_name: &str,
+    scale: &str,
+    strength: f64,
+) -> Result<()> {
+    // Check if manual override is set -- if so, skip the write
+    let is_manual: bool = conn
+        .query_row(
+            "SELECT COALESCE(manual_override, 0) FROM jam_key WHERE jam_id = ?1",
+            params![jam_id],
+            |row| row.get::<_, i32>(0),
+        )
+        .map(|v| v != 0)
+        .unwrap_or(false);
+
+    if is_manual {
+        return Ok(());
+    }
+
+    conn.execute(
+        "INSERT OR REPLACE INTO jam_key (jam_id, key_name, scale, strength, manual_override, created_at)
+         VALUES (?1, ?2, ?3, ?4, 0, datetime('now'))",
+        params![jam_id, key_name, scale, strength],
+    )?;
+    Ok(())
+}
+
+/// Save section boundaries for a jam (replace all existing).
+pub fn save_sections(conn: &Connection, jam_id: &str, sections: &[SectionRecord]) -> Result<()> {
+    conn.execute("DELETE FROM jam_sections WHERE jam_id = ?1", params![jam_id])?;
+    for s in sections {
+        conn.execute(
+            "INSERT INTO jam_sections (id, jam_id, start_seconds, end_seconds, label, cluster_id, sort_order)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![s.id, jam_id, s.start_seconds, s.end_seconds, s.label, s.cluster_id, s.sort_order],
+        )?;
+    }
+    Ok(())
+}
+
+/// Save detected loops for a jam (replace all existing).
+pub fn save_loops(conn: &Connection, jam_id: &str, loops: &[LoopRecord]) -> Result<()> {
+    conn.execute("DELETE FROM jam_loops WHERE jam_id = ?1", params![jam_id])?;
+    for l in loops {
+        conn.execute(
+            "INSERT INTO jam_loops (id, jam_id, start_seconds, end_seconds, repeat_count, evolving, label, sort_order)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![l.id, jam_id, l.start_seconds, l.end_seconds, l.repeat_count, l.evolving as i32, l.label, l.sort_order],
+        )?;
+    }
+    Ok(())
+}
+
+/// Save beat positions for a jam (replace all existing).
+pub fn save_beats(conn: &Connection, jam_id: &str, beat_times: &[f64]) -> Result<()> {
+    conn.execute("DELETE FROM jam_beats WHERE jam_id = ?1", params![jam_id])?;
+    for &t in beat_times {
+        conn.execute(
+            "INSERT INTO jam_beats (jam_id, beat_time) VALUES (?1, ?2)",
+            params![jam_id, t],
+        )?;
+    }
+    Ok(())
+}
+
+/// Get composite analysis results for a jam.
+pub fn get_jam_analysis_results(conn: &Connection, jam_id: &str) -> Result<AnalysisResults> {
+    let status = get_analysis_status(conn, jam_id)?;
+
+    let tempo: Option<TempoResult> = conn
+        .query_row(
+            "SELECT jam_id, bpm, confidence, manual_override FROM jam_tempo WHERE jam_id = ?1",
+            params![jam_id],
+            |row| {
+                Ok(TempoResult {
+                    jam_id: row.get(0)?,
+                    bpm: row.get(1)?,
+                    confidence: row.get(2)?,
+                    manual_override: row.get::<_, i32>(3)? != 0,
+                })
+            },
+        )
+        .ok();
+
+    let key: Option<KeyResult> = conn
+        .query_row(
+            "SELECT jam_id, key_name, scale, strength, manual_override FROM jam_key WHERE jam_id = ?1",
+            params![jam_id],
+            |row| {
+                Ok(KeyResult {
+                    jam_id: row.get(0)?,
+                    key_name: row.get(1)?,
+                    scale: row.get(2)?,
+                    strength: row.get(3)?,
+                    manual_override: row.get::<_, i32>(4)? != 0,
+                })
+            },
+        )
+        .ok();
+
+    let mut sect_stmt = conn.prepare(
+        "SELECT id, jam_id, start_seconds, end_seconds, label, cluster_id, sort_order
+         FROM jam_sections WHERE jam_id = ?1 ORDER BY sort_order",
+    )?;
+    let sections: Vec<SectionRecord> = sect_stmt
+        .query_map(params![jam_id], |row| {
+            Ok(SectionRecord {
+                id: row.get(0)?,
+                jam_id: row.get(1)?,
+                start_seconds: row.get(2)?,
+                end_seconds: row.get(3)?,
+                label: row.get(4)?,
+                cluster_id: row.get(5)?,
+                sort_order: row.get(6)?,
+            })
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+
+    let mut loop_stmt = conn.prepare(
+        "SELECT id, jam_id, start_seconds, end_seconds, repeat_count, evolving, label, sort_order
+         FROM jam_loops WHERE jam_id = ?1 ORDER BY sort_order",
+    )?;
+    let loops: Vec<LoopRecord> = loop_stmt
+        .query_map(params![jam_id], |row| {
+            Ok(LoopRecord {
+                id: row.get(0)?,
+                jam_id: row.get(1)?,
+                start_seconds: row.get(2)?,
+                end_seconds: row.get(3)?,
+                repeat_count: row.get(4)?,
+                evolving: row.get::<_, i32>(5)? != 0,
+                label: row.get(6)?,
+                sort_order: row.get(7)?,
+            })
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+
+    Ok(AnalysisResults {
+        status,
+        tempo,
+        key,
+        sections,
+        loops,
+    })
+}
+
+/// Get jam IDs that need analysis (no analysis record or status is 'pending').
+pub fn get_pending_analysis_jams(conn: &Connection) -> Result<Vec<String>> {
+    let mut stmt = conn.prepare(
+        "SELECT j.id FROM jams j
+         LEFT JOIN jam_analysis a ON j.id = a.jam_id
+         WHERE a.jam_id IS NULL OR a.status = 'pending'
+         ORDER BY j.imported_at ASC",
+    )?;
+    let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+    let mut ids = Vec::new();
+    for row in rows {
+        ids.push(row?);
+    }
+    Ok(ids)
+}
+
+/// Rebuild the FTS5 search index entry for a jam.
+pub fn update_fts_index(conn: &Connection, jam_id: &str) -> Result<()> {
+    // Delete existing entry
+    conn.execute(
+        "DELETE FROM jam_search WHERE jam_id = ?1",
+        params![jam_id],
+    )?;
+
+    // Gather data from related tables
+    let jam = get_jam(conn, jam_id)?;
+    let jam = match jam {
+        Some(j) => j,
+        None => return Ok(()),
+    };
+
+    let tags = list_tags_for_jam(conn, jam_id)?;
+    let tag_str = tags.iter().map(|t| t.tag.as_str()).collect::<Vec<_>>().join(" ");
+
+    let collabs = list_collaborators_for_jam(conn, jam_id)?;
+    let collab_str = collabs.iter().map(|c| c.name.as_str()).collect::<Vec<_>>().join(" ");
+
+    let instruments = list_instruments_for_jam(conn, jam_id)?;
+    let inst_str = instruments.iter().map(|i| i.name.as_str()).collect::<Vec<_>>().join(" ");
+
+    conn.execute(
+        "INSERT INTO jam_search (jam_id, filename, notes, tags, collaborators, instruments, location)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            jam_id,
+            jam.filename,
+            jam.notes.unwrap_or_default(),
+            tag_str,
+            collab_str,
+            inst_str,
+            jam.location.unwrap_or_default(),
+        ],
+    )?;
     Ok(())
 }
 
