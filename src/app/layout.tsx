@@ -3,7 +3,11 @@ import "./globals.css";
 import "@fontsource/plus-jakarta-sans/400.css";
 import "@fontsource/plus-jakarta-sans/600.css";
 import { Providers } from "@/components/providers";
+<<<<<<< HEAD
+import { Toaster } from "@/components/ui/sonner";
+=======
 import { TransportBar } from "@/components/transport/TransportBar";
+>>>>>>> worktree-agent-a82adea1
 
 export const metadata: Metadata = {
   title: "Wallflower",
@@ -29,10 +33,15 @@ export default function RootLayout({
         }}
       >
         <Providers>
+<<<<<<< HEAD
+          {children}
+          <Toaster />
+=======
           <div className="pb-14">
             {children}
           </div>
           <TransportBar />
+>>>>>>> worktree-agent-a82adea1
         </Providers>
       </body>
     </html>
