@@ -23,9 +23,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **REC-02**: Recording writes incrementally to disk with periodic WAV header updates and fsync every 5-10 seconds to prevent data loss on crash
 - [x] **REC-03**: Recording gracefully recovers from audio interface dropout without corrupting the in-progress file
 - [x] **REC-04**: User can configure a silence threshold; recording auto-pauses when audio falls below it
-- [ ] **REC-05**: User can edit metadata (tags, notes, collaborators) while recording is active, with live-save to database
-- [ ] **REC-06**: Recording status is clearly indicated at all times with prominent visual indicator
-- [ ] **REC-07**: User is warned with a confirmation dialog before stopping an active recording
+- [x] **REC-05**: User can edit metadata (tags, notes, collaborators) while recording is active, with live-save to database
+- [x] **REC-06**: Recording status is clearly indicated at all times with prominent visual indicator
+- [x] **REC-07**: User is warned with a confirmation dialog before stopping an active recording
 - [x] **REC-08**: All AI/ML processing pauses while recording is active — recording always gets priority
 - [x] **REC-09**: Architecture supports expansion to 8 or 16 channels without significant refactoring
 
@@ -91,9 +91,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **INFRA-07**: MIT license, all dependencies open source or creative commons (no GPL in core, LGPL acceptable)
 - [x] **INFRA-08**: Documentation accessible for open source contributors
 - [x] **INFRA-09**: Application is a native macOS app built with Tauri v2 — launches instantly, lives in dock
-- [ ] **INFRA-10**: Application has a menubar/system tray icon showing recording status and quick actions
+- [x] **INFRA-10**: Application has a menubar/system tray icon showing recording status and quick actions
 - [ ] **INFRA-11**: Application uses native macOS notifications for events (device connected, analysis complete, etc.)
-- [ ] **INFRA-12**: Global keyboard shortcuts work even when the app is not focused (e.g., start/stop recording)
+- [x] **INFRA-12**: Global keyboard shortcuts work even when the app is not focused (e.g., start/stop recording)
 - [ ] **INFRA-13**: Application can be configured to auto-launch on login
 - [ ] **INFRA-14**: macOS app is properly signed and notarized for distribution
 
@@ -184,13 +184,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REC-02 | Phase 3 | Complete |
 | REC-03 | Phase 3 | Complete |
 | REC-04 | Phase 3 | Complete |
-| REC-05 | Phase 3 | Pending |
-| REC-06 | Phase 3 | Pending |
-| REC-07 | Phase 3 | Pending |
+| REC-05 | Phase 3 | Complete |
+| REC-06 | Phase 3 | Complete |
+| REC-07 | Phase 3 | Complete |
 | REC-08 | Phase 3 | Complete |
 | REC-09 | Phase 3 | Complete |
-| INFRA-10 | Phase 3 | Pending |
-| INFRA-12 | Phase 3 | Pending |
+| INFRA-10 | Phase 3 | Complete |
+| INFRA-12 | Phase 3 | Complete |
 | AI-01 | Phase 4 | Pending |
 | AI-02 | Phase 4 | Pending |
 | AI-03 | Phase 4 | Pending |
