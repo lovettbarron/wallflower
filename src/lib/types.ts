@@ -13,6 +13,10 @@ export interface JamRecord {
   fileSizeBytes: number;
   importedAt: string;
   createdAt: string | null;
+  location: string | null;
+  notes: string | null;
+  patchNotes: string | null;
+  peaksGenerated: boolean;
 }
 
 /** Result of an import operation for a single file. */
@@ -49,4 +53,57 @@ export interface AppStatus {
   jamCount: number;
   watcherActive: boolean;
   watchFolder: string;
+}
+
+// ── Phase 2: Metadata types ──────────────────────────────
+
+/** A tag associated with a jam. */
+export interface JamTag {
+  id: string;
+  jamId: string;
+  tag: string;
+  createdAt: string;
+}
+
+/** A collaborator associated with a jam. */
+export interface JamCollaborator {
+  id: string;
+  jamId: string;
+  name: string;
+  createdAt: string;
+}
+
+/** An instrument associated with a jam. */
+export interface JamInstrument {
+  id: string;
+  jamId: string;
+  name: string;
+  createdAt: string;
+}
+
+/** A photo associated with a jam. */
+export interface JamPhoto {
+  id: string;
+  jamId: string;
+  filename: string;
+  filePath: string;
+  thumbnailPath: string | null;
+  source: "drop" | "patches_folder";
+  createdAt: string;
+}
+
+/** Extended jam record with all metadata attached. */
+export interface JamDetail extends JamRecord {
+  tags: JamTag[];
+  collaborators: JamCollaborator[];
+  instruments: JamInstrument[];
+  photos: JamPhoto[];
+}
+
+/** Pre-computed waveform peak data for visualization. */
+export interface PeakData {
+  sampleRate: number;
+  channels: number;
+  duration: number;
+  peaks: [number, number][];
 }
