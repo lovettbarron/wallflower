@@ -9,6 +9,7 @@ import { WaveformOverview } from "@/components/waveform/WaveformOverview";
 import { WaveformDetail } from "@/components/waveform/WaveformDetail";
 import { MetadataEditor } from "@/components/metadata/MetadataEditor";
 import { useTransportStore } from "@/lib/stores/transport";
+import { useRecordingStore } from "@/lib/stores/recording";
 
 interface JamDetailProps {
   jamId: string;
@@ -16,6 +17,8 @@ interface JamDetailProps {
 }
 
 export function JamDetail({ jamId, onBack }: JamDetailProps) {
+  const isRecording = useRecordingStore((s) => s.isRecording);
+  const recordingJamId = useRecordingStore((s) => s.recordingJamId);
   const [isDragOver, setIsDragOver] = useState(false);
   const currentJamId = useTransportStore((s) => s.currentJamId);
   const loadJam = useTransportStore((s) => s.loadJam);
@@ -101,6 +104,18 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
 
   if (!jam) {
     return <p className="text-sm text-muted-foreground">Jam not found.</p>;
+  }
+
+  // Guard: if this jam is being actively recorded, show a note
+  if (isRecording && recordingJamId === jam.id) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="recording-dot mb-4 h-3 w-3 rounded-full" style={{ backgroundColor: "#E53E3E" }} />
+        <p className="text-sm text-muted-foreground">
+          This jam is currently being recorded. Use the recording view to edit metadata.
+        </p>
+      </div>
+    );
   }
 
   const audioUrl = `http://localhost:23516/api/audio/${encodeURIComponent(jam.filename)}`;
