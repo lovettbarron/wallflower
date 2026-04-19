@@ -75,7 +75,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 03-01: TBD
+- [x] 03-01: TBD
 - [ ] 03-02: TBD
 - [ ] 03-03: TBD
 
