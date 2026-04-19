@@ -136,10 +136,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           <WaveformDetail
             audioUrl={audioUrl}
             peaks={peaks}
-            currentTime={currentTime}
             onSeek={handleWaveformSeek}
-            onPlayPause={handlePlayPause}
-            isPlaying={isPlaying}
           />
         </>
       )}

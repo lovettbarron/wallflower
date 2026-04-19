@@ -1,31 +1,25 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 import { useWavesurfer } from "@wavesurfer/react";
 import type { PeakData } from "@/lib/types";
 
 interface WaveformDetailProps {
   audioUrl: string;
   peaks: PeakData;
-  currentTime: number;
   onSeek: (time: number) => void;
-  onPlayPause: (playing: boolean) => void;
-  isPlaying: boolean;
 }
 
 export function WaveformDetail({
   audioUrl,
   peaks,
-  currentTime,
   onSeek,
-  onPlayPause,
-  isPlaying,
 }: WaveformDetailProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const seekingRef = useRef(false);
 
   const { wavesurfer, isReady } = useWavesurfer({
     container: containerRef,
-    url: audioUrl,
     peaks: [peaks.peaks.map((p) => p[0])],
     duration: peaks.duration,
     waveColor: "#E8863A",
@@ -36,36 +30,25 @@ export function WaveformDetail({
     normalize: true,
     minPxPerSec: 1,
     interact: true,
-    mediaControls: false,
   });
 
-  // Sync cursor position from transport (read-only — don't push back)
-  useEffect(() => {
-    if (!wavesurfer || !isReady || peaks.duration <= 0) return;
-    const progress = currentTime / peaks.duration;
-    const clampedProgress = Math.max(0, Math.min(1, progress));
-    const wsTime = wavesurfer.getCurrentTime();
-    if (Math.abs(wsTime - currentTime) > 0.3) {
-      wavesurfer.seekTo(clampedProgress);
-    }
-  }, [wavesurfer, isReady, currentTime, peaks.duration]);
-
-  // Handle user clicking on waveform to seek
   useEffect(() => {
     if (!wavesurfer) return;
 
-    const onSeeking = (time: number) => onSeek(time);
-    const onClick = () => {
-      const time = wavesurfer.getCurrentTime();
-      onSeek(time);
+    const handleInteraction = (time: number) => {
+      if (!seekingRef.current) {
+        seekingRef.current = true;
+        onSeek(time);
+        requestAnimationFrame(() => {
+          seekingRef.current = false;
+        });
+      }
     };
 
-    wavesurfer.on("seeking", onSeeking);
-    wavesurfer.on("click", onClick);
+    wavesurfer.on("seeking", handleInteraction);
 
     return () => {
-      wavesurfer.un("seeking", onSeeking);
-      wavesurfer.un("click", onClick);
+      wavesurfer.un("seeking", handleInteraction);
     };
   }, [wavesurfer, onSeek]);
 
