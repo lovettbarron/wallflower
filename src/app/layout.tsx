@@ -3,6 +3,7 @@ import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
+import { TransportBar } from "@/components/transport/TransportBar";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -28,7 +29,10 @@ export default function RootLayout({
         }}
       >
         <Providers>
-          {children}
+          <div className="pb-14">
+            {children}
+          </div>
+          <TransportBar />
         </Providers>
       </body>
     </html>

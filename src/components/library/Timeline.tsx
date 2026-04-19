@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { listJams } from "@/lib/tauri";
+import { useLibraryStore } from "@/lib/stores/library";
 import type { JamRecord } from "@/lib/types";
 import { DateGroup } from "./DateGroup";
 import { JamCard } from "./JamCard";
@@ -68,7 +68,7 @@ interface TimelineProps {
 }
 
 export function Timeline({ onImportClick }: TimelineProps) {
-  const router = useRouter();
+  const { setSelectedJam } = useLibraryStore();
 
   const {
     data: jams,
@@ -131,7 +131,7 @@ export function Timeline({ onImportClick }: TimelineProps) {
             <JamCard
               key={jam.id}
               jam={jam}
-              onClick={() => router.push(`/jam/${jam.id}`)}
+              onClick={() => setSelectedJam(jam.id)}
             />
           ))}
         </DateGroup>

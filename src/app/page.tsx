@@ -2,15 +2,31 @@
 
 import { useState } from "react";
 import { Timeline } from "@/components/library/Timeline";
+import { JamDetail } from "@/components/library/JamDetail";
 import { DeviceImportDialog } from "@/components/device-import-dialog";
+import { useLibraryStore } from "@/lib/stores/library";
 
 export default function Home() {
   const [showDeviceDialog, setShowDeviceDialog] = useState(false);
+  const { selectedJamId, setSelectedJam } = useLibraryStore();
 
   const handleImportClick = () => {
     setShowDeviceDialog(true);
   };
 
+  // Jam detail view
+  if (selectedJamId) {
+    return (
+      <main className="px-12 pt-6">
+        <JamDetail
+          jamId={selectedJamId}
+          onBack={() => setSelectedJam(null)}
+        />
+      </main>
+    );
+  }
+
+  // Library timeline view
   return (
     <main className="px-12 pt-6">
       {/* Header */}
