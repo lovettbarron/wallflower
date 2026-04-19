@@ -1,20 +1,41 @@
 mod api;
 mod commands;
+mod tray;
 
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::atomic::AtomicI32;
+use std::sync::{Arc, Mutex};
 
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 use wallflower_core::db::Database;
+use wallflower_core::recording::scheduler::PriorityScheduler;
+use wallflower_core::recording::{RecordingConfig, RecordingEngine, RecordingEvent, RecordingState};
 use wallflower_core::settings::{self, AppConfig};
 use wallflower_core::watcher::WatcherHandle;
+
+/// Wrapper to make RecordingEngine Send + Sync.
+///
+/// cpal::Stream deliberately opts out of Send/Sync, but our RecordingEngine
+/// already wraps it in Arc<Mutex<Option<Stream>>> and only accesses it
+/// through the Mutex, which provides thread safety. The Tauri managed state
+/// requires Send + Sync.
+pub struct SendableRecordingEngine(pub RecordingEngine);
+
+// SAFETY: RecordingEngine internally uses Arc<Mutex<..>> for all shared state
+// including the cpal::Stream. Access is synchronized through the Mutex in AppState.
+unsafe impl Send for SendableRecordingEngine {}
+unsafe impl Sync for SendableRecordingEngine {}
 
 pub struct AppState {
     pub db: Mutex<Database>,
     pub config: Mutex<AppConfig>,
     pub watcher: Mutex<Option<WatcherHandle>>,
+    pub recording_engine: Mutex<SendableRecordingEngine>,
+    pub latest_rms_db: Arc<AtomicI32>,
+    pub scheduler: PriorityScheduler,
+    pub current_recording_jam_id: Mutex<Option<String>>,
 }
 
 /// Send a native macOS notification via the Tauri notification plugin.
@@ -171,6 +192,91 @@ fn start_patches_watcher(app: tauri::AppHandle) {
     });
 }
 
+/// Start the recording event bridge thread.
+///
+/// Reads events from the recording engine channel and emits them as Tauri events.
+/// Also updates the shared RMS value and tray icon state.
+fn start_recording_event_bridge(
+    app_handle: tauri::AppHandle,
+    event_rx: crossbeam_channel::Receiver<RecordingEvent>,
+    latest_rms: Arc<AtomicI32>,
+) {
+    std::thread::Builder::new()
+        .name("recording-event-bridge".into())
+        .spawn(move || {
+            let mut last_level_emit = std::time::Instant::now();
+            let level_throttle = std::time::Duration::from_millis(67); // ~15fps
+
+            loop {
+                match event_rx.recv_timeout(std::time::Duration::from_millis(100)) {
+                    Ok(event) => match &event {
+                        RecordingEvent::LevelUpdate { rms_db } => {
+                            // Store latest RMS for polling via get_recording_level
+                            latest_rms.store(
+                                (*rms_db * 100.0) as i32,
+                                std::sync::atomic::Ordering::Relaxed,
+                            );
+                            // Throttle level updates to ~15fps
+                            if last_level_emit.elapsed() >= level_throttle {
+                                let _ = app_handle
+                                    .emit("recording-level", serde_json::json!({ "rmsDb": rms_db }));
+                                last_level_emit = std::time::Instant::now();
+                            }
+                        }
+                        RecordingEvent::StateChanged(state) => {
+                            let _ = app_handle.emit("recording-state-changed", state);
+                            // Update tray when state changes
+                            match state {
+                                RecordingState::Recording => {
+                                    tray::update_tray_for_recording(&app_handle, true, None);
+                                }
+                                RecordingState::Idle => {
+                                    tray::update_tray_for_recording(&app_handle, false, None);
+                                }
+                                _ => {}
+                            }
+                        }
+                        RecordingEvent::DeviceError(msg) => {
+                            let _ = app_handle.emit(
+                                "recording-device-error",
+                                serde_json::json!({ "error": msg }),
+                            );
+                        }
+                        RecordingEvent::DeviceReconnected => {
+                            let _ = app_handle.emit("recording-device-reconnected", ());
+                        }
+                        RecordingEvent::SilenceStart { offset_samples } => {
+                            let _ = app_handle.emit(
+                                "recording-silence-start",
+                                serde_json::json!({ "offsetSamples": offset_samples }),
+                            );
+                        }
+                        RecordingEvent::SilenceEnd { offset_samples } => {
+                            let _ = app_handle.emit(
+                                "recording-silence-end",
+                                serde_json::json!({ "offsetSamples": offset_samples }),
+                            );
+                        }
+                        RecordingEvent::SamplesWritten { total_samples } => {
+                            let _ = app_handle.emit(
+                                "recording-samples-written",
+                                serde_json::json!({ "totalSamples": total_samples }),
+                            );
+                        }
+                    },
+                    Err(crossbeam_channel::RecvTimeoutError::Timeout) => {
+                        // No events, continue polling
+                    }
+                    Err(crossbeam_channel::RecvTimeoutError::Disconnected) => {
+                        tracing::info!("Recording event bridge: channel disconnected");
+                        break;
+                    }
+                }
+            }
+        })
+        .ok();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let db = Database::open_default().expect("failed to open database");
@@ -178,6 +284,10 @@ pub fn run() {
 
     // Ensure storage directory exists
     settings::ensure_storage_dir(&config).expect("failed to create storage directory");
+
+    // Run crash recovery: scan for orphaned WAV files not in the database (D-06)
+    let recovered_recordings =
+        commands::recording::recover_crashed_recordings(&config.storage_dir, &db.conn);
 
     // Start the folder watcher
     let db_path = wallflower_core::db::Database::default_path();
@@ -199,6 +309,15 @@ pub fn run() {
         }
     };
 
+    // Create the recording engine
+    let (event_tx, event_rx) = crossbeam_channel::unbounded();
+    let scheduler = PriorityScheduler::new();
+    let recording_engine = RecordingEngine::new(RecordingConfig::default(), event_tx, scheduler.clone());
+
+    // Shared RMS value for level metering
+    let latest_rms = Arc::new(AtomicI32::new(-10000));
+    let latest_rms_for_state = latest_rms.clone();
+
     // Start the HTTP API server in the background
     let audio_dir = config.storage_dir.clone();
     tauri::async_runtime::spawn(async move {
@@ -207,14 +326,109 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
-        .setup(|app| {
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .setup(move |app| {
             start_patches_watcher(app.handle().clone());
+
+            // Set up system tray (D-07)
+            tray::setup_tray(app)?;
+
+            // Register global shortcut Cmd+Shift+R (D-08)
+            {
+                use tauri_plugin_global_shortcut::{
+                    Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
+                };
+                let shortcut =
+                    Shortcut::new(Some(Modifiers::META | Modifiers::SHIFT), Code::KeyR);
+                app.global_shortcut()
+                    .on_shortcut(shortcut, move |_app, _shortcut, event| {
+                        if event.state() == ShortcutState::Pressed {
+                            let state: tauri::State<'_, AppState> = _app.state();
+                            let status = {
+                                let engine = state.recording_engine.lock().unwrap();
+                                engine.0.status()
+                            };
+                            match status {
+                                RecordingState::Idle => {
+                                    // Start recording via async runtime
+                                    let handle = _app.clone();
+                                    tauri::async_runtime::spawn(async move {
+                                        let state: tauri::State<'_, AppState> = handle.state();
+                                        match commands::recording::start_recording(
+                                            handle.clone(),
+                                            state,
+                                        )
+                                        .await
+                                        {
+                                            Ok(result) => {
+                                                tracing::info!(
+                                                    "Global shortcut: recording started (jam {})",
+                                                    result.jam_id
+                                                );
+                                                let device_desc = result
+                                                    .device_name
+                                                    .as_deref()
+                                                    .unwrap_or("default device");
+                                                notify(
+                                                    &handle,
+                                                    "Recording Started",
+                                                    &format!(
+                                                        "Wallflower is now recording from {}.",
+                                                        device_desc
+                                                    ),
+                                                );
+                                            }
+                                            Err(e) => {
+                                                tracing::error!(
+                                                    "Global shortcut: failed to start recording: {}",
+                                                    e
+                                                );
+                                            }
+                                        }
+                                    });
+                                }
+                                RecordingState::Recording => {
+                                    // Show stop confirmation dialog (D-12)
+                                    if let Some(window) = _app.get_webview_window("main") {
+                                        let _ = window.show();
+                                        let _ = window.set_focus();
+                                    }
+                                    let _ = _app.emit("show-stop-dialog", ());
+                                }
+                                _ => {}
+                            }
+                        }
+                    })
+                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+            }
+
+            // Notify about recovered recordings (D-06)
+            let app_handle = app.handle().clone();
+            for (_jam_id, duration) in &recovered_recordings {
+                notify(
+                    &app_handle,
+                    "Recording Recovered",
+                    &format!("Recovered recording from crash ({:.0}s)", duration),
+                );
+            }
+
+            // Start recording event bridge
+            start_recording_event_bridge(
+                app.handle().clone(),
+                event_rx,
+                latest_rms.clone(),
+            );
+
             Ok(())
         })
         .manage(AppState {
             db: Mutex::new(db),
             config: Mutex::new(config),
             watcher: Mutex::new(watcher),
+            recording_engine: Mutex::new(SendableRecordingEngine(recording_engine)),
+            latest_rms_db: latest_rms_for_state,
+            scheduler,
+            current_recording_jam_id: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             // Jam queries
@@ -247,6 +461,12 @@ pub fn run() {
             commands::metadata::get_peaks,
             commands::metadata::generate_peaks_for_jam,
             commands::metadata::send_notification,
+            // Recording (Phase 3)
+            commands::recording::start_recording,
+            commands::recording::stop_recording,
+            commands::recording::get_recording_status,
+            commands::recording::list_audio_devices,
+            commands::recording::get_recording_level,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
