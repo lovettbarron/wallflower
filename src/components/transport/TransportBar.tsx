@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useEffect, useCallback } from "react";
 import {
   Play,
   Pause,
@@ -13,12 +14,81 @@ export function TransportBar() {
   const {
     currentJamId,
     currentJamName,
+    audioUrl,
     isPlaying,
     currentTime,
     duration,
     setPlaying,
     setCurrentTime,
+    setDuration,
   } = useTransportStore();
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (!audioUrl) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current = null;
+      }
+      return;
+    }
+
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+    }
+
+    const audio = audioRef.current;
+    if (audio.src !== audioUrl) {
+      audio.src = audioUrl;
+      audio.load();
+    }
+
+    const onLoadedMetadata = () => {
+      if (audio.duration && isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    };
+
+    const onTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
+
+    const onEnded = () => {
+      setPlaying(false);
+      setCurrentTime(0);
+    };
+
+    audio.addEventListener("loadedmetadata", onLoadedMetadata);
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("ended", onEnded);
+
+    return () => {
+      audio.removeEventListener("loadedmetadata", onLoadedMetadata);
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("ended", onEnded);
+    };
+  }, [audioUrl, setCurrentTime, setDuration, setPlaying]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audio.src) return;
+
+    if (isPlaying) {
+      audio.play().catch(() => setPlaying(false));
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying, setPlaying]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audio.src) return;
+    if (Math.abs(audio.currentTime - currentTime) > 0.5) {
+      audio.currentTime = currentTime;
+    }
+  }, [currentTime]);
 
   if (currentJamId === null) return null;
 

@@ -92,7 +92,7 @@ export function AutocompletePopover({
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger render={<span />}>{trigger}</PopoverTrigger>
+      <PopoverTrigger render={<button type="button" />}>{trigger}</PopoverTrigger>
       <PopoverContent
         align="start"
         sideOffset={4}
