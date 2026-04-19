@@ -95,7 +95,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01-PLAN.md -- Proto contract, Python sidecar project, analyzer abstractions, model manager
+- [x] 04-01-PLAN.md -- Proto contract, Python sidecar project, analyzer abstractions, model manager
 - [ ] 04-02-PLAN.md -- SQLite V4 migration, Rust analysis module types, priority queue
 - [ ] 04-03-PLAN.md -- Python ML analyzers (tempo, key, sections, loops) and gRPC server
 - [ ] 04-04-PLAN.md -- Rust sidecar manager, gRPC client bridge, Tauri commands, event streaming
