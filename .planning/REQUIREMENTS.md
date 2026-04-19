@@ -23,9 +23,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **REC-02**: Recording writes incrementally to disk with periodic WAV header updates and fsync every 5-10 seconds to prevent data loss on crash
 - [x] **REC-03**: Recording gracefully recovers from audio interface dropout without corrupting the in-progress file
 - [x] **REC-04**: User can configure a silence threshold; recording auto-pauses when audio falls below it
-- [ ] **REC-05**: User can edit metadata (tags, notes, collaborators) while recording is active, with live-save to database
-- [ ] **REC-06**: Recording status is clearly indicated at all times with prominent visual indicator
-- [ ] **REC-07**: User is warned with a confirmation dialog before stopping an active recording
+- [x] **REC-05**: User can edit metadata (tags, notes, collaborators) while recording is active, with live-save to database
+- [x] **REC-06**: Recording status is clearly indicated at all times with prominent visual indicator
+- [x] **REC-07**: User is warned with a confirmation dialog before stopping an active recording
 - [x] **REC-08**: All AI/ML processing pauses while recording is active — recording always gets priority
 - [x] **REC-09**: Architecture supports expansion to 8 or 16 channels without significant refactoring
 
@@ -184,9 +184,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REC-02 | Phase 3 | Complete |
 | REC-03 | Phase 3 | Complete |
 | REC-04 | Phase 3 | Complete |
-| REC-05 | Phase 3 | Pending |
-| REC-06 | Phase 3 | Pending |
-| REC-07 | Phase 3 | Pending |
+| REC-05 | Phase 3 | Complete |
+| REC-06 | Phase 3 | Complete |
+| REC-07 | Phase 3 | Complete |
 | REC-08 | Phase 3 | Complete |
 | REC-09 | Phase 3 | Complete |
 | INFRA-10 | Phase 3 | Pending |
