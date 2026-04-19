@@ -4,10 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { ArrowLeft } from "lucide-react";
-import { getJam, getPeaks } from "@/lib/tauri";
-import type { JamRecord, PeakData } from "@/lib/types";
+import { getJamWithMetadata, getPeaks, generatePeaksForJam } from "@/lib/tauri";
+import type { JamDetail as JamDetailType, PeakData } from "@/lib/types";
 import { WaveformOverview } from "@/components/waveform/WaveformOverview";
 import { WaveformDetail } from "@/components/waveform/WaveformDetail";
+import { MetadataEditor } from "@/components/metadata/MetadataEditor";
 import { useTransportStore } from "@/lib/stores/transport";
 
 interface JamDetailProps {
@@ -19,16 +20,21 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const transportStore = useTransportStore();
   const [seekTo, setSeekTo] = useState<number | null>(null);
 
-  const { data: jam, isLoading: jamLoading } = useQuery<JamRecord | null>({
+  const { data: jam, isLoading: jamLoading, refetch: refetchJam } = useQuery<JamDetailType | null>({
     queryKey: ["jam", jamId],
-    queryFn: () => getJam(jamId),
+    queryFn: () => getJamWithMetadata(jamId),
     enabled: !!jamId,
   });
 
   const { data: peaks, isLoading: peaksLoading } = useQuery<PeakData>({
     queryKey: ["peaks", jamId],
-    queryFn: () => getPeaks(jamId),
-    enabled: !!jamId && !!jam?.peaksGenerated,
+    queryFn: async () => {
+      if (jam?.peaksGenerated) {
+        return getPeaks(jamId);
+      }
+      return generatePeaksForJam(jamId);
+    },
+    enabled: !!jamId && !!jam,
   });
 
   // Load jam into transport when page mounts
@@ -154,13 +160,10 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
 
       <div className="h-6" />
 
-      {/* Metadata placeholder */}
-      <div
-        className="rounded-xl p-6 text-sm text-muted-foreground"
-        style={{ background: "#1D2129" }}
-      >
-        Metadata section coming in Plan 03
-      </div>
+      {/* Metadata editor */}
+      {jam && (
+        <MetadataEditor jam={jam} onUpdate={() => refetchJam()} />
+      )}
     </div>
   );
 }
