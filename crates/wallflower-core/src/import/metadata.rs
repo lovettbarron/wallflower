@@ -7,8 +7,6 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 
-use crate::error::Result;
-
 /// Audio metadata extracted from a file via symphonia.
 #[derive(Debug, Clone)]
 pub struct AudioMetadata {
