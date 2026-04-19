@@ -18,8 +18,21 @@ export function TauriEventListener() {
 
     async function setupListeners() {
       try {
-        // Dynamic import to avoid SSR issues with Tauri APIs
         const { listen } = await import("@tauri-apps/api/event");
+
+        // Request notification permission on first launch
+        try {
+          const {
+            isPermissionGranted,
+            requestPermission,
+          } = await import("@tauri-apps/plugin-notification");
+          const granted = await isPermissionGranted();
+          if (!granted) {
+            await requestPermission();
+          }
+        } catch {
+          // Notification plugin not available
+        }
 
         const unlistenFn = await listen<PhotoAutoAttachedPayload>(
           "photo-auto-attached",

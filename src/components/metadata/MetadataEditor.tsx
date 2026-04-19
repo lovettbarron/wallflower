@@ -11,9 +11,9 @@ import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { TagChip } from "./TagChip";
 import { AutocompletePopover } from "./AutocompletePopover";
+import { PhotoGallery } from "./PhotoGallery";
 import type { JamDetail } from "@/lib/types";
 import {
   addTag,
@@ -65,9 +65,9 @@ function useDebouncedSave(
       try {
         await updateJamMetadata(
           jamId,
-          field === "location" ? val : undefined,
-          field === "notes" ? val : undefined,
-          field === "patchNotes" ? val : undefined
+          field === "location" ? val : null,
+          field === "notes" ? val : null,
+          field === "patchNotes" ? val : null
         );
         setShowSaved(true);
         if (savedTimeoutRef.current) clearTimeout(savedTimeoutRef.current);
@@ -157,16 +157,8 @@ function ChipSection({
           placeholder={placeholder}
           open={popoverOpen}
           onOpenChange={setPopoverOpen}
-          trigger={
-            <Button
-              variant="outline"
-              size="xs"
-              className="h-6 rounded-xl border-primary text-primary"
-              onClick={() => setPopoverOpen(true)}
-            >
-              <Plus className="size-3" />
-            </Button>
-          }
+          triggerClassName="inline-flex h-6 items-center justify-center rounded-xl border border-primary px-2 text-primary hover:bg-accent/50 transition-colors"
+          triggerContent={<Plus className="size-3" />}
         />
       </div>
     </div>
@@ -363,6 +355,17 @@ export function MetadataEditor({ jam, onUpdate }: MetadataEditorProps) {
           placeholder="Describe your patch settings, signal chain, synth presets..."
           rows={4}
           className="bg-secondary"
+        />
+      </div>
+
+      {/* Photos */}
+      <div className="space-y-1.5">
+        <span className="text-xs text-muted-foreground">Photos</span>
+        <PhotoGallery
+          photos={jam.photos}
+          jamId={jam.id}
+          jamName={jam.originalFilename || jam.filename}
+          onUpdate={invalidateJam}
         />
       </div>
     </div>

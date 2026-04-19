@@ -14,7 +14,8 @@ export interface AutocompletePopoverProps {
   onSelect: (value: string) => void;
   onClose: () => void;
   placeholder: string;
-  trigger: React.ReactNode;
+  triggerClassName?: string;
+  triggerContent: React.ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -24,7 +25,8 @@ export function AutocompletePopover({
   onSelect,
   onClose,
   placeholder,
-  trigger,
+  triggerClassName,
+  triggerContent,
   open,
   onOpenChange,
 }: AutocompletePopoverProps) {
@@ -92,7 +94,7 @@ export function AutocompletePopover({
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger render={trigger} />
+      <PopoverTrigger className={triggerClassName}>{triggerContent}</PopoverTrigger>
       <PopoverContent
         align="start"
         sideOffset={4}

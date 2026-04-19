@@ -1,18 +1,21 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { listJams } from "@/lib/tauri";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { listJams, attachPhoto } from "@/lib/tauri";
 import { useLibraryStore } from "@/lib/stores/library";
 import type { JamRecord } from "@/lib/types";
 import { DateGroup } from "./DateGroup";
 import { JamCard } from "./JamCard";
+
+const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic"];
 
 /** Compute a human-readable date group label for a jam. */
 function getDateGroupLabel(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();
 
-  // Strip time for comparison
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const diffDays = Math.floor(
@@ -29,12 +32,10 @@ function getDateGroupLabel(dateStr: string): string {
     });
   }
   if (diffDays < 30) {
-    // "Week of April 7"
     const weekStart = new Date(target);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
     return `Week of ${weekStart.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`;
   }
-  // Older: "March 2026"
   return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
@@ -63,12 +64,93 @@ function groupJamsByDate(
   return groups;
 }
 
+function findJamCardAtPosition(x: number, y: number): { id: string; name: string } | null {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return null;
+  const card = el.closest("[data-jam-id]") as HTMLElement | null;
+  if (!card) return null;
+  return {
+    id: card.dataset.jamId!,
+    name: card.dataset.jamName || "this jam",
+  };
+}
+
 interface TimelineProps {
   onImportClick: () => void;
 }
 
 export function Timeline({ onImportClick }: TimelineProps) {
   const { setSelectedJam } = useLibraryStore();
+  const [dropTargetJamId, setDropTargetJamId] = useState<string | null>(null);
+  const dropTargetRef = useRef<{ id: string; name: string } | null>(null);
+  const queryClient = useQueryClient();
+
+  const attachMutation = useMutation({
+    mutationFn: ({ jamId, filePath }: { jamId: string; filePath: string }) =>
+      attachPhoto(jamId, filePath),
+    onSuccess: (_data, variables) => {
+      const name = dropTargetRef.current?.name || "jam";
+      toast.success(`Photo attached to ${name}`, { duration: 3000 });
+      queryClient.invalidateQueries({ queryKey: ["jam", variables.jamId] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Could not attach photo: ${error.message}`, { duration: 6000 });
+    },
+  });
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let mounted = true;
+
+    async function setup() {
+      try {
+        const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+        const fn = await getCurrentWebview().onDragDropEvent((event) => {
+          if (!mounted) return;
+
+          if (event.payload.type === "over") {
+            const pos = event.payload.position;
+            const target = findJamCardAtPosition(pos.x, pos.y);
+            dropTargetRef.current = target;
+            setDropTargetJamId(target?.id ?? null);
+          }
+
+          if (event.payload.type === "drop") {
+            const pos = event.payload.position;
+            const target = findJamCardAtPosition(pos.x, pos.y);
+            setDropTargetJamId(null);
+
+            if (target) {
+              const paths = event.payload.paths;
+              let attached = 0;
+              for (const path of paths) {
+                const ext = path.substring(path.lastIndexOf(".")).toLowerCase();
+                if (IMAGE_EXTENSIONS.includes(ext)) {
+                  dropTargetRef.current = target;
+                  attachMutation.mutate({ jamId: target.id, filePath: path });
+                  attached++;
+                }
+              }
+              if (attached === 0 && paths.length > 0) {
+                toast.error("No supported image files. Try .jpg, .png, .webp, or .heic.", { duration: 4000 });
+              }
+            }
+          }
+
+          if (event.payload.type === "leave") {
+            setDropTargetJamId(null);
+            dropTargetRef.current = null;
+          }
+        });
+        unlisten = fn;
+      } catch {
+        // Not running in Tauri
+      }
+    }
+
+    setup();
+    return () => { mounted = false; unlisten?.(); };
+  }, []);
 
   const {
     data: jams,
@@ -82,9 +164,7 @@ export function Timeline({ onImportClick }: TimelineProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div
-          className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"
-        />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
       </div>
     );
   }
@@ -132,6 +212,7 @@ export function Timeline({ onImportClick }: TimelineProps) {
               key={jam.id}
               jam={jam}
               onClick={() => setSelectedJam(jam.id)}
+              isDropTarget={dropTargetJamId === jam.id}
             />
           ))}
         </DateGroup>

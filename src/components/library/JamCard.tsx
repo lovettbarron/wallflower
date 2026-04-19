@@ -2,13 +2,16 @@
 
 import { useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ImagePlus } from "lucide-react";
 import type { JamRecord, PeakData } from "@/lib/types";
 import { getPeaks } from "@/lib/tauri";
 import { formatDuration } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 interface JamCardProps {
   jam: JamRecord;
   onClick: () => void;
+  isDropTarget?: boolean;
 }
 
 function MiniWaveform({ peaks }: { peaks: PeakData }) {
@@ -72,7 +75,7 @@ function WaveformSkeleton() {
   );
 }
 
-export function JamCard({ jam, onClick }: JamCardProps) {
+export function JamCard({ jam, onClick, isDropTarget }: JamCardProps) {
   const { data: peaks, isLoading } = useQuery<PeakData>({
     queryKey: ["peaks", jam.id],
     queryFn: () => getPeaks(jam.id),
@@ -83,10 +86,29 @@ export function JamCard({ jam, onClick }: JamCardProps) {
   return (
     <button
       type="button"
+      data-jam-id={jam.id}
+      data-jam-name={jam.originalFilename || jam.filename}
       onClick={onClick}
-      className="w-full cursor-pointer rounded-xl p-4 text-left transition-colors hover:bg-[#272C36] focus:outline-none focus:ring-2 focus:ring-[#E8863A] focus:ring-offset-2 focus:ring-offset-[#151921]"
-      style={{ background: "#1D2129" }}
+      className={cn(
+        "relative w-full cursor-pointer rounded-xl p-4 text-left transition-all focus:outline-none focus:ring-2 focus:ring-[#E8863A] focus:ring-offset-2 focus:ring-offset-[#151921]",
+        isDropTarget
+          ? "ring-2 ring-[#E8863A] bg-[#E8863A]/10"
+          : "hover:bg-[#272C36]",
+      )}
+      style={{ background: isDropTarget ? undefined : "#1D2129" }}
     >
+      {/* Drop target indicator */}
+      {isDropTarget && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl">
+          <div className="flex items-center gap-2 rounded-lg bg-[#1D2129]/90 px-4 py-2">
+            <ImagePlus className="size-4 text-[#E8863A]" strokeWidth={1.5} />
+            <span className="text-sm font-medium text-[#E8863A]">
+              Drop to attach photo
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Mini waveform */}
       {isLoading || !peaks ? <WaveformSkeleton /> : <MiniWaveform peaks={peaks} />}
 

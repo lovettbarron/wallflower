@@ -2,8 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
-import { convertFileSrc } from "@tauri-apps/api/core";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ImagePlus } from "lucide-react";
 import { getJamWithMetadata, getPeaks, generatePeaksForJam } from "@/lib/tauri";
 import type { JamDetail as JamDetailType, PeakData } from "@/lib/types";
 import { WaveformOverview } from "@/components/waveform/WaveformOverview";
@@ -17,13 +16,45 @@ interface JamDetailProps {
 }
 
 export function JamDetail({ jamId, onBack }: JamDetailProps) {
-  const currentTime = useTransportStore((s) => s.currentTime);
-  const duration = useTransportStore((s) => s.duration);
-  const isPlaying = useTransportStore((s) => s.isPlaying);
+  const [isDragOver, setIsDragOver] = useState(false);
   const currentJamId = useTransportStore((s) => s.currentJamId);
   const loadJam = useTransportStore((s) => s.loadJam);
-  const setPlaying = useTransportStore((s) => s.setPlaying);
   const setCurrentTime = useTransportStore((s) => s.setCurrentTime);
+  const isPlaying = useTransportStore((s) => s.isPlaying);
+  const setPlaying = useTransportStore((s) => s.setPlaying);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let mounted = true;
+
+    async function setupDragOverlay() {
+      try {
+        const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+        const fn = await getCurrentWebview().onDragDropEvent((event) => {
+          if (!mounted) return;
+          if (event.payload.type === "over") setIsDragOver(true);
+          if (event.payload.type === "leave" || event.payload.type === "drop") setIsDragOver(false);
+        });
+        unlisten = fn;
+      } catch {
+        // Not running in Tauri
+      }
+    }
+    setupDragOverlay();
+    return () => { mounted = false; unlisten?.(); };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      e.preventDefault();
+      setPlaying(!isPlaying);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPlaying, setPlaying]);
 
   const { data: jam, isLoading: jamLoading, refetch: refetchJam } = useQuery<JamDetailType | null>({
     queryKey: ["jam", jamId],
@@ -44,7 +75,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
 
   useEffect(() => {
     if (!jam || currentJamId === jam.id) return;
-    const audioUrl = convertFileSrc(jam.filePath);
+    const audioUrl = `http://localhost:23516/api/audio/${encodeURIComponent(jam.filename)}`;
     loadJam(
       jam.id,
       jam.originalFilename || jam.filename,
@@ -53,25 +84,11 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
     );
   }, [jam, currentJamId, loadJam]);
 
-  const handleOverviewSeek = useCallback(
+  const handleSeek = useCallback(
     (time: number) => {
       setCurrentTime(time);
     },
     [setCurrentTime],
-  );
-
-  const handleWaveformSeek = useCallback(
-    (time: number) => {
-      setCurrentTime(time);
-    },
-    [setCurrentTime],
-  );
-
-  const handlePlayPause = useCallback(
-    (playing: boolean) => {
-      setPlaying(playing);
-    },
-    [setPlaying],
   );
 
   if (jamLoading) {
@@ -86,10 +103,25 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
     return <p className="text-sm text-muted-foreground">Jam not found.</p>;
   }
 
-  const audioUrl = convertFileSrc(jam.filePath);
+  const audioUrl = `http://localhost:23516/api/audio/${encodeURIComponent(jam.filename)}`;
 
   return (
-    <div>
+    <div className="relative">
+      {/* Full-page drag overlay */}
+      {isDragOver && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-[#E8863A] bg-[#1D2129]/90 px-12 py-10">
+            <ImagePlus className="size-12 text-[#E8863A]" strokeWidth={1.5} />
+            <span className="text-base font-medium text-[#E8863A]">
+              Drop to attach photo
+            </span>
+            <span className="text-xs text-muted-foreground">
+              to {jam?.originalFilename || jam?.filename || "this jam"}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Back navigation */}
       <button
         type="button"
@@ -125,9 +157,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           {/* Overview waveform */}
           <WaveformOverview
             peaks={peaks}
-            currentTime={currentTime}
-            duration={duration}
-            onSeek={handleOverviewSeek}
+            onSeek={handleSeek}
           />
 
           <div className="h-6" />
@@ -136,7 +166,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           <WaveformDetail
             audioUrl={audioUrl}
             peaks={peaks}
-            onSeek={handleWaveformSeek}
+            onSeek={handleSeek}
           />
         </>
       )}
