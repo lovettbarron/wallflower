@@ -1,3 +1,12 @@
-fn main() {
-    tauri_build::build()
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tonic_build::configure()
+        .build_server(false)
+        .build_client(true)
+        .compile_protos(
+            &["../../proto/wallflower_analysis.proto"],
+            &["../../proto/"],
+        )?;
+
+    tauri_build::build();
+    Ok(())
 }

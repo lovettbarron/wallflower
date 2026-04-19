@@ -5,6 +5,7 @@ edition = "2024"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+tonic-build = "0.14"
 
 [dependencies]
 wallflower-core = { path = "../wallflower-core" }
@@ -24,3 +25,7 @@ hound = "3.5"
 rusqlite = { workspace = true }
 notify = "8"
 dirs = "6"
+tonic = "0.14"
+prost = "0.13"
+tonic-health = "0.14"
+tokio-stream = "0.1"
