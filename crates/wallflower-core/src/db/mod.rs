@@ -40,6 +40,15 @@ impl Database {
         Self::open(&db_path)
     }
 
+    /// Returns the default database path without opening it.
+    /// On macOS: ~/Library/Application Support/wallflower/wallflower.db
+    pub fn default_path() -> std::path::PathBuf {
+        dirs::data_dir()
+            .unwrap_or_else(|| std::path::PathBuf::from("."))
+            .join("wallflower")
+            .join("wallflower.db")
+    }
+
     /// Open an in-memory database (for testing).
     pub fn open_in_memory() -> Result<Self> {
         let conn = Connection::open_in_memory()?;

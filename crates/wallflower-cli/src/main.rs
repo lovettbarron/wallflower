@@ -2,6 +2,7 @@ use std::path::Path;
 
 use clap::{Parser, Subcommand};
 use wallflower_core::db::{self, Database};
+use wallflower_core::device;
 use wallflower_core::import;
 use wallflower_core::settings;
 
@@ -34,6 +35,8 @@ enum Commands {
         /// New value for the setting
         value: Option<String>,
     },
+    /// List connected audio recording devices
+    Devices,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -116,6 +119,26 @@ fn main() -> anyhow::Result<()> {
                 "Duplicate handling: {}",
                 config.duplicate_handling
             );
+        }
+        Commands::Devices => {
+            let devices = device::detect_devices();
+            if devices.is_empty() {
+                println!("No audio recording devices detected.");
+                println!("Connect a USB recorder (e.g., Zoom F3) and try again.");
+            } else {
+                println!("Detected {} device(s):\n", devices.len());
+                for dev in &devices {
+                    println!("  {} ({})", dev.name, dev.mount_point);
+                    println!("    {} audio file(s)", dev.files.len());
+                    for file in dev.files.iter().take(5) {
+                        println!("      - {file}");
+                    }
+                    if dev.files.len() > 5 {
+                        println!("      ... and {} more", dev.files.len() - 5);
+                    }
+                    println!();
+                }
+            }
         }
         Commands::Settings { key, value } => {
             match (key.as_deref(), value.as_deref()) {
