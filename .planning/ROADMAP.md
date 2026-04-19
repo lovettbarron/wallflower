@@ -80,7 +80,7 @@ Plans:
 - [x] 03-03-PLAN.md -- Recording UI: zustand store, transport bar recording mode, live waveform, stop dialog
 - [x] 03-04-PLAN.md -- Recording workflow wiring: RecordingView, event listener, navigation lock, elapsed timer
 - [x] 03-05-PLAN.md -- Recording settings and full phase verification checkpoint
-- [ ] 03-06-PLAN.md -- Gap closure: wire recording-started event to zustand store for tray/shortcut recording indication
+- [x] 03-06-PLAN.md -- Gap closure: wire recording-started event to zustand store for tray/shortcut recording indication
 
 ### Phase 4: ML Analysis Pipeline
 **Goal**: Imported and recorded jams are automatically analyzed for tempo, key, sections, and loops, with results appearing progressively in the UI
@@ -144,7 +144,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Tauri App Shell, Storage & API Foundation | 3/4 | In progress | - |
 | 2. Playback, Metadata, Design System & Notifications | 0/4 | Not started | - |
-| 3. Recording Engine & System Integration | 5/6 | In progress | - |
+| 3. Recording Engine & System Integration | 5/6 | In Progress|  |
 | 4. ML Analysis Pipeline | 0/3 | Not started | - |
 | 5. Source Separation & Export | 0/3 | Not started | - |
 | 6. Spatial Explorer, Accessibility & Distribution | 0/3 | Not started | - |
