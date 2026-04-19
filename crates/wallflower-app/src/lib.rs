@@ -1,3 +1,4 @@
+mod api;
 mod commands;
 
 use std::sync::Mutex;
@@ -17,6 +18,11 @@ pub fn run() {
 
     // Ensure storage directory exists
     settings::ensure_storage_dir(&config).expect("failed to create storage directory");
+
+    // Start the HTTP API server in the background
+    tauri::async_runtime::spawn(async {
+        api::start_api_server(23516).await;
+    });
 
     tauri::Builder::default()
         .manage(AppState {
