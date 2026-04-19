@@ -91,13 +91,16 @@ Plans:
   2. User can record and browse the library immediately on first launch while AI models download in the background
   3. User can search and filter jams by key, tempo, tags, collaborators, instruments, date, and location
   4. Swapping an AI model requires only a configuration change, not code changes
-**Plans**: TBD
+**Plans**: 6 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md -- Proto contract, Python sidecar project, analyzer abstractions, model manager
+- [ ] 04-02-PLAN.md -- SQLite V4 migration, Rust analysis module types, priority queue
+- [ ] 04-03-PLAN.md -- Python ML analyzers (tempo, key, sections, loops) and gRPC server
+- [ ] 04-04-PLAN.md -- Rust sidecar manager, gRPC client bridge, Tauri commands, event streaming
+- [ ] 04-05-PLAN.md -- Search and filter: SQLite queries, API endpoints, frontend filter bar
+- [ ] 04-06-PLAN.md -- Analysis UI: badges, waveform markers, summary row, settings page, verification
 
 ### Phase 5: Source Separation & Export
 **Goal**: Users can isolate instruments from recordings, bookmark interesting sections, and export stems ready for use in Ableton
@@ -145,6 +148,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Tauri App Shell, Storage & API Foundation | 3/4 | In progress | - |
 | 2. Playback, Metadata, Design System & Notifications | 0/4 | Not started | - |
 | 3. Recording Engine & System Integration | 5/6 | In Progress|  |
-| 4. ML Analysis Pipeline | 0/3 | Not started | - |
+| 4. ML Analysis Pipeline | 0/6 | Not started | - |
 | 5. Source Separation & Export | 0/3 | Not started | - |
 | 6. Spatial Explorer, Accessibility & Distribution | 0/3 | Not started | - |

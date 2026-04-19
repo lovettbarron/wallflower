@@ -41,17 +41,21 @@ created: 2026-04-19
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 04-01-01 | 01 | 1 | AI-01 | unit (Python) | `cd sidecar && uv run pytest tests/test_tempo.py -x` | ❌ W0 | ⬜ pending |
-| 04-01-02 | 01 | 1 | AI-02 | unit (Python) | `cd sidecar && uv run pytest tests/test_key.py -x` | ❌ W0 | ⬜ pending |
-| 04-01-03 | 01 | 1 | AI-03 | unit (Python) | `cd sidecar && uv run pytest tests/test_sections.py -x` | ❌ W0 | ⬜ pending |
-| 04-01-04 | 01 | 1 | AI-05 | unit (Python) | `cd sidecar && uv run pytest tests/test_loops.py -x` | ❌ W0 | ⬜ pending |
-| 04-02-01 | 02 | 2 | AI-06 | integration | `~/.cargo/bin/cargo test -p wallflower-app grpc_streaming` | ❌ W0 | ⬜ pending |
-| 04-02-02 | 02 | 2 | AI-07 | unit (Python) | `cd sidecar && uv run pytest tests/test_models.py -x` | ❌ W0 | ⬜ pending |
-| 04-02-03 | 02 | 2 | AI-08 | unit (Python) | `cd sidecar && uv run pytest tests/test_provider.py -x` | ❌ W0 | ⬜ pending |
-| 04-03-01 | 03 | 3 | AI-09 | integration | Manual: start app, verify recording works while models download | N/A | ⬜ pending |
-| 04-03-02 | 03 | 3 | META-08 | unit (Rust) | `~/.cargo/bin/cargo test -p wallflower-core filter_search` | ❌ W0 | ⬜ pending |
+| 04-01-01 | 01 | 1 | AI-08 | unit (Python) | `cd sidecar && uv run pytest tests/test_provider.py -x` | Wave 0 | pending |
+| 04-02-01 | 02 | 1 | AI-09 | unit (Rust) | `~/.cargo/bin/cargo test -p wallflower-core --lib` | Wave 0 | pending |
+| 04-03-01 | 03 | 2 | AI-01 | unit (Python) | `cd sidecar && uv run pytest tests/test_tempo.py -x` | Wave 0 | pending |
+| 04-03-02 | 03 | 2 | AI-02 | unit (Python) | `cd sidecar && uv run pytest tests/test_key.py -x` | Wave 0 | pending |
+| 04-03-03 | 03 | 2 | AI-03 | unit (Python) | `cd sidecar && uv run pytest tests/test_sections.py -x` | Wave 0 | pending |
+| 04-03-04 | 03 | 2 | AI-05 | unit (Python) | `cd sidecar && uv run pytest tests/test_loops.py -x` | Wave 0 | pending |
+| 04-03-05 | 03 | 2 | AI-07 | unit (Python) | `cd sidecar && uv run pytest tests/test_models.py -x` | Wave 0 | pending |
+| 04-04-01 | 04 | 2 | AI-06 | compilation | `~/.cargo/bin/cargo check -p wallflower-app` | N/A | pending |
+| 04-04-02 | 04 | 2 | AI-06 | unit (Python) | `cd sidecar && uv run pytest tests/ -x` (server tests cover gRPC streaming) | Wave 0 | pending |
+| 04-05-01 | 05 | 3 | META-08 | unit (Rust) | `~/.cargo/bin/cargo test -p wallflower-core filter_search` | Wave 0 | pending |
+| 04-05-02 | 05 | 3 | META-08 | typecheck | `npx tsc --noEmit` | N/A | pending |
+| 04-06-01 | 06 | 3 | AI-06 | typecheck | `npx tsc --noEmit` | N/A | pending |
+| 04-06-02 | 06 | 3 | AI-09 | manual | Start app, verify recording works while models download | N/A | pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: pending / green / red / flaky*
 
 ---
 
@@ -70,6 +74,17 @@ created: 2026-04-19
 - [ ] `uv python install 3.13` — compatible Python version
 - [ ] `migrations/V4__analysis_tables.sql` — analysis result schema
 - [ ] Rust test fixtures for analysis DB operations
+
+---
+
+## AI-06 Coverage Note
+
+AI-06 (progressive analysis results via Tauri events) is covered by:
+1. **Python server tests (Plan 03):** Verify gRPC streaming works correctly with STARTED/COMPLETED/FAILED/SKIPPED status per step
+2. **Rust compilation check (Plan 04):** Verify Tauri event emission code compiles with correct types
+3. **Manual verification (Plan 06 checkpoint):** Full end-to-end progressive UI flow
+
+A dedicated Rust integration test for gRPC streaming (`cargo test grpc_streaming`) is not included because it would require a running Python sidecar process during `cargo test`, adding significant complexity. The gRPC contract is tested at both ends (Python server tests + Rust compilation) with manual end-to-end verification.
 
 ---
 
