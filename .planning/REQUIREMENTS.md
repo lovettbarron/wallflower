@@ -19,15 +19,15 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Recording
 
-- [ ] **REC-01**: User can record audio from any connected audio interface with 1-4 channel support (default stereo)
-- [ ] **REC-02**: Recording writes incrementally to disk with periodic WAV header updates and fsync every 5-10 seconds to prevent data loss on crash
-- [ ] **REC-03**: Recording gracefully recovers from audio interface dropout without corrupting the in-progress file
-- [ ] **REC-04**: User can configure a silence threshold; recording auto-pauses when audio falls below it
+- [x] **REC-01**: User can record audio from any connected audio interface with 1-4 channel support (default stereo)
+- [x] **REC-02**: Recording writes incrementally to disk with periodic WAV header updates and fsync every 5-10 seconds to prevent data loss on crash
+- [x] **REC-03**: Recording gracefully recovers from audio interface dropout without corrupting the in-progress file
+- [x] **REC-04**: User can configure a silence threshold; recording auto-pauses when audio falls below it
 - [ ] **REC-05**: User can edit metadata (tags, notes, collaborators) while recording is active, with live-save to database
 - [ ] **REC-06**: Recording status is clearly indicated at all times with prominent visual indicator
 - [ ] **REC-07**: User is warned with a confirmation dialog before stopping an active recording
-- [ ] **REC-08**: All AI/ML processing pauses while recording is active — recording always gets priority
-- [ ] **REC-09**: Architecture supports expansion to 8 or 16 channels without significant refactoring
+- [x] **REC-08**: All AI/ML processing pauses while recording is active — recording always gets priority
+- [x] **REC-09**: Architecture supports expansion to 8 or 16 channels without significant refactoring
 
 ### AI Analysis
 
@@ -180,15 +180,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DES-05 | Phase 2 | Pending |
 | DES-06 | Phase 2 | Pending |
 | INFRA-11 | Phase 2 | Pending |
-| REC-01 | Phase 3 | Pending |
-| REC-02 | Phase 3 | Pending |
-| REC-03 | Phase 3 | Pending |
-| REC-04 | Phase 3 | Pending |
+| REC-01 | Phase 3 | Complete |
+| REC-02 | Phase 3 | Complete |
+| REC-03 | Phase 3 | Complete |
+| REC-04 | Phase 3 | Complete |
 | REC-05 | Phase 3 | Pending |
 | REC-06 | Phase 3 | Pending |
 | REC-07 | Phase 3 | Pending |
-| REC-08 | Phase 3 | Pending |
-| REC-09 | Phase 3 | Pending |
+| REC-08 | Phase 3 | Complete |
+| REC-09 | Phase 3 | Complete |
 | INFRA-10 | Phase 3 | Pending |
 | INFRA-12 | Phase 3 | Pending |
 | AI-01 | Phase 4 | Pending |

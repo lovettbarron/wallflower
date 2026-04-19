@@ -15,6 +15,9 @@ const MIGRATION_V1: &str = include_str!("../../../../migrations/V1__initial_sche
 /// The V2 schema migration: metadata tables, additional jams columns.
 const MIGRATION_V2: &str = include_str!("../../../../migrations/V2__metadata_tables.sql");
 
+/// V3: Recording support tables (gap tracking for device disconnects).
+const MIGRATION_V3: &str = include_str!("../../../../migrations/V3__recording_tables.sql");
+
 /// Database wrapper around a SQLite connection.
 pub struct Database {
     pub conn: Connection,
@@ -114,6 +117,18 @@ impl Database {
                 self.conn.execute_batch(MIGRATION_V1)?;
                 self.conn.execute_batch(MIGRATION_V2)?;
             }
+        }
+
+        // Schema version tracking via user_version pragma.
+        let current_version: i32 = self
+            .conn
+            .query_row("PRAGMA user_version", [], |row| row.get(0))?;
+
+        // V3: Recording support tables
+        if current_version < 3 {
+            info!("Running V3 migration: recording tables");
+            self.conn.execute_batch(MIGRATION_V3)?;
+            self.conn.execute_batch("PRAGMA user_version = 3;")?;
         }
 
         Ok(())

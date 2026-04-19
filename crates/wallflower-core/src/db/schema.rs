@@ -23,6 +23,18 @@ pub struct JamRecord {
     pub peaks_generated: bool,
 }
 
+/// A recording gap caused by device disconnect or other interruption.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecordingGap {
+    pub id: String,
+    pub jam_id: String,
+    pub gap_start_seconds: f64,
+    pub gap_end_seconds: f64,
+    pub reason: String,
+    pub created_at: String,
+}
+
 /// Data required to create a new jam record.
 #[derive(Debug, Clone)]
 pub struct NewJam {
