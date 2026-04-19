@@ -9,13 +9,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Storage & File Management
 
-- [ ] **STOR-01**: User can import audio files (WAV, FLAC, MP3) via atomic copy-first import with temp-then-rename for sync-folder safety
+- [x] **STOR-01**: User can import audio files (WAV, FLAC, MP3) via atomic copy-first import with temp-then-rename for sync-folder safety
 - [x] **STOR-02**: Application stores metadata in SQLite database located in ~/Library/Application Support/wallflower (never in sync folders)
 - [ ] **STOR-03**: Application watches a configurable folder (default ~/wallflower) for new audio files and auto-imports them
 - [ ] **STOR-04**: Application detects connected USB audio recorders (e.g., Zoom F3) and prompts to import new recordings
-- [ ] **STOR-05**: Application processes 32-bit float WAV files and can downsample to 24-bit for DAW compatibility
+- [x] **STOR-05**: Application processes 32-bit float WAV files and can downsample to 24-bit for DAW compatibility
 - [x] **STOR-06**: SQLite database is a single portable file that can be backed up by copying
-- [ ] **STOR-07**: File writes use atomic operations (temp-then-rename) to prevent corruption in Dropbox/iCloud sync folders
+- [x] **STOR-07**: File writes use atomic operations (temp-then-rename) to prevent corruption in Dropbox/iCloud sync folders
 
 ### Recording
 
@@ -82,9 +82,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Infrastructure
 
-- [ ] **INFRA-01**: Backend exposes a RESTful API for all functionality
-- [ ] **INFRA-02**: CLI tool provides access to all backend operations for debugging and scripting
-- [ ] **INFRA-03**: Comprehensive test coverage across backend (Rust), frontend (React), and ML sidecar (Python)
+- [x] **INFRA-01**: Backend exposes a RESTful API for all functionality
+- [x] **INFRA-02**: CLI tool provides access to all backend operations for debugging and scripting
+- [x] **INFRA-03**: Comprehensive test coverage across backend (Rust), frontend (React), and ML sidecar (Python)
 - [ ] **INFRA-04**: README updated at end of every phase with current progress
 - [ ] **INFRA-05**: Release generated at end of each milestone
 - [ ] **INFRA-06**: agents.md maintained at repo top level capturing feedback and codified skills
@@ -148,16 +148,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STOR-01 | Phase 1 | Pending |
+| STOR-01 | Phase 1 | Complete |
 | STOR-02 | Phase 1 | Complete |
 | STOR-03 | Phase 1 | Pending |
 | STOR-04 | Phase 1 | Pending |
-| STOR-05 | Phase 1 | Pending |
+| STOR-05 | Phase 1 | Complete |
 | STOR-06 | Phase 1 | Complete |
-| STOR-07 | Phase 1 | Pending |
-| INFRA-01 | Phase 1 | Pending |
-| INFRA-02 | Phase 1 | Pending |
-| INFRA-03 | Phase 1 | Pending |
+| STOR-07 | Phase 1 | Complete |
+| INFRA-01 | Phase 1 | Complete |
+| INFRA-02 | Phase 1 | Complete |
+| INFRA-03 | Phase 1 | Complete |
 | INFRA-04 | Phase 1 | Pending |
 | INFRA-05 | Phase 1 | Pending |
 | INFRA-06 | Phase 1 | Pending |
