@@ -1,0 +1,102 @@
+syntax = "proto3";
+package wallflower.analysis;
+
+service AnalysisService {
+  rpc AnalyzeJam(AnalyzeRequest) returns (stream AnalysisProgress);
+  rpc GetHealth(HealthRequest) returns (HealthResponse);
+  rpc GetHardwareInfo(HardwareInfoRequest) returns (HardwareInfoResponse);
+}
+
+message AnalyzeRequest {
+  string jam_id = 1;
+  string audio_path = 2;
+  AnalysisProfile profile = 3;
+  repeated string skip_steps = 4;
+}
+
+enum AnalysisProfile {
+  FULL = 0;
+  STANDARD = 1;
+  LIGHTWEIGHT = 2;
+}
+
+message AnalysisProgress {
+  string jam_id = 1;
+  AnalysisStep step = 2;
+  StepStatus status = 3;
+  oneof result {
+    TempoResult tempo = 4;
+    KeyResult key = 5;
+    SectionsResult sections = 6;
+    LoopsResult loops = 7;
+  }
+}
+
+enum AnalysisStep {
+  TEMPO = 0;
+  KEY = 1;
+  SECTIONS = 2;
+  LOOPS = 3;
+}
+
+enum StepStatus {
+  STARTED = 0;
+  COMPLETED = 1;
+  FAILED = 2;
+  SKIPPED = 3;
+}
+
+message TempoResult {
+  float bpm = 1;
+  float confidence = 2;
+  repeated BeatPosition beats = 3;
+}
+
+message BeatPosition {
+  float time_seconds = 1;
+}
+
+message KeyResult {
+  string key = 1;
+  string scale = 2;
+  float strength = 3;
+}
+
+message SectionsResult {
+  repeated Section sections = 1;
+}
+
+message Section {
+  float start_seconds = 1;
+  float end_seconds = 2;
+  string label = 3;
+  int32 cluster_id = 4;
+}
+
+message LoopsResult {
+  repeated Loop loops = 1;
+}
+
+message Loop {
+  float start_seconds = 1;
+  float end_seconds = 2;
+  int32 repeat_count = 3;
+  bool evolving = 4;
+  string label = 5;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  bool healthy = 1;
+  string version = 2;
+}
+
+message HardwareInfoRequest {}
+
+message HardwareInfoResponse {
+  string chip = 1;
+  int32 cores = 2;
+  int64 memory_bytes = 3;
+  AnalysisProfile recommended_profile = 4;
+}
