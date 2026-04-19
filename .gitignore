@@ -28,3 +28,4 @@ tsconfig.tsbuildinfo
 .vscode/
 *.swp
 *.swo
+.claude/worktrees/

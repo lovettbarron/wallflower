@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "@fontsource/plus-jakarta-sans/400.css";
 import "@fontsource/plus-jakarta-sans/600.css";
+import { Providers } from "@/components/providers";
+import { TransportBar } from "@/components/transport/TransportBar";
 
 export const metadata: Metadata = {
   title: "Wallflower",
@@ -19,11 +21,19 @@ export default function RootLayout({
         <meta name="color-scheme" content="dark" />
       </head>
       <body
+        className="min-h-screen"
         style={{
           fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+          background: "#151921",
+          color: "#E2E4E8",
         }}
       >
-        {children}
+        <Providers>
+          <div className="pb-14">
+            {children}
+          </div>
+          <TransportBar />
+        </Providers>
       </body>
     </html>
   );
