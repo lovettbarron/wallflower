@@ -50,3 +50,50 @@ export interface AppStatus {
   watcherActive: boolean;
   watchFolder: string;
 }
+
+/** A tag attached to a jam. */
+export interface JamTag {
+  id: string;
+  jamId: string;
+  tag: string;
+  createdAt: string;
+}
+
+/** A collaborator attached to a jam. */
+export interface JamCollaborator {
+  id: string;
+  jamId: string;
+  name: string;
+  createdAt: string;
+}
+
+/** An instrument/gear entry attached to a jam. */
+export interface JamInstrument {
+  id: string;
+  jamId: string;
+  name: string;
+  createdAt: string;
+}
+
+/** A photo attached to a jam. */
+export interface JamPhoto {
+  id: string;
+  jamId: string;
+  filename: string;
+  filePath: string;
+  thumbnailPath: string | null;
+  source: "drop" | "patches_folder";
+  createdAt: string;
+}
+
+/** Extended jam record with all metadata for detail views. */
+export interface JamDetail extends JamRecord {
+  location: string | null;
+  notes: string | null;
+  patchNotes: string | null;
+  peaksGenerated: boolean;
+  tags: JamTag[];
+  collaborators: JamCollaborator[];
+  instruments: JamInstrument[];
+  photos: JamPhoto[];
+}
