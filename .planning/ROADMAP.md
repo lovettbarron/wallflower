@@ -71,13 +71,15 @@ Plans:
   4. Recording status is visible in both the main window and the macOS menubar/system tray icon, with quick actions available from the tray
   5. All background processing pauses automatically when recording starts and resumes when recording stops
   6. User can start and stop recording via global keyboard shortcuts even when the app is not focused
-**Plans**: TBD
+**Plans**: 5 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md -- Recording engine core: cpal capture, crash-safe WAV writer, silence detection, priority scheduler, DB migration
+- [ ] 03-02-PLAN.md -- Tauri integration: recording commands, system tray, global shortcut, crash recovery, event bridge
+- [ ] 03-03-PLAN.md -- Recording UI: zustand store, transport bar recording mode, live waveform, stop dialog
+- [ ] 03-04-PLAN.md -- Recording workflow wiring: RecordingView, event listener, navigation lock, elapsed timer
+- [ ] 03-05-PLAN.md -- Recording settings and full phase verification checkpoint
 
 ### Phase 4: ML Analysis Pipeline
 **Goal**: Imported and recorded jams are automatically analyzed for tempo, key, sections, and loops, with results appearing progressively in the UI
@@ -141,7 +143,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Tauri App Shell, Storage & API Foundation | 3/4 | In progress | - |
 | 2. Playback, Metadata, Design System & Notifications | 0/4 | Not started | - |
-| 3. Recording Engine & System Integration | 0/3 | Not started | - |
+| 3. Recording Engine & System Integration | 0/5 | Not started | - |
 | 4. ML Analysis Pipeline | 0/3 | Not started | - |
 | 5. Source Separation & Export | 0/3 | Not started | - |
 | 6. Spatial Explorer, Accessibility & Distribution | 0/3 | Not started | - |
