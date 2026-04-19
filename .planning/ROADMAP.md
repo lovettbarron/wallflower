@@ -78,8 +78,8 @@ Plans:
 - [x] 03-01-PLAN.md -- Recording engine core: cpal capture, crash-safe WAV writer, silence detection, priority scheduler, DB migration
 - [x] 03-02-PLAN.md -- Tauri integration: recording commands, system tray, global shortcut, crash recovery, event bridge
 - [x] 03-03-PLAN.md -- Recording UI: zustand store, transport bar recording mode, live waveform, stop dialog
-- [ ] 03-04-PLAN.md -- Recording workflow wiring: RecordingView, event listener, navigation lock, elapsed timer
-- [ ] 03-05-PLAN.md -- Recording settings and full phase verification checkpoint
+- [x] 03-04-PLAN.md -- Recording workflow wiring: RecordingView, event listener, navigation lock, elapsed timer
+- [x] 03-05-PLAN.md -- Recording settings and full phase verification checkpoint
 
 ### Phase 4: ML Analysis Pipeline
 **Goal**: Imported and recorded jams are automatically analyzed for tempo, key, sections, and loops, with results appearing progressively in the UI
