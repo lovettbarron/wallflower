@@ -44,23 +44,23 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Playback & Visualization
 
-- [ ] **PLAY-01**: User can view waveforms for any recording, powered by pre-computed multi-resolution peaks served from the backend
-- [ ] **PLAY-02**: User can scrub and seek to any position in recordings up to 120 minutes via HTTP Range requests without loading the full file
+- [x] **PLAY-01**: User can view waveforms for any recording, powered by pre-computed multi-resolution peaks served from the backend
+- [x] **PLAY-02**: User can scrub and seek to any position in recordings up to 120 minutes via HTTP Range requests without loading the full file
 - [ ] **PLAY-03**: User can browse jam library in a chronological timeline view
 - [ ] **PLAY-04**: User can browse jam library in a spatial map/explorer view where jams cluster by musical similarity, temporal proximity, instrumentation, and collaborators
-- [ ] **PLAY-05**: Playback and scrubbing are never interrupted by background processing
+- [x] **PLAY-05**: Playback and scrubbing are never interrupted by background processing
 
 ### Metadata & Organization
 
-- [ ] **META-01**: User can add free-form tags and notes to jams and individual sections
-- [ ] **META-02**: User can record collaborator information (who played in each jam)
-- [ ] **META-03**: User can tag which instruments were used in a jam
-- [ ] **META-04**: User can record location and time metadata for jams
-- [ ] **META-05**: User can attach patch notes (text descriptions of synth/eurorack settings) to jams
-- [ ] **META-06**: User can drag-and-drop photos (e.g., eurorack patch photos, sketches) into a jam's metadata
+- [x] **META-01**: User can add free-form tags and notes to jams and individual sections
+- [x] **META-02**: User can record collaborator information (who played in each jam)
+- [x] **META-03**: User can tag which instruments were used in a jam
+- [x] **META-04**: User can record location and time metadata for jams
+- [x] **META-05**: User can attach patch notes (text descriptions of synth/eurorack settings) to jams
+- [x] **META-06**: User can drag-and-drop photos (e.g., eurorack patch photos, sketches) into a jam's metadata
 - [ ] **META-07**: Application watches a configurable patches folder (e.g., ~/wallflower/patches/) and auto-attaches new photos to the active or most recent jam
 - [ ] **META-08**: User can search and filter jams by any metadata field (tags, key, tempo, collaborators, instruments, date, location)
-- [ ] **META-09**: All metadata live-saves to prevent data loss
+- [x] **META-09**: All metadata live-saves to prevent data loss
 
 ### Export & DAW Integration
 
@@ -73,12 +73,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Design & Accessibility
 
-- [ ] **DES-01**: UI follows a playful, clean, "big" design language inspired by Mutable Instruments (generous whitespace, bold accent colors, rounded organic shapes) and Intellijel (structured logical sections)
+- [x] **DES-01**: UI follows a playful, clean, "big" design language inspired by Mutable Instruments (generous whitespace, bold accent colors, rounded organic shapes) and Intellijel (structured logical sections)
 - [ ] **DES-02**: Full keyboard navigation for all application features
 - [ ] **DES-03**: ARIA labels and screen reader support throughout the application
 - [ ] **DES-04**: High contrast mode and accessible color choices
-- [ ] **DES-05**: Wireframes are generated and approved before implementation of each UI component
-- [ ] **DES-06**: UI accepts photo sketches as design input that feed into the implementation approach
+- [x] **DES-05**: Wireframes are generated and approved before implementation of each UI component
+- [x] **DES-06**: UI accepts photo sketches as design input that feed into the implementation approach
 
 ### Infrastructure
 
@@ -92,7 +92,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **INFRA-08**: Documentation accessible for open source contributors
 - [x] **INFRA-09**: Application is a native macOS app built with Tauri v2 — launches instantly, lives in dock
 - [ ] **INFRA-10**: Application has a menubar/system tray icon showing recording status and quick actions
-- [ ] **INFRA-11**: Application uses native macOS notifications for events (device connected, analysis complete, etc.)
+- [x] **INFRA-11**: Application uses native macOS notifications for events (device connected, analysis complete, etc.)
 - [ ] **INFRA-12**: Global keyboard shortcuts work even when the app is not focused (e.g., start/stop recording)
 - [ ] **INFRA-13**: Application can be configured to auto-launch on login
 - [ ] **INFRA-14**: macOS app is properly signed and notarized for distribution
@@ -164,22 +164,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-07 | Phase 1 | Complete |
 | INFRA-08 | Phase 1 | Complete |
 | INFRA-09 | Phase 1 | Complete |
-| PLAY-01 | Phase 2 | Pending |
-| PLAY-02 | Phase 2 | Pending |
+| PLAY-01 | Phase 2 | Complete |
+| PLAY-02 | Phase 2 | Complete |
 | PLAY-03 | Phase 2 | Pending |
-| PLAY-05 | Phase 2 | Pending |
-| META-01 | Phase 2 | Pending |
-| META-02 | Phase 2 | Pending |
-| META-03 | Phase 2 | Pending |
-| META-04 | Phase 2 | Pending |
-| META-05 | Phase 2 | Pending |
-| META-06 | Phase 2 | Pending |
+| PLAY-05 | Phase 2 | Complete |
+| META-01 | Phase 2 | Complete |
+| META-02 | Phase 2 | Complete |
+| META-03 | Phase 2 | Complete |
+| META-04 | Phase 2 | Complete |
+| META-05 | Phase 2 | Complete |
+| META-06 | Phase 2 | Complete |
 | META-07 | Phase 2 | Pending |
-| META-09 | Phase 2 | Pending |
-| DES-01 | Phase 2 | Pending |
-| DES-05 | Phase 2 | Pending |
-| DES-06 | Phase 2 | Pending |
-| INFRA-11 | Phase 2 | Pending |
+| META-09 | Phase 2 | Complete |
+| DES-01 | Phase 2 | Complete |
+| DES-05 | Phase 2 | Complete |
+| DES-06 | Phase 2 | Complete |
+| INFRA-11 | Phase 2 | Complete |
 | REC-01 | Phase 3 | Pending |
 | REC-02 | Phase 3 | Pending |
 | REC-03 | Phase 3 | Pending |
