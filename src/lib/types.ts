@@ -13,6 +13,10 @@ export interface JamRecord {
   fileSizeBytes: number;
   importedAt: string;
   createdAt: string | null;
+  location: string | null;
+  notes: string | null;
+  patchNotes: string | null;
+  peaksGenerated: boolean;
 }
 
 /** Result of an import operation for a single file. */
@@ -51,7 +55,19 @@ export interface AppStatus {
   watchFolder: string;
 }
 
+<<<<<<< HEAD
 /** A tag attached to a jam. */
+=======
+/** Pre-computed waveform peak data for a jam recording. */
+export interface PeakData {
+  sampleRate: number;
+  channels: number;
+  duration: number;
+  peaks: [number, number][];
+}
+
+/** A tag associated with a jam. */
+>>>>>>> worktree-agent-a82adea1
 export interface JamTag {
   id: string;
   jamId: string;
@@ -59,13 +75,18 @@ export interface JamTag {
   createdAt: string;
 }
 
+<<<<<<< HEAD
 /** A collaborator attached to a jam. */
+=======
+/** A collaborator associated with a jam. */
+>>>>>>> worktree-agent-a82adea1
 export interface JamCollaborator {
   id: string;
   jamId: string;
   name: string;
   createdAt: string;
 }
+<<<<<<< HEAD
 
 /** An instrument/gear entry attached to a jam. */
 export interface JamInstrument {
@@ -97,3 +118,5 @@ export interface JamDetail extends JamRecord {
   instruments: JamInstrument[];
   photos: JamPhoto[];
 }
+=======
+>>>>>>> worktree-agent-a82adea1

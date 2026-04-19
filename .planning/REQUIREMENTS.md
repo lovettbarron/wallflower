@@ -44,23 +44,23 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Playback & Visualization
 
-- [ ] **PLAY-01**: User can view waveforms for any recording, powered by pre-computed multi-resolution peaks served from the backend
-- [ ] **PLAY-02**: User can scrub and seek to any position in recordings up to 120 minutes via HTTP Range requests without loading the full file
-- [ ] **PLAY-03**: User can browse jam library in a chronological timeline view
+- [x] **PLAY-01**: User can view waveforms for any recording, powered by pre-computed multi-resolution peaks served from the backend
+- [x] **PLAY-02**: User can scrub and seek to any position in recordings up to 120 minutes via HTTP Range requests without loading the full file
+- [x] **PLAY-03**: User can browse jam library in a chronological timeline view
 - [ ] **PLAY-04**: User can browse jam library in a spatial map/explorer view where jams cluster by musical similarity, temporal proximity, instrumentation, and collaborators
-- [ ] **PLAY-05**: Playback and scrubbing are never interrupted by background processing
+- [x] **PLAY-05**: Playback and scrubbing are never interrupted by background processing
 
 ### Metadata & Organization
 
-- [x] **META-01**: User can add free-form tags and notes to jams and individual sections
-- [x] **META-02**: User can record collaborator information (who played in each jam)
-- [x] **META-03**: User can tag which instruments were used in a jam
-- [x] **META-04**: User can record location and time metadata for jams
-- [x] **META-05**: User can attach patch notes (text descriptions of synth/eurorack settings) to jams
-- [x] **META-06**: User can drag-and-drop photos (e.g., eurorack patch photos, sketches) into a jam's metadata
-- [x] **META-07**: Application watches a configurable patches folder (e.g., ~/wallflower/patches/) and auto-attaches new photos to the active or most recent jam
+- [ ] **META-01**: User can add free-form tags and notes to jams and individual sections
+- [ ] **META-02**: User can record collaborator information (who played in each jam)
+- [ ] **META-03**: User can tag which instruments were used in a jam
+- [ ] **META-04**: User can record location and time metadata for jams
+- [ ] **META-05**: User can attach patch notes (text descriptions of synth/eurorack settings) to jams
+- [ ] **META-06**: User can drag-and-drop photos (e.g., eurorack patch photos, sketches) into a jam's metadata
+- [ ] **META-07**: Application watches a configurable patches folder (e.g., ~/wallflower/patches/) and auto-attaches new photos to the active or most recent jam
 - [ ] **META-08**: User can search and filter jams by any metadata field (tags, key, tempo, collaborators, instruments, date, location)
-- [x] **META-09**: All metadata live-saves to prevent data loss
+- [ ] **META-09**: All metadata live-saves to prevent data loss
 
 ### Export & DAW Integration
 
@@ -73,7 +73,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Design & Accessibility
 
-- [x] **DES-01**: UI follows a playful, clean, "big" design language inspired by Mutable Instruments (generous whitespace, bold accent colors, rounded organic shapes) and Intellijel (structured logical sections)
+- [ ] **DES-01**: UI follows a playful, clean, "big" design language inspired by Mutable Instruments (generous whitespace, bold accent colors, rounded organic shapes) and Intellijel (structured logical sections)
 - [ ] **DES-02**: Full keyboard navigation for all application features
 - [ ] **DES-03**: ARIA labels and screen reader support throughout the application
 - [ ] **DES-04**: High contrast mode and accessible color choices
@@ -164,19 +164,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-07 | Phase 1 | Complete |
 | INFRA-08 | Phase 1 | Complete |
 | INFRA-09 | Phase 1 | Complete |
-| PLAY-01 | Phase 2 | Pending |
-| PLAY-02 | Phase 2 | Pending |
-| PLAY-03 | Phase 2 | Pending |
-| PLAY-05 | Phase 2 | Pending |
-| META-01 | Phase 2 | Complete |
-| META-02 | Phase 2 | Complete |
-| META-03 | Phase 2 | Complete |
-| META-04 | Phase 2 | Complete |
-| META-05 | Phase 2 | Complete |
-| META-06 | Phase 2 | Complete |
-| META-07 | Phase 2 | Complete |
-| META-09 | Phase 2 | Complete |
-| DES-01 | Phase 2 | Complete |
+| PLAY-01 | Phase 2 | Complete |
+| PLAY-02 | Phase 2 | Complete |
+| PLAY-03 | Phase 2 | Complete |
+| PLAY-05 | Phase 2 | Complete |
+| META-01 | Phase 2 | Pending |
+| META-02 | Phase 2 | Pending |
+| META-03 | Phase 2 | Pending |
+| META-04 | Phase 2 | Pending |
+| META-05 | Phase 2 | Pending |
+| META-06 | Phase 2 | Pending |
+| META-07 | Phase 2 | Pending |
+| META-09 | Phase 2 | Pending |
+| DES-01 | Phase 2 | Pending |
 | DES-05 | Phase 2 | Pending |
 | DES-06 | Phase 2 | Pending |
 | INFRA-11 | Phase 2 | Pending |
