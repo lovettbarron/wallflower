@@ -19,15 +19,15 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Recording
 
-- [x] **REC-01**: User can record audio from any connected audio interface with 1-4 channel support (default stereo)
-- [x] **REC-02**: Recording writes incrementally to disk with periodic WAV header updates and fsync every 5-10 seconds to prevent data loss on crash
-- [x] **REC-03**: Recording gracefully recovers from audio interface dropout without corrupting the in-progress file
+- [ ] **REC-01**: User can record audio from any connected audio interface with 1-4 channel support (default stereo)
+- [ ] **REC-02**: Recording writes incrementally to disk with periodic WAV header updates and fsync every 5-10 seconds to prevent data loss on crash
+- [ ] **REC-03**: Recording gracefully recovers from audio interface dropout without corrupting the in-progress file
 - [x] **REC-04**: User can configure a silence threshold; recording auto-pauses when audio falls below it
 - [x] **REC-05**: User can edit metadata (tags, notes, collaborators) while recording is active, with live-save to database
 - [x] **REC-06**: Recording status is clearly indicated at all times with prominent visual indicator
-- [x] **REC-07**: User is warned with a confirmation dialog before stopping an active recording
-- [x] **REC-08**: All AI/ML processing pauses while recording is active — recording always gets priority
-- [x] **REC-09**: Architecture supports expansion to 8 or 16 channels without significant refactoring
+- [ ] **REC-07**: User is warned with a confirmation dialog before stopping an active recording
+- [ ] **REC-08**: All AI/ML processing pauses while recording is active — recording always gets priority
+- [ ] **REC-09**: Architecture supports expansion to 8 or 16 channels without significant refactoring
 
 ### AI Analysis
 
@@ -44,11 +44,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Playback & Visualization
 
-- [x] **PLAY-01**: User can view waveforms for any recording, powered by pre-computed multi-resolution peaks served from the backend
-- [x] **PLAY-02**: User can scrub and seek to any position in recordings up to 120 minutes via HTTP Range requests without loading the full file
-- [x] **PLAY-03**: User can browse jam library in a chronological timeline view
+- [ ] **PLAY-01**: User can view waveforms for any recording, powered by pre-computed multi-resolution peaks served from the backend
+- [ ] **PLAY-02**: User can scrub and seek to any position in recordings up to 120 minutes via HTTP Range requests without loading the full file
+- [ ] **PLAY-03**: User can browse jam library in a chronological timeline view
 - [ ] **PLAY-04**: User can browse jam library in a spatial map/explorer view where jams cluster by musical similarity, temporal proximity, instrumentation, and collaborators
-- [x] **PLAY-05**: Playback and scrubbing are never interrupted by background processing
+- [ ] **PLAY-05**: Playback and scrubbing are never interrupted by background processing
 
 ### Metadata & Organization
 
@@ -91,9 +91,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **INFRA-07**: MIT license, all dependencies open source or creative commons (no GPL in core, LGPL acceptable)
 - [x] **INFRA-08**: Documentation accessible for open source contributors
 - [x] **INFRA-09**: Application is a native macOS app built with Tauri v2 — launches instantly, lives in dock
-- [x] **INFRA-10**: Application has a menubar/system tray icon showing recording status and quick actions
+- [ ] **INFRA-10**: Application has a menubar/system tray icon showing recording status and quick actions
 - [ ] **INFRA-11**: Application uses native macOS notifications for events (device connected, analysis complete, etc.)
-- [x] **INFRA-12**: Global keyboard shortcuts work even when the app is not focused (e.g., start/stop recording)
+- [ ] **INFRA-12**: Global keyboard shortcuts work even when the app is not focused (e.g., start/stop recording)
 - [ ] **INFRA-13**: Application can be configured to auto-launch on login
 - [ ] **INFRA-14**: macOS app is properly signed and notarized for distribution
 
@@ -164,10 +164,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-07 | Phase 1 | Complete |
 | INFRA-08 | Phase 1 | Complete |
 | INFRA-09 | Phase 1 | Complete |
-| PLAY-01 | Phase 2 | Complete |
-| PLAY-02 | Phase 2 | Complete |
-| PLAY-03 | Phase 2 | Complete |
-| PLAY-05 | Phase 2 | Complete |
+| PLAY-01 | Phase 2 | Pending |
+| PLAY-02 | Phase 2 | Pending |
+| PLAY-03 | Phase 2 | Pending |
+| PLAY-05 | Phase 2 | Pending |
 | META-01 | Phase 2 | Pending |
 | META-02 | Phase 2 | Pending |
 | META-03 | Phase 2 | Pending |
@@ -180,17 +180,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DES-05 | Phase 2 | Pending |
 | DES-06 | Phase 2 | Pending |
 | INFRA-11 | Phase 2 | Pending |
-| REC-01 | Phase 3 | Complete |
-| REC-02 | Phase 3 | Complete |
-| REC-03 | Phase 3 | Complete |
+| REC-01 | Phase 3 | Pending |
+| REC-02 | Phase 3 | Pending |
+| REC-03 | Phase 3 | Pending |
 | REC-04 | Phase 3 | Complete |
 | REC-05 | Phase 3 | Complete |
 | REC-06 | Phase 3 | Complete |
-| REC-07 | Phase 3 | Complete |
-| REC-08 | Phase 3 | Complete |
-| REC-09 | Phase 3 | Complete |
-| INFRA-10 | Phase 3 | Complete |
-| INFRA-12 | Phase 3 | Complete |
+| REC-07 | Phase 3 | Pending |
+| REC-08 | Phase 3 | Pending |
+| REC-09 | Phase 3 | Pending |
+| INFRA-10 | Phase 3 | Pending |
+| INFRA-12 | Phase 3 | Pending |
 | AI-01 | Phase 4 | Pending |
 | AI-02 | Phase 4 | Pending |
 | AI-03 | Phase 4 | Pending |
