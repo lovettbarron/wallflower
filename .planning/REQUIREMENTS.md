@@ -44,11 +44,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Playback & Visualization
 
-- [ ] **PLAY-01**: User can view waveforms for any recording, powered by pre-computed multi-resolution peaks served from the backend
-- [ ] **PLAY-02**: User can scrub and seek to any position in recordings up to 120 minutes via HTTP Range requests without loading the full file
-- [ ] **PLAY-03**: User can browse jam library in a chronological timeline view
+- [x] **PLAY-01**: User can view waveforms for any recording, powered by pre-computed multi-resolution peaks served from the backend
+- [x] **PLAY-02**: User can scrub and seek to any position in recordings up to 120 minutes via HTTP Range requests without loading the full file
+- [x] **PLAY-03**: User can browse jam library in a chronological timeline view
 - [ ] **PLAY-04**: User can browse jam library in a spatial map/explorer view where jams cluster by musical similarity, temporal proximity, instrumentation, and collaborators
-- [ ] **PLAY-05**: Playback and scrubbing are never interrupted by background processing
+- [x] **PLAY-05**: Playback and scrubbing are never interrupted by background processing
 
 ### Metadata & Organization
 
@@ -164,10 +164,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-07 | Phase 1 | Complete |
 | INFRA-08 | Phase 1 | Complete |
 | INFRA-09 | Phase 1 | Complete |
-| PLAY-01 | Phase 2 | Pending |
-| PLAY-02 | Phase 2 | Pending |
-| PLAY-03 | Phase 2 | Pending |
-| PLAY-05 | Phase 2 | Pending |
+| PLAY-01 | Phase 2 | Complete |
+| PLAY-02 | Phase 2 | Complete |
+| PLAY-03 | Phase 2 | Complete |
+| PLAY-05 | Phase 2 | Complete |
 | META-01 | Phase 2 | Pending |
 | META-02 | Phase 2 | Pending |
 | META-03 | Phase 2 | Pending |
