@@ -4,6 +4,8 @@ import "@fontsource/plus-jakarta-sans/400.css";
 import "@fontsource/plus-jakarta-sans/600.css";
 import { Providers } from "@/components/providers";
 import { TransportBar } from "@/components/transport/TransportBar";
+import { Toaster } from "@/components/ui/sonner";
+import { TauriEventListener } from "@/components/tauri-event-listener";
 
 export const metadata: Metadata = {
   title: "Wallflower",
@@ -33,6 +35,8 @@ export default function RootLayout({
             {children}
           </div>
           <TransportBar />
+          <TauriEventListener />
+          <Toaster position="bottom-right" />
         </Providers>
       </body>
     </html>

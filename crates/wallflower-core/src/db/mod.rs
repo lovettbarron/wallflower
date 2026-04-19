@@ -215,6 +215,19 @@ pub fn insert_jam(conn: &Connection, jam: &NewJam) -> Result<JamRecord> {
         .ok_or_else(|| WallflowerError::Db(rusqlite::Error::QueryReturnedNoRows))
 }
 
+/// Get the most recent jam (by imported_at DESC). Used by patches watcher
+/// to determine which jam to auto-attach photos to.
+pub fn get_most_recent_jam(conn: &Connection) -> Result<Option<JamRecord>> {
+    let mut stmt = conn.prepare(&format!("{} ORDER BY imported_at DESC LIMIT 1", JAM_SELECT))?;
+
+    let mut rows = stmt.query_map([], map_jam_row)?;
+
+    match rows.next() {
+        Some(row) => Ok(Some(row?)),
+        None => Ok(None),
+    }
+}
+
 /// Get a single setting value by key.
 pub fn get_setting(conn: &Connection, key: &str) -> Result<Option<String>> {
     let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = ?1")?;
