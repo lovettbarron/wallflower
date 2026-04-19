@@ -11,6 +11,7 @@ pub struct SettingsResponse {
     pub watch_folder: String,
     pub storage_dir: String,
     pub duplicate_handling: String,
+    pub silence_threshold_db: f32,
 }
 
 impl From<&settings::AppConfig> for SettingsResponse {
@@ -19,6 +20,7 @@ impl From<&settings::AppConfig> for SettingsResponse {
             watch_folder: config.watch_folder.to_string_lossy().to_string(),
             storage_dir: config.storage_dir.to_string_lossy().to_string(),
             duplicate_handling: config.duplicate_handling.clone(),
+            silence_threshold_db: config.silence_threshold_db,
         }
     }
 }
@@ -46,6 +48,9 @@ pub async fn update_settings(
     }
     if let Some(v) = settings.get("duplicateHandling").and_then(|v| v.as_str()) {
         config.duplicate_handling = v.to_string();
+    }
+    if let Some(v) = settings.get("silenceThresholdDb").and_then(|v| v.as_f64()) {
+        config.silence_threshold_db = v as f32;
     }
 
     settings::save_config(&db.conn, &config).map_err(|e| e.to_string())?;
