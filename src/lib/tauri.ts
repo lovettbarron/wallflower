@@ -11,6 +11,10 @@ import type {
   AppSettings,
   AppStatus,
   DeviceInfo,
+  RecordingStartResult,
+  RecordingStopResult,
+  RecordingStatus,
+  InputDeviceInfo,
 } from "./types";
 
 // --- Jam operations ---
@@ -184,4 +188,31 @@ export async function sendNotification(
   body: string,
 ): Promise<void> {
   return invoke("send_notification", { title, body });
+}
+
+// --- Recording operations ---
+
+/** Start a new recording session. */
+export async function startRecording(): Promise<RecordingStartResult> {
+  return invoke("start_recording");
+}
+
+/** Stop the current recording session. */
+export async function stopRecording(): Promise<RecordingStopResult> {
+  return invoke("stop_recording");
+}
+
+/** Get the current recording status. */
+export async function getRecordingStatus(): Promise<RecordingStatus> {
+  return invoke("get_recording_status");
+}
+
+/** List available audio input devices. */
+export async function listAudioDevices(): Promise<InputDeviceInfo[]> {
+  return invoke("list_audio_devices");
+}
+
+/** Get current recording input level (RMS in dB). */
+export async function getRecordingLevel(): Promise<{ rmsDb: number }> {
+  return invoke("get_recording_level");
 }

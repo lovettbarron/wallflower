@@ -107,3 +107,39 @@ export interface PeakData {
   duration: number;
   peaks: [number, number][];
 }
+
+// ── Phase 3: Recording types ────────────────────────────
+
+/** Current recording status from the backend. */
+export interface RecordingStatus {
+  state: "idle" | "recording" | "paused" | "device_disconnected" | "error";
+  deviceName: string | null;
+  isRecording: boolean;
+}
+
+/** Result returned when a recording starts successfully. */
+export interface RecordingStartResult {
+  jamId: string;
+  deviceName: string;
+}
+
+/** Result returned when a recording stops. */
+export interface RecordingStopResult {
+  jamId: string;
+  filePath: string;
+  durationSeconds: number;
+}
+
+/** Information about an available audio input device. */
+export interface InputDeviceInfo {
+  name: string;
+  channelCount: number;
+  sampleRate: number;
+  isDefault: boolean;
+}
+
+/** A detected silence region during recording. */
+export interface SilenceRegion {
+  startSeconds: number;
+  endSeconds: number;
+}
