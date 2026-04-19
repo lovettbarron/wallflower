@@ -66,8 +66,15 @@
     }
   body {
     @apply bg-background text-foreground;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
     }
   html {
     @apply font-sans;
+    }
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
     }
 }

@@ -23,57 +23,40 @@ export function TransportBar() {
     setDuration,
   } = useTransportStore();
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    if (!audioUrl) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-        audioRef.current = null;
-      }
-      return;
-    }
-
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-    }
-
     const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+
     if (audio.src !== audioUrl) {
       audio.src = audioUrl;
       audio.load();
     }
+  }, [audioUrl]);
 
-    const onLoadedMetadata = () => {
-      if (audio.duration && isFinite(audio.duration)) {
-        setDuration(audio.duration);
-      }
-    };
+  const handleLoadedMetadata = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio?.duration && isFinite(audio.duration)) {
+      setDuration(audio.duration);
+    }
+  }, [setDuration]);
 
-    const onTimeUpdate = () => {
+  const handleTimeUpdate = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio) {
       setCurrentTime(audio.currentTime);
-    };
+    }
+  }, [setCurrentTime]);
 
-    const onEnded = () => {
-      setPlaying(false);
-      setCurrentTime(0);
-    };
-
-    audio.addEventListener("loadedmetadata", onLoadedMetadata);
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("ended", onEnded);
-
-    return () => {
-      audio.removeEventListener("loadedmetadata", onLoadedMetadata);
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("ended", onEnded);
-    };
-  }, [audioUrl, setCurrentTime, setDuration, setPlaying]);
+  const handleEnded = useCallback(() => {
+    setPlaying(false);
+    setCurrentTime(0);
+  }, [setPlaying, setCurrentTime]);
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !audio.src) return;
+    if (!audio) return;
 
     if (isPlaying) {
       audio.play().catch(() => setPlaying(false));
@@ -112,6 +95,15 @@ export function TransportBar() {
         borderColor: "#323844",
       }}
     >
+      {/* biome-ignore lint: audio element is controlled programmatically */}
+      <audio
+        ref={audioRef}
+        onLoadedMetadata={handleLoadedMetadata}
+        onTimeUpdate={handleTimeUpdate}
+        onEnded={handleEnded}
+        preload="auto"
+      />
+
       {/* Skip back */}
       <button
         type="button"

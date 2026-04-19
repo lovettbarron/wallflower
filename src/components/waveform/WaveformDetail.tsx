@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { useWavesurfer } from "@wavesurfer/react";
 import type { PeakData } from "@/lib/types";
 
@@ -18,9 +18,14 @@ export function WaveformDetail({
   const containerRef = useRef<HTMLDivElement>(null);
   const seekingRef = useRef(false);
 
+  const flatPeaks = useMemo(
+    () => [peaks.peaks.map((p) => p[0])],
+    [peaks],
+  );
+
   const { wavesurfer, isReady } = useWavesurfer({
     container: containerRef,
-    peaks: [peaks.peaks.map((p) => p[0])],
+    peaks: flatPeaks,
     duration: peaks.duration,
     waveColor: "#E8863A",
     progressColor: "#B55E20",
@@ -45,10 +50,10 @@ export function WaveformDetail({
       }
     };
 
-    wavesurfer.on("seeking", handleInteraction);
+    wavesurfer.on("interaction", handleInteraction);
 
     return () => {
-      wavesurfer.un("seeking", handleInteraction);
+      wavesurfer.un("interaction", handleInteraction);
     };
   }, [wavesurfer, onSeek]);
 

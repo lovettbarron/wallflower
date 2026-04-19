@@ -1,8 +1,11 @@
+use std::path::PathBuf;
+
 use axum::http::StatusCode;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde_json::{json, Value};
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::services::ServeDir;
 
 /// Handler that returns 501 Not Implemented for all stub endpoints.
 async fn not_implemented() -> (StatusCode, Json<Value>) {
@@ -18,13 +21,15 @@ async fn not_implemented() -> (StatusCode, Json<Value>) {
 /// Build the API router with all planned endpoints stubbed out.
 /// Endpoints are organized by domain and annotated with the phase
 /// in which they will be connected to real handlers.
-pub fn api_router() -> Router {
+pub fn api_router(audio_dir: PathBuf) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any);
 
     Router::new()
+        // Audio file serving — streams files from the storage directory
+        .nest_service("/api/audio", ServeDir::new(audio_dir))
         // Jams (Phase 1 - will be connected to real handlers)
         .route("/api/jams", get(not_implemented))
         .route("/api/jams/{id}", get(not_implemented))
@@ -56,8 +61,8 @@ pub fn api_router() -> Router {
 }
 
 /// Start the API server on the given port (bound to localhost only).
-pub async fn start_api_server(port: u16) {
-    let app = api_router();
+pub async fn start_api_server(port: u16, audio_dir: PathBuf) {
+    let app = api_router(audio_dir);
     let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{}", port))
         .await
         .expect("failed to bind API server");

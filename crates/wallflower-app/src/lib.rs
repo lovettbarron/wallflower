@@ -200,8 +200,9 @@ pub fn run() {
     };
 
     // Start the HTTP API server in the background
-    tauri::async_runtime::spawn(async {
-        api::start_api_server(23516).await;
+    let audio_dir = config.storage_dir.clone();
+    tauri::async_runtime::spawn(async move {
+        api::start_api_server(23516, audio_dir).await;
     });
 
     tauri::Builder::default()

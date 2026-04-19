@@ -55,10 +55,10 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 02-01-PLAN.md -- Backend foundation: SQLite V2 migration, metadata CRUD, peak generation, photo storage, design tokens, Tauri commands
+- [x] 02-01-PLAN.md -- Backend foundation: SQLite V2 migration, metadata CRUD, peak generation, photo storage, design tokens, Tauri commands
 - [x] 02-02-PLAN.md -- Timeline browser with date-grouped jam cards, waveform viewer, transport bar, audio playback
-- [ ] 02-03-PLAN.md -- Metadata editor: tag/collaborator/instrument chips, text fields with live-save, photo gallery with drag-drop
-- [ ] 02-04-PLAN.md -- Patches folder watcher, native notifications, full Phase 2 verification checkpoint
+- [x] 02-03-PLAN.md -- Metadata editor: tag/collaborator/instrument chips, text fields with live-save, photo gallery with drag-drop
+- [x] 02-04-PLAN.md -- Patches folder watcher, native notifications, full Phase 2 verification checkpoint
 
 ### Phase 3: Recording Engine & System Integration
 **Goal**: Users can record audio from any connected interface with crash safety, dropout recovery, live metadata editing, menubar status, and global hotkeys for hands-free control

@@ -490,10 +490,24 @@ pub fn update_jam_metadata(
     jam_id: &str,
     metadata: &JamMetadata,
 ) -> Result<()> {
-    conn.execute(
-        "UPDATE jams SET location = ?1, notes = ?2, patch_notes = ?3 WHERE id = ?4",
-        params![metadata.location, metadata.notes, metadata.patch_notes, jam_id],
-    )?;
+    if let Some(ref location) = metadata.location {
+        conn.execute(
+            "UPDATE jams SET location = ?1 WHERE id = ?2",
+            params![location, jam_id],
+        )?;
+    }
+    if let Some(ref notes) = metadata.notes {
+        conn.execute(
+            "UPDATE jams SET notes = ?1 WHERE id = ?2",
+            params![notes, jam_id],
+        )?;
+    }
+    if let Some(ref patch_notes) = metadata.patch_notes {
+        conn.execute(
+            "UPDATE jams SET patch_notes = ?1 WHERE id = ?2",
+            params![patch_notes, jam_id],
+        )?;
+    }
     Ok(())
 }
 
