@@ -131,14 +131,20 @@ export function TauriEventListener() {
                 "Audio device disconnected. Reconnect to resume recording.",
                 { duration: Infinity, id: "device-disconnect" }
               );
-            } else if (
-              state === "recording" &&
-              wasDisconnectedRef.current
-            ) {
-              setDeviceDisconnected(false);
-              wasDisconnectedRef.current = false;
-              toast.dismiss("device-disconnect");
-              toast.success("Recording resumed", { duration: 3000 });
+            } else if (state === "recording") {
+              if (wasDisconnectedRef.current) {
+                // Device reconnection case
+                setDeviceDisconnected(false);
+                wasDisconnectedRef.current = false;
+                toast.dismiss("device-disconnect");
+                toast.success("Recording resumed", { duration: 3000 });
+              }
+              // Ensure store reflects recording state (covers edge cases
+              // where state-changed fires but recording-started was missed)
+              const currentState = useRecordingStore.getState();
+              if (!currentState.isRecording) {
+                useRecordingStore.setState({ isRecording: true });
+              }
             } else if (state === "idle") {
               // Recording was stopped externally (e.g., backend or tray)
               reset();
@@ -214,7 +220,23 @@ export function TauriEventListener() {
         const unlistenStarted = await listen<RecordingStartedPayload>(
           "recording-started",
           (event) => {
-            const { deviceName } = event.payload;
+            const { jamId, deviceName } = event.payload;
+            // Set recording state in zustand store — this triggers:
+            // 1. page.tsx renders RecordingView (isRecording === true)
+            // 2. TransportBar switches to recording mode
+            // 3. Navigation locks to recording view
+            // 4. Elapsed timer useEffect starts (isRecording dependency)
+            useRecordingStore.setState({
+              isRecording: true,
+              recordingJamId: jamId,
+              deviceName: deviceName,
+              elapsedSeconds: 0,
+              rmsDb: -100,
+              deviceDisconnected: false,
+              silenceRegions: [],
+              showStopDialog: false,
+              levelHistory: [],
+            });
             toast(`Recording from ${deviceName}`, { duration: 3000 });
           }
         );
