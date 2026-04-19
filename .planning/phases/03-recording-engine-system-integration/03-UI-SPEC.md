@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: true
 preset: custom (inherited from Phase 2)
 created: 2026-04-19
+revised: 2026-04-19
 ---
 
 # Phase 3 — UI Design Contract
@@ -41,11 +42,26 @@ Inherited from Phase 2 without modification:
 | 2xl | 48px | Page margins (left/right) |
 | 3xl | 64px | Page-level vertical spacing |
 
-Exceptions:
-- Transport bar height: 56px (unchanged from Phase 2)
-- Input level meter height: 4px (thin horizontal bar within transport bar)
-- Silence marker width: 2px (vertical line on waveform, same as playback position line)
-- System tray menu width: 240px (native macOS menu, not a web component)
+### Layout Exceptions
+
+These are element dimensions that fall outside the standard spacing scale:
+
+| Element | Value | Rationale |
+|---------|-------|-----------|
+| Transport bar height | 56px | Unchanged from Phase 2, sufficient touch target for transport controls |
+| Input level meter height | 4px | Thin horizontal bar within transport bar, intentionally minimal |
+| System tray menu width | 240px | Native macOS menu, not a web component |
+
+### Visual / Stroke Exceptions
+
+These are border and stroke widths used for visual treatment, not layout spacing:
+
+| Element | Value | Rationale |
+|---------|-------|-----------|
+| Silence marker boundary lines | 2px | Horizontal lines at top/bottom of silence overlay, matches playback position line weight |
+| Transport bar recording border | 3px | Left border indicating recording state, sized for peripheral visibility |
+| Record button border | 2px | Circle outline for record button in idle state |
+| Device disconnect gap marker | 2px | Dashed vertical line on waveform during device disconnect |
 
 ---
 
@@ -165,7 +181,7 @@ New and modified components for Phase 3. Existing Phase 2 components (MetadataEd
 +--------------------------------------------------+
 ```
 
-- Record button (*) added to the right side of the transport bar. 36px circle, transparent background with recording-red border (2px). Lucide `Circle` icon (filled) in recording-red, 14px.
+- Record button (*) added to the right side of the transport bar. 36px circle, transparent background with recording-red border (2px). Lucide `Circle` icon (filled) in recording-red, 14px. `aria-label="Start Recording"`.
 
 ### Transport Bar -- Recording Mode (D-01)
 
@@ -206,7 +222,7 @@ New and modified components for Phase 3. Existing Phase 2 components (MetadataEd
 |                                       |
 |  1 hour, 14 minutes captured.         |
 |                                       |
-|           [Cancel]    [Stop Recording] |
+|      [Keep Recording]  [Stop Recording] |
 +--------------------------------------+
 ```
 
@@ -215,10 +231,10 @@ New and modified components for Phase 3. Existing Phase 2 components (MetadataEd
 - Dialog surface: Secondary background (#1D2129), 12px border-radius, border color (#323844) 1px border.
 - Title: Heading size (20px/600), foreground color.
 - Body: Body size (14px/400), muted-foreground color. Duration formatted in human-readable words (e.g., "1 hour, 14 minutes" not "1:14:32").
-- Cancel button: Secondary style (surface-elevated background, foreground text, 8px border-radius).
+- Keep Recording button: Secondary style (surface-elevated background, foreground text, 8px border-radius).
 - Stop Recording button: Destructive style (destructive background #D93636, white text, 8px border-radius). This IS a destructive action (ending an irreversible recording session).
-- Focus: Stop Recording button is NOT auto-focused. Cancel is auto-focused to prevent accidental recording termination. Tab order: Cancel -> Stop Recording.
-- Keyboard: Escape dismisses dialog (same as Cancel). Enter activates focused button.
+- Focus: Stop Recording button is NOT auto-focused. Keep Recording is auto-focused to prevent accidental recording termination. Tab order: Keep Recording -> Stop Recording.
+- Keyboard: Escape dismisses dialog (same as Keep Recording). Enter activates focused button (Keep Recording by default, preserving the recording).
 
 ### Silence Markers on Waveform (D-03)
 
@@ -236,11 +252,11 @@ Silence markers appear as semi-transparent overlays on the waveform:
 
 | State | Visual |
 |-------|--------|
-| Default | 36px circle, transparent background, 2px recording-red border, filled circle icon (14px) in recording-red |
+| Default | 36px circle, transparent background, 2px recording-red border, filled circle icon (14px) in recording-red. `aria-label="Start Recording"` |
 | Hover | Background fills with recording-red at 15% opacity |
 | Active (pressed) | Background fills with recording-red at 25% opacity |
 | Recording active | Button is replaced by full recording transport layout (see Recording Mode above) |
-| Disabled (no input device) | Border and icon in muted-foreground. Tooltip: "No audio input device detected" |
+| Disabled (no input device) | Border and icon in muted-foreground. `aria-label="Start Recording"`. Tooltip: "No audio input device detected" |
 
 ### Recording State Transition
 
@@ -324,14 +340,14 @@ Identical to Phase 2 metadata editing. All fields (tags, collaborators, instrume
 
 | Element | Copy |
 |---------|------|
-| Primary CTA | "Start Recording" (record button in transport bar) |
+| Primary CTA | "Start Recording" (record button in transport bar, also used as aria-label) |
 | Recording active label | "REC" (uppercase, label size, recording-red) |
 | Elapsed time format | "H:MM:SS" (e.g., "0:14:32", "1:02:15") |
 | Device display format | "{device name} ({channel config})" (e.g., "Zoom F3 (Stereo)") |
 | Stop recording dialog title | "Stop Recording?" |
 | Stop recording dialog body | "{duration in words} captured." (e.g., "1 hour, 14 minutes captured.") |
 | Stop recording confirm button | "Stop Recording" |
-| Stop recording cancel button | "Cancel" |
+| Stop recording cancel button | "Keep Recording" |
 | Device disconnected warning | "Reconnect device" (in transport bar, with AlertTriangle icon) |
 | Device disconnected toast | "Audio device disconnected. Reconnect to resume recording." |
 | Device reconnected toast | "Recording resumed -- {device name} reconnected" |
@@ -387,13 +403,15 @@ No third-party registries declared. New custom components (RecordingWaveform) ar
 
 3. **Navigation lock is simple, not clever.** During recording, tabs and back-nav are greyed out. No modal overlays, no warnings -- just visually disabled. The recording state in the transport bar makes it obvious why navigation is locked. The musician's focus stays on the metadata and live waveform.
 
-4. **Stop-recording confirmation defaults to Cancel.** This is deliberate (D-12). Accidentally stopping a recording is worse than accidentally dismissing the dialog. Cancel is auto-focused so Enter key dismisses without stopping. The musician must deliberately Tab to and activate "Stop Recording."
+4. **Stop-recording confirmation defaults to Keep Recording.** This is deliberate (D-12). Accidentally stopping a recording is worse than accidentally dismissing the dialog. Keep Recording is auto-focused so pressing Enter preserves the recording session. The musician must deliberately Tab to and activate "Stop Recording." The label "Keep Recording" reinforces the safe default action -- it is unambiguous about what will happen.
 
 5. **System tray is native, not web.** The tray icon, menu, and interactions are all handled by Tauri's system tray API on the Rust side. The UI-SPEC documents what the user sees and the copy they read, but the implementation is not React components.
 
 6. **Live waveform is a new component.** Unlike Phase 2's wavesurfer.js-based static waveform, the recording waveform receives real-time audio data and renders progressively. This may use wavesurfer.js with a custom renderer or a canvas-based approach -- the visual contract (color, size, behavior) is specified here; implementation approach is the planner's decision.
 
 7. **Input level meter is intentionally minimal.** A 4px horizontal bar in the transport bar provides just enough feedback to confirm audio signal is present. This is not a professional metering tool -- it is a confidence indicator for musicians who want to know "is it picking up sound?"
+
+8. **Record button accessibility.** The record button is an icon-only control (filled circle, no visible text label). It declares `aria-label="Start Recording"` in all states (default, hover, active, disabled) to ensure screen readers announce its purpose. The disabled state additionally provides a tooltip for sighted users.
 
 ---
 
