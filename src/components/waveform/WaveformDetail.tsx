@@ -7,26 +7,23 @@ import type { PeakData } from "@/lib/types";
 interface WaveformDetailProps {
   audioUrl: string;
   peaks: PeakData;
-  onTimeUpdate: (time: number) => void;
+  currentTime: number;
   onSeek: (time: number) => void;
   onPlayPause: (playing: boolean) => void;
   isPlaying: boolean;
-  seekTo?: number | null;
 }
 
 export function WaveformDetail({
   audioUrl,
   peaks,
-  onTimeUpdate,
+  currentTime,
   onSeek,
   onPlayPause,
   isPlaying,
-  seekTo,
 }: WaveformDetailProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastSeekRef = useRef<number | null>(null);
 
-  const { wavesurfer, isReady, currentTime } = useWavesurfer({
+  const { wavesurfer, isReady } = useWavesurfer({
     container: containerRef,
     url: audioUrl,
     peaks: [peaks.peaks.map((p) => p[0])],
@@ -38,64 +35,39 @@ export function WaveformDetail({
     height: 200,
     normalize: true,
     minPxPerSec: 1,
+    interact: true,
+    mediaControls: false,
   });
 
-  // Sync time updates
+  // Sync cursor position from transport (read-only — don't push back)
   useEffect(() => {
-    onTimeUpdate(currentTime);
-  }, [currentTime, onTimeUpdate]);
+    if (!wavesurfer || !isReady || peaks.duration <= 0) return;
+    const progress = currentTime / peaks.duration;
+    const clampedProgress = Math.max(0, Math.min(1, progress));
+    const wsTime = wavesurfer.getCurrentTime();
+    if (Math.abs(wsTime - currentTime) > 0.3) {
+      wavesurfer.seekTo(clampedProgress);
+    }
+  }, [wavesurfer, isReady, currentTime, peaks.duration]);
 
-  // Listen for wavesurfer events
+  // Handle user clicking on waveform to seek
   useEffect(() => {
     if (!wavesurfer) return;
 
-    const onPlay = () => onPlayPause(true);
-    const onPause = () => onPlayPause(false);
     const onSeeking = (time: number) => onSeek(time);
+    const onClick = () => {
+      const time = wavesurfer.getCurrentTime();
+      onSeek(time);
+    };
 
-    wavesurfer.on("play", onPlay);
-    wavesurfer.on("pause", onPause);
     wavesurfer.on("seeking", onSeeking);
+    wavesurfer.on("click", onClick);
 
     return () => {
-      wavesurfer.un("play", onPlay);
-      wavesurfer.un("pause", onPause);
       wavesurfer.un("seeking", onSeeking);
+      wavesurfer.un("click", onClick);
     };
-  }, [wavesurfer, onPlayPause, onSeek]);
-
-  // Sync play/pause from transport store
-  useEffect(() => {
-    if (!wavesurfer || !isReady) return;
-    if (isPlaying && !wavesurfer.isPlaying()) {
-      wavesurfer.play();
-    } else if (!isPlaying && wavesurfer.isPlaying()) {
-      wavesurfer.pause();
-    }
-  }, [wavesurfer, isReady, isPlaying]);
-
-  // Handle external seek
-  useEffect(() => {
-    if (
-      !wavesurfer ||
-      !isReady ||
-      seekTo === null ||
-      seekTo === undefined ||
-      seekTo === lastSeekRef.current
-    )
-      return;
-    lastSeekRef.current = seekTo;
-    const progress = peaks.duration > 0 ? seekTo / peaks.duration : 0;
-    wavesurfer.seekTo(Math.max(0, Math.min(1, progress)));
-  }, [wavesurfer, isReady, seekTo, peaks.duration]);
-
-  // Expose wavesurfer for external control
-  const handlePlayPause = useCallback(() => {
-    if (!wavesurfer) return;
-    wavesurfer.playPause();
-  }, [wavesurfer]);
-
-  if (!containerRef) return null;
+  }, [wavesurfer, onSeek]);
 
   return (
     <div className="relative w-full">

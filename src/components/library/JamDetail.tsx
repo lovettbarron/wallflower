@@ -17,8 +17,13 @@ interface JamDetailProps {
 }
 
 export function JamDetail({ jamId, onBack }: JamDetailProps) {
-  const transportStore = useTransportStore();
-  const [seekTo, setSeekTo] = useState<number | null>(null);
+  const currentTime = useTransportStore((s) => s.currentTime);
+  const duration = useTransportStore((s) => s.duration);
+  const isPlaying = useTransportStore((s) => s.isPlaying);
+  const currentJamId = useTransportStore((s) => s.currentJamId);
+  const loadJam = useTransportStore((s) => s.loadJam);
+  const setPlaying = useTransportStore((s) => s.setPlaying);
+  const setCurrentTime = useTransportStore((s) => s.setCurrentTime);
 
   const { data: jam, isLoading: jamLoading, refetch: refetchJam } = useQuery<JamDetailType | null>({
     queryKey: ["jam", jamId],
@@ -37,45 +42,36 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
     enabled: !!jamId && !!jam,
   });
 
-  // Load jam into transport when page mounts
   useEffect(() => {
-    if (!jam || transportStore.currentJamId === jam.id) return;
+    if (!jam || currentJamId === jam.id) return;
     const audioUrl = convertFileSrc(jam.filePath);
-    transportStore.loadJam(
+    loadJam(
       jam.id,
       jam.originalFilename || jam.filename,
       audioUrl,
       jam.durationSeconds || 0,
     );
-  }, [jam]);
-
-  const handleTimeUpdate = useCallback(
-    (time: number) => {
-      transportStore.setCurrentTime(time);
-    },
-    [transportStore],
-  );
-
-  const handleSeek = useCallback(
-    (time: number) => {
-      transportStore.setCurrentTime(time);
-    },
-    [transportStore],
-  );
+  }, [jam, currentJamId, loadJam]);
 
   const handleOverviewSeek = useCallback(
     (time: number) => {
-      setSeekTo(time);
-      transportStore.setCurrentTime(time);
+      setCurrentTime(time);
     },
-    [transportStore],
+    [setCurrentTime],
+  );
+
+  const handleWaveformSeek = useCallback(
+    (time: number) => {
+      setCurrentTime(time);
+    },
+    [setCurrentTime],
   );
 
   const handlePlayPause = useCallback(
     (playing: boolean) => {
-      transportStore.setPlaying(playing);
+      setPlaying(playing);
     },
-    [transportStore],
+    [setPlaying],
   );
 
   if (jamLoading) {
@@ -129,8 +125,8 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           {/* Overview waveform */}
           <WaveformOverview
             peaks={peaks}
-            currentTime={transportStore.currentTime}
-            duration={transportStore.duration}
+            currentTime={currentTime}
+            duration={duration}
             onSeek={handleOverviewSeek}
           />
 
@@ -140,11 +136,10 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           <WaveformDetail
             audioUrl={audioUrl}
             peaks={peaks}
-            onTimeUpdate={handleTimeUpdate}
-            onSeek={handleSeek}
+            currentTime={currentTime}
+            onSeek={handleWaveformSeek}
             onPlayPause={handlePlayPause}
-            isPlaying={transportStore.isPlaying}
-            seekTo={seekTo}
+            isPlaying={isPlaying}
           />
         </>
       )}
