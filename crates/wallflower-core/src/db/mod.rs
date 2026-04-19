@@ -212,6 +212,42 @@ pub fn insert_jam(conn: &Connection, jam: &NewJam) -> Result<JamRecord> {
         .ok_or_else(|| WallflowerError::Db(rusqlite::Error::QueryReturnedNoRows))
 }
 
+/// Get the most recent jam (by imported_at DESC). Used by patches watcher
+/// to determine which jam to auto-attach photos to.
+pub fn get_most_recent_jam(conn: &Connection) -> Result<Option<JamRecord>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, filename, original_filename, content_hash, file_path, format,
+                duration_seconds, sample_rate, bit_depth, channels, file_size_bytes,
+                imported_at, created_at
+         FROM jams
+         ORDER BY imported_at DESC
+         LIMIT 1",
+    )?;
+
+    let mut rows = stmt.query_map([], |row| {
+        Ok(JamRecord {
+            id: row.get(0)?,
+            filename: row.get(1)?,
+            original_filename: row.get(2)?,
+            content_hash: row.get(3)?,
+            file_path: row.get(4)?,
+            format: row.get(5)?,
+            duration_seconds: row.get(6)?,
+            sample_rate: row.get(7)?,
+            bit_depth: row.get(8)?,
+            channels: row.get(9)?,
+            file_size_bytes: row.get(10)?,
+            imported_at: row.get(11)?,
+            created_at: row.get(12)?,
+        })
+    })?;
+
+    match rows.next() {
+        Some(row) => Ok(Some(row?)),
+        None => Ok(None),
+    }
+}
+
 /// Get a single setting value by key.
 pub fn get_setting(conn: &Connection, key: &str) -> Result<Option<String>> {
     let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = ?1")?;

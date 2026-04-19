@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
+import { TauriEventListener } from "@/components/tauri-event-listener";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -24,6 +26,8 @@ export default function RootLayout({
         }}
       >
         {children}
+        <TauriEventListener />
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );
