@@ -32,6 +32,7 @@ export interface AppSettings {
   watchFolder: string;
   storageDir: string;
   duplicateHandling: "skip" | "copy";
+  silenceThresholdDb: number;
 }
 
 /** Progress information for an active import operation. */

@@ -13,6 +13,8 @@ pub struct AppConfig {
     pub watch_folder: PathBuf,
     pub storage_dir: PathBuf,
     pub duplicate_handling: String,
+    /// Silence detection threshold in dB. Default: -40.0. Range: -60.0 to -20.0.
+    pub silence_threshold_db: f32,
 }
 
 /// Load application configuration from the database settings table.
@@ -25,6 +27,9 @@ pub fn load_config(conn: &Connection) -> Result<AppConfig> {
         .unwrap_or_default();
     let dup = db::get_setting(conn, "duplicate_handling")?
         .unwrap_or_else(|| "skip".to_string());
+    let silence_threshold_db = db::get_setting(conn, "silence_threshold_db")?
+        .and_then(|v| v.parse::<f32>().ok())
+        .unwrap_or(-40.0);
 
     let watch_folder = expand_tilde(&watch_raw);
 
@@ -43,6 +48,7 @@ pub fn load_config(conn: &Connection) -> Result<AppConfig> {
         watch_folder,
         storage_dir,
         duplicate_handling: dup,
+        silence_threshold_db,
     })
 }
 
@@ -59,6 +65,11 @@ pub fn save_config(conn: &Connection, config: &AppConfig) -> Result<()> {
         &config.storage_dir.to_string_lossy(),
     )?;
     db::set_setting(conn, "duplicate_handling", &config.duplicate_handling)?;
+    db::set_setting(
+        conn,
+        "silence_threshold_db",
+        &config.silence_threshold_db.to_string(),
+    )?;
     Ok(())
 }
 
@@ -183,6 +194,7 @@ mod tests {
             watch_folder: PathBuf::from("/tmp"),
             storage_dir: tmp.path().join("new_subdir"),
             duplicate_handling: "skip".into(),
+            silence_threshold_db: -40.0,
         };
         ensure_storage_dir(&config).unwrap();
         assert!(config.storage_dir.exists());
