@@ -17,6 +17,8 @@ export function RecordingWaveform({
   const lastDrawnLengthRef = useRef(0);
 
   const levelHistory = useRecordingStore((s) => s.levelHistory);
+  const silenceRegions = useRecordingStore((s) => s.silenceRegions);
+  const elapsedSeconds = useRecordingStore((s) => s.elapsedSeconds);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -72,7 +74,21 @@ export function RecordingWaveform({
 
       ctx.fillRect(x, y, barWidth, barHeight);
     }
-  }, [levelHistory]);
+
+    // Draw silence region overlays
+    if (silenceRegions.length > 0 && elapsedSeconds > 0) {
+      const visibleDuration = visibleHistory.length / 15; // ~15fps level updates
+      const visibleStart = Math.max(0, elapsedSeconds - visibleDuration);
+
+      ctx.fillStyle = "rgba(50, 56, 68, 0.5)";
+      for (const region of silenceRegions) {
+        if (region.endSeconds < visibleStart || region.startSeconds > elapsedSeconds) continue;
+        const x0 = startX + ((region.startSeconds - visibleStart) / visibleDuration) * (visibleHistory.length * barStep);
+        const x1 = startX + ((region.endSeconds - visibleStart) / visibleDuration) * (visibleHistory.length * barStep);
+        ctx.fillRect(Math.max(0, x0), 0, Math.max(1, x1 - x0), displayHeight);
+      }
+    }
+  }, [levelHistory, silenceRegions, elapsedSeconds]);
 
   useEffect(() => {
     // Only redraw when levelHistory changes
