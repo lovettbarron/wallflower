@@ -102,3 +102,79 @@ pub struct JamMetadata {
     pub notes: Option<String>,
     pub patch_notes: Option<String>,
 }
+
+// ── Analysis types ───────────────────────────────────────────
+
+/// Analysis status tracking for a jam.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnalysisStatus {
+    pub jam_id: String,
+    pub status: String, // "pending", "analyzing", "complete", "failed"
+    pub current_step: Option<String>,
+    pub analysis_profile: String,
+    pub error_message: Option<String>,
+    pub retry_count: i32,
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
+    pub updated_at: String,
+}
+
+/// Tempo detection result.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TempoResult {
+    pub jam_id: String,
+    pub bpm: f64,
+    pub confidence: f64,
+    pub manual_override: bool,
+}
+
+/// Key detection result.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KeyResult {
+    pub jam_id: String,
+    pub key_name: String,
+    pub scale: String,
+    pub strength: f64,
+    pub manual_override: bool,
+}
+
+/// A detected section within a jam.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SectionRecord {
+    pub id: String,
+    pub jam_id: String,
+    pub start_seconds: f64,
+    pub end_seconds: f64,
+    pub label: String,
+    pub cluster_id: i32,
+    pub sort_order: i32,
+}
+
+/// A detected loop within a jam.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoopRecord {
+    pub id: String,
+    pub jam_id: String,
+    pub start_seconds: f64,
+    pub end_seconds: f64,
+    pub repeat_count: i32,
+    pub evolving: bool,
+    pub label: String,
+    pub sort_order: i32,
+}
+
+/// Composite analysis results for a jam.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnalysisResults {
+    pub status: Option<AnalysisStatus>,
+    pub tempo: Option<TempoResult>,
+    pub key: Option<KeyResult>,
+    pub sections: Vec<SectionRecord>,
+    pub loops: Vec<LoopRecord>,
+}
