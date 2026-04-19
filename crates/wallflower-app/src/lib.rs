@@ -44,21 +44,43 @@ pub fn run() {
     });
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .manage(AppState {
             db: Mutex::new(db),
             config: Mutex::new(config),
             watcher: Mutex::new(watcher),
         })
         .invoke_handler(tauri::generate_handler![
+            // Jam queries
             commands::jams::list_jams,
             commands::jams::get_jam,
+            // Import
             commands::import::import_files,
             commands::import::import_directory,
             commands::import::import_from_device,
+            // Settings
             commands::settings::get_settings,
             commands::settings::update_settings,
+            // Status
             commands::status::get_status,
             commands::status::get_connected_devices,
+            // Metadata (Phase 2)
+            commands::metadata::get_jam_with_metadata,
+            commands::metadata::add_tag,
+            commands::metadata::remove_tag,
+            commands::metadata::list_all_tags,
+            commands::metadata::add_collaborator,
+            commands::metadata::remove_collaborator,
+            commands::metadata::list_all_collaborators,
+            commands::metadata::add_instrument,
+            commands::metadata::remove_instrument,
+            commands::metadata::list_all_instruments,
+            commands::metadata::update_jam_metadata,
+            commands::metadata::attach_photo,
+            commands::metadata::remove_photo,
+            commands::metadata::get_peaks,
+            commands::metadata::generate_peaks_for_jam,
+            commands::metadata::send_notification,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

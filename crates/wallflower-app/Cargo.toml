@@ -8,7 +8,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 wallflower-core = { path = "../wallflower-core" }
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["protocol-asset"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
@@ -16,3 +16,4 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 axum = "0.8"
 tower-http = { version = "0.6", features = ["cors"] }
+tauri-plugin-notification = "2"
