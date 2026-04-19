@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Tauri App Shell, Storage & API Foundation** - Tauri v2 scaffolding, SQLite database, file import pipeline, API skeleton, CLI, and infrastructure practices
 - [ ] **Phase 2: Playback, Metadata, Design System & Notifications** - Waveform visualization, audio streaming, timeline browser, metadata CRUD, design language, and native macOS notifications
 - [ ] **Phase 3: Recording Engine & System Integration** - Multi-channel audio capture, crash safety, dropout recovery, live metadata, priority scheduler, menubar status, and global hotkeys
-- [ ] **Phase 4: ML Analysis Pipeline** - Python sidecar, tempo/key/section detection, progressive results via SSE, model management, and search/filter
+- [x] **Phase 4: ML Analysis Pipeline** - Python sidecar, tempo/key/section detection, progressive results via SSE, model management, and search/filter (completed 2026-04-19)
 - [ ] **Phase 5: Source Separation & Export** - Demucs integration, bookmarking, stem export, DAW folder integration
 - [ ] **Phase 6: Spatial Explorer, Accessibility & Distribution** - Spatial similarity map, keyboard navigation, screen reader support, accessibility, auto-launch, code signing
 
@@ -95,7 +95,7 @@ Plans:
 
 Plans:
 - [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [x] 04-02: TBD
 - [ ] 04-03: TBD
 
 ### Phase 5: Source Separation & Export
@@ -144,6 +144,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 1. Tauri App Shell, Storage & API Foundation | 3/4 | In progress | - |
 | 2. Playback, Metadata, Design System & Notifications | 0/4 | Not started | - |
 | 3. Recording Engine & System Integration | 0/5 | Not started | - |
-| 4. ML Analysis Pipeline | 0/3 | Not started | - |
+| 4. ML Analysis Pipeline | 1/1 | Complete   | 2026-04-19 |
 | 5. Source Separation & Export | 0/3 | Not started | - |
 | 6. Spatial Explorer, Accessibility & Distribution | 0/3 | Not started | - |

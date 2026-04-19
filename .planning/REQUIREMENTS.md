@@ -39,7 +39,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **AI-06**: Analysis runs as a background pipeline — UI is fully usable before analysis completes, with results populating progressively via SSE
 - [ ] **AI-07**: AI models are downloaded at runtime on first launch, cached in ~/Library/Application Support/wallflower/models, and reused across app updates unless model version changes
 - [ ] **AI-08**: Model interface is abstracted so models can be swapped via configuration as new capabilities emerge
-- [ ] **AI-09**: Model downloads do not block any other application functionality — user can record and browse immediately
+- [x] **AI-09**: Model downloads do not block any other application functionality — user can record and browse immediately
 - [ ] **AI-10**: Demucs processes long recordings in chunks with overlap-add to stay within memory limits (~8GB target for 60-min files)
 
 ### Playback & Visualization
@@ -198,7 +198,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AI-06 | Phase 4 | Pending |
 | AI-07 | Phase 4 | Pending |
 | AI-08 | Phase 4 | Pending |
-| AI-09 | Phase 4 | Pending |
+| AI-09 | Phase 4 | Complete |
 | META-08 | Phase 4 | Pending |
 | AI-04 | Phase 5 | Pending |
 | AI-10 | Phase 5 | Pending |
