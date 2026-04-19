@@ -1,3 +1,4 @@
+pub mod audio;
 pub mod db;
 pub mod device;
 pub mod error;
