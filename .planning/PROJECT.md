@@ -109,4 +109,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-19 — Phase 1 (Tauri App Shell, Storage & API Foundation) complete. Scaffold, import pipeline, folder watcher, device detection, downsample utility, and release build all verified.*
+*Last updated: 2026-04-19 — Phase 2 (Playback, Metadata, Design System & Notifications) complete. Timeline browser, waveform playback, metadata editing, photo drag-drop, patches folder watcher, and in-app toasts verified. Native macOS notifications tracked as gap (INFRA-11).*
