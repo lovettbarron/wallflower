@@ -14,6 +14,9 @@ anyhow = { workspace = true }
 sha2 = "0.10"
 symphonia = { version = "0.5", features = ["all"] }
 hound = "3.5"
+cpal = "0.15"
+crossbeam-channel = "0.5"
+libc = "0.2"
 tempfile = "3"
 notify = "8"
 dirs = "6"
