@@ -18,8 +18,48 @@ pub enum DownsampleError {
 ///
 /// The source file must be a WAV with SampleFormat::Float and bits_per_sample=32.
 /// The output preserves sample_rate and channels, changing only the bit depth.
-pub fn downsample_32f_to_24i(_source: &Path, _dest: &Path) -> Result<(), DownsampleError> {
-    todo!("not yet implemented")
+pub fn downsample_32f_to_24i(source: &Path, dest: &Path) -> Result<(), DownsampleError> {
+    // Validate file extension
+    let ext = source
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_lowercase());
+    if ext.as_deref() != Some("wav") {
+        return Err(DownsampleError::NotWav);
+    }
+
+    // Open source and validate format
+    let reader = hound::WavReader::open(source)?;
+    let spec = reader.spec();
+
+    if spec.sample_format != hound::SampleFormat::Float || spec.bits_per_sample != 32 {
+        return Err(DownsampleError::NotFloat32);
+    }
+
+    // Create output spec: same channels/rate, 24-bit integer
+    let out_spec = hound::WavSpec {
+        channels: spec.channels,
+        sample_rate: spec.sample_rate,
+        bits_per_sample: 24,
+        sample_format: hound::SampleFormat::Int,
+    };
+
+    let mut writer = hound::WavWriter::create(dest, out_spec)?;
+
+    // Convert each sample: clamp to [-1.0, 1.0], scale to 24-bit range
+    for sample in reader.into_samples::<f32>() {
+        let sample = sample?;
+        let clamped = sample.clamp(-1.0, 1.0);
+        let scaled = if clamped >= 0.0 {
+            (clamped * 8_388_607.0) as i32
+        } else {
+            (clamped * 8_388_608.0) as i32
+        };
+        writer.write_sample(scaled)?;
+    }
+
+    writer.finalize()?;
+    Ok(())
 }
 
 #[cfg(test)]
