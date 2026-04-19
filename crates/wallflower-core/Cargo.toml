@@ -11,6 +11,7 @@ uuid = { workspace = true }
 tracing = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
+async-trait = "0.1"
 sha2 = "0.10"
 symphonia = { version = "0.5", features = ["all"] }
 hound = "3.5"
