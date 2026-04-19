@@ -11,8 +11,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **STOR-01**: User can import audio files (WAV, FLAC, MP3) via atomic copy-first import with temp-then-rename for sync-folder safety
 - [x] **STOR-02**: Application stores metadata in SQLite database located in ~/Library/Application Support/wallflower (never in sync folders)
-- [ ] **STOR-03**: Application watches a configurable folder (default ~/wallflower) for new audio files and auto-imports them
-- [ ] **STOR-04**: Application detects connected USB audio recorders (e.g., Zoom F3) and prompts to import new recordings
+- [x] **STOR-03**: Application watches a configurable folder (default ~/wallflower) for new audio files and auto-imports them
+- [x] **STOR-04**: Application detects connected USB audio recorders (e.g., Zoom F3) and prompts to import new recordings
 - [x] **STOR-05**: Application processes 32-bit float WAV files and can downsample to 24-bit for DAW compatibility
 - [x] **STOR-06**: SQLite database is a single portable file that can be backed up by copying
 - [x] **STOR-07**: File writes use atomic operations (temp-then-rename) to prevent corruption in Dropbox/iCloud sync folders
@@ -85,11 +85,11 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **INFRA-01**: Backend exposes a RESTful API for all functionality
 - [x] **INFRA-02**: CLI tool provides access to all backend operations for debugging and scripting
 - [x] **INFRA-03**: Comprehensive test coverage across backend (Rust), frontend (React), and ML sidecar (Python)
-- [ ] **INFRA-04**: README updated at end of every phase with current progress
-- [ ] **INFRA-05**: Release generated at end of each milestone
-- [ ] **INFRA-06**: agents.md maintained at repo top level capturing feedback and codified skills
+- [x] **INFRA-04**: README updated at end of every phase with current progress
+- [x] **INFRA-05**: Release generated at end of each milestone
+- [x] **INFRA-06**: agents.md maintained at repo top level capturing feedback and codified skills
 - [x] **INFRA-07**: MIT license, all dependencies open source or creative commons (no GPL in core, LGPL acceptable)
-- [ ] **INFRA-08**: Documentation accessible for open source contributors
+- [x] **INFRA-08**: Documentation accessible for open source contributors
 - [x] **INFRA-09**: Application is a native macOS app built with Tauri v2 — launches instantly, lives in dock
 - [ ] **INFRA-10**: Application has a menubar/system tray icon showing recording status and quick actions
 - [ ] **INFRA-11**: Application uses native macOS notifications for events (device connected, analysis complete, etc.)
@@ -150,19 +150,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | STOR-01 | Phase 1 | Complete |
 | STOR-02 | Phase 1 | Complete |
-| STOR-03 | Phase 1 | Pending |
-| STOR-04 | Phase 1 | Pending |
+| STOR-03 | Phase 1 | Complete |
+| STOR-04 | Phase 1 | Complete |
 | STOR-05 | Phase 1 | Complete |
 | STOR-06 | Phase 1 | Complete |
 | STOR-07 | Phase 1 | Complete |
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 1 | Complete |
 | INFRA-03 | Phase 1 | Complete |
-| INFRA-04 | Phase 1 | Pending |
-| INFRA-05 | Phase 1 | Pending |
-| INFRA-06 | Phase 1 | Pending |
+| INFRA-04 | Phase 1 | Complete |
+| INFRA-05 | Phase 1 | Complete |
+| INFRA-06 | Phase 1 | Complete |
 | INFRA-07 | Phase 1 | Complete |
-| INFRA-08 | Phase 1 | Pending |
+| INFRA-08 | Phase 1 | Complete |
 | INFRA-09 | Phase 1 | Complete |
 | PLAY-01 | Phase 2 | Pending |
 | PLAY-02 | Phase 2 | Pending |

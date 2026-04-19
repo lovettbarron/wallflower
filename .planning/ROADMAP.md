@@ -37,7 +37,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md -- Project scaffolding: Tauri v2 + Cargo workspace + SQLite + Next.js + shadcn
 - [x] 01-02-PLAN.md -- Import pipeline, Tauri IPC commands, CLI subcommands, settings module
-- [ ] 01-03-PLAN.md -- Folder watcher, device detection, documentation, release verification
+- [x] 01-03-PLAN.md -- Folder watcher, device detection, documentation, release verification
 
 ### Phase 2: Playback, Metadata, Design System & Notifications
 **Goal**: Users can see waveforms, play and scrub audio, browse their library chronologically, edit metadata, experience the Wallflower design language, and receive native macOS notifications for key events
