@@ -5733,6 +5733,7 @@ dependencies = [
  "dirs",
  "hound",
  "image",
+ "libc",
  "notify",
  "rusqlite",
  "serde",

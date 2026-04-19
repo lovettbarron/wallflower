@@ -91,6 +91,34 @@ export function DeviceImportDialog({ onClose }: DeviceImportDialogProps) {
     0
   );
 
+  function groupFilesByMonth(files: string[]): { label: string; files: string[] }[] {
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const groups = new Map<string, { label: string; files: string[] }>();
+
+    for (const file of files) {
+      const filename = file.split('/').pop() ?? '';
+      const match = filename.match(/^(\d{2})(\d{2})\d{2}_/);
+      if (match) {
+        const year = 2000 + parseInt(match[1], 10);
+        const monthIdx = parseInt(match[2], 10) - 1;
+        const key = `${year}-${match[2]}`;
+        if (!groups.has(key)) {
+          groups.set(key, { label: `${MONTHS[monthIdx]} ${year}`, files: [] });
+        }
+        groups.get(key)!.files.push(file);
+      } else {
+        if (!groups.has('other')) {
+          groups.set('other', { label: 'Other', files: [] });
+        }
+        groups.get('other')!.files.push(file);
+      }
+    }
+
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => (a === 'other' ? 1 : b === 'other' ? -1 : b.localeCompare(a)))
+      .map(([, group]) => ({ ...group, files: group.files.sort().reverse() }));
+  }
+
   // Results summary
   if (results) {
     const imported = results.filter((r) => r.status === 'imported').length;
@@ -98,24 +126,25 @@ export function DeviceImportDialog({ onClose }: DeviceImportDialogProps) {
     const errors = results.filter((r) => r.status === 'error').length;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="mx-4 w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-          <h2 className="text-lg font-semibold">Import Complete</h2>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+        <div className="mx-4 w-full max-w-lg rounded-lg p-6 shadow-xl" style={{ background: '#1E2330' }}>
+          <h2 className="text-lg font-semibold text-[#E2E4E8]">Import Complete</h2>
           <div className="mt-4 space-y-2 text-sm">
             {imported > 0 && (
-              <p className="text-green-700">{imported} file(s) imported successfully</p>
+              <p className="text-green-400">{imported} {imported === 1 ? 'file' : 'files'} imported successfully</p>
             )}
             {duplicates > 0 && (
-              <p className="text-yellow-700">{duplicates} duplicate(s) skipped</p>
+              <p className="text-yellow-400">{duplicates} {duplicates === 1 ? 'duplicate' : 'duplicates'} skipped</p>
             )}
             {errors > 0 && (
-              <p className="text-red-700">{errors} error(s) occurred</p>
+              <p className="text-red-400">{errors} {errors === 1 ? 'error' : 'errors'} occurred</p>
             )}
           </div>
           <div className="mt-6 flex justify-end">
             <button
               onClick={onClose}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-800"
+              className="rounded-md px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              style={{ background: '#E8863A' }}
             >
               Done
             </button>
@@ -126,13 +155,13 @@ export function DeviceImportDialog({ onClose }: DeviceImportDialogProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="mx-4 w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="mx-4 w-full max-w-lg rounded-lg p-6 shadow-xl" style={{ background: '#1E2330' }}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Import from Device</h2>
+          <h2 className="text-lg font-semibold text-[#E2E4E8]">Import from Device</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-[#6B7280] hover:text-[#E2E4E8]"
             aria-label="Close"
           >
             <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -146,15 +175,15 @@ export function DeviceImportDialog({ onClose }: DeviceImportDialogProps) {
         </div>
 
         {loading && (
-          <p className="mt-4 text-sm text-gray-500">Scanning for devices...</p>
+          <p className="mt-4 text-sm text-[#8B8F96]">Scanning for devices...</p>
         )}
 
         {!loading && devices.length === 0 && (
           <div className="mt-4">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[#8B8F96]">
               No audio recording devices detected.
             </p>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-[#6B7280]">
               Connect a USB recorder (e.g., Zoom F3) and try again.
             </p>
           </div>
@@ -167,43 +196,50 @@ export function DeviceImportDialog({ onClose }: DeviceImportDialogProps) {
               const allSelected = selected.size === dev.files.length;
 
               return (
-                <div key={dev.mountPoint} className="rounded-md border p-3">
+                <div key={dev.mountPoint} className="rounded-md border border-[#2A3040] p-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium">{dev.name}</h3>
-                      <p className="text-xs text-gray-400">{dev.mountPoint}</p>
+                      <h3 className="text-sm font-medium text-[#E2E4E8]">{dev.name}</h3>
+                      <p className="text-xs text-[#6B7280]">{dev.mountPoint}</p>
                     </div>
                     <button
                       onClick={() => toggleAll(dev.mountPoint, dev.files, !allSelected)}
-                      className="text-xs text-blue-600 hover:text-blue-800"
+                      className="text-xs text-[#E8863A] hover:text-[#F09A52]"
                     >
                       {allSelected ? 'Deselect All' : 'Select All'}
                     </button>
                   </div>
 
-                  <div className="mt-2 max-h-48 overflow-y-auto">
-                    {dev.files.map((file) => {
-                      const filename = file.split('/').pop() ?? file;
-                      return (
-                        <label
-                          key={file}
-                          className="flex items-center gap-2 py-1 text-sm hover:bg-gray-50"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selected.has(file)}
-                            onChange={() => toggleFile(dev.mountPoint, file)}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                          <span className="truncate" title={file}>
-                            {filename}
-                          </span>
-                        </label>
-                      );
-                    })}
+                  <div className="mt-2 max-h-64 overflow-y-auto">
+                    {groupFilesByMonth(dev.files).map((group) => (
+                      <div key={group.label} className="mb-2">
+                        <p className="sticky top-0 py-1 text-xs font-semibold text-[#8B8F96]" style={{ background: '#1E2330' }}>
+                          {group.label} ({group.files.length})
+                        </p>
+                        {group.files.map((file) => {
+                          const filename = file.split('/').pop() ?? file;
+                          return (
+                            <label
+                              key={file}
+                              className="flex items-center gap-2 rounded py-1 text-sm text-[#C0C4CC] hover:bg-[#252B38]"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected.has(file)}
+                                onChange={() => toggleFile(dev.mountPoint, file)}
+                                className="h-4 w-4 rounded accent-[#E8863A]"
+                              />
+                              <span className="truncate" title={file}>
+                                {filename}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
 
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-xs text-[#6B7280]">
                     {selected.size} of {dev.files.length} selected
                   </p>
                 </div>
@@ -214,13 +250,14 @@ export function DeviceImportDialog({ onClose }: DeviceImportDialogProps) {
 
         {importing && (
           <div className="mt-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#C0C4CC]">
               Importing {importProgress.current} of {importProgress.total}...
             </p>
-            <div className="mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#2A3040]">
               <div
-                className="h-full rounded-full bg-blue-600 transition-all"
+                className="h-full rounded-full transition-all"
                 style={{
+                  background: '#E8863A',
                   width: importProgress.total > 0
                     ? `${(importProgress.current / importProgress.total) * 100}%`
                     : '0%',
@@ -234,14 +271,15 @@ export function DeviceImportDialog({ onClose }: DeviceImportDialogProps) {
           <div className="mt-6 flex justify-end gap-3">
             <button
               onClick={onClose}
-              className="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="rounded-md border border-[#2A3040] px-4 py-2 text-sm text-[#8B8F96] hover:bg-[#252B38]"
             >
               Dismiss
             </button>
             <button
               onClick={handleImport}
               disabled={totalSelected === 0}
-              className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ background: '#E8863A' }}
             >
               Import Selected ({totalSelected})
             </button>
