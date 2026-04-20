@@ -49,6 +49,14 @@ export function WaveformDetail({
 
   const isStereo = peaks.channels > 1;
 
+  const splitChannelsConfig = useMemo(
+    () => isStereo ? [
+      { waveColor: "#E8863A", progressColor: "#B55E20" },
+      { waveColor: "#E8863A", progressColor: "#B55E20", overlay: true },
+    ] : undefined,
+    [isStereo],
+  );
+
   const { isReady } = useWavesurfer({
     container: containerRef,
     url: isStereo ? audioUrl : undefined,
@@ -62,10 +70,7 @@ export function WaveformDetail({
     normalize: true,
     minPxPerSec: 1,
     interact: false,
-    splitChannels: isStereo ? [
-      { waveColor: "#E8863A", progressColor: "#B55E20" },
-      { waveColor: "#E8863A", progressColor: "#B55E20", overlay: true },
-    ] : undefined,
+    splitChannels: splitChannelsConfig,
     plugins,
   });
 
