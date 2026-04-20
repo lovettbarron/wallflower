@@ -1,4 +1,6 @@
 pub mod analysis;
+pub mod bookmarks;
+pub mod export;
 pub mod import;
 pub mod jams;
 pub mod metadata;

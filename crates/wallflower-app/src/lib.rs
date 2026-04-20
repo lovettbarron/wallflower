@@ -4,7 +4,7 @@ mod sidecar;
 mod tray;
 
 use std::path::PathBuf;
-use std::sync::atomic::AtomicI32;
+use std::sync::atomic::{AtomicBool, AtomicI32};
 use std::sync::{Arc, Mutex};
 
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
@@ -38,6 +38,7 @@ pub struct AppState {
     pub scheduler: PriorityScheduler,
     pub current_recording_jam_id: Mutex<Option<String>>,
     pub sidecar: tokio::sync::Mutex<sidecar::SidecarManager>,
+    pub separation_cancel: Arc<AtomicBool>,
 }
 
 /// Send a native macOS notification via the Tauri notification plugin.
@@ -435,6 +436,7 @@ pub fn run() {
                 let sidecar_dir = sidecar::resolve_sidecar_dir(None);
                 sidecar::SidecarManager::new(50051, sidecar_dir)
             }),
+            separation_cancel: Arc::new(AtomicBool::new(false)),
         })
         .invoke_handler(tauri::generate_handler![
             // Jam queries
@@ -485,6 +487,15 @@ pub fn run() {
             commands::analysis::clear_manual_tempo,
             commands::analysis::clear_manual_key,
             commands::analysis::get_analysis_results,
+            // Bookmarks & Export (Phase 5)
+            commands::bookmarks::create_bookmark,
+            commands::bookmarks::get_bookmarks,
+            commands::bookmarks::update_bookmark,
+            commands::bookmarks::delete_bookmark,
+            commands::export::export_audio,
+            commands::export::separate_stems,
+            commands::export::export_stems,
+            commands::export::cancel_separation,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

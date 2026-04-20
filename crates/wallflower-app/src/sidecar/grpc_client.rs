@@ -7,10 +7,11 @@ pub mod wallflower_analysis {
 
 use wallflower_analysis::{
     analysis_service_client::AnalysisServiceClient, AnalyzeRequest, HardwareInfoRequest,
-    HealthRequest,
+    HealthRequest, SeparateRequest,
 };
 pub use wallflower_analysis::AnalysisProfile as ProtoProfile;
 pub use wallflower_analysis::AnalysisProgress;
+pub use wallflower_analysis::SeparationProgress;
 
 /// Check sidecar health via gRPC.
 pub async fn check_health(port: u16) -> anyhow::Result<bool> {
@@ -53,5 +54,34 @@ pub async fn analyze_jam(
         skip_steps,
     };
     let response = client.analyze_jam(request).await?;
+    Ok(response.into_inner())
+}
+
+/// Run stem separation on an audio segment, yielding progress updates as a stream.
+pub async fn separate_stems(
+    port: u16,
+    bookmark_id: &str,
+    audio_path: &str,
+    start_seconds: f32,
+    end_seconds: f32,
+    model_name: &str,
+    segment_seconds: f32,
+    overlap: f32,
+    output_dir: &str,
+) -> anyhow::Result<tonic::Streaming<SeparationProgress>> {
+    let addr = format!("http://127.0.0.1:{}", port);
+    let channel = Channel::from_shared(addr)?.connect().await?;
+    let mut client = AnalysisServiceClient::new(channel);
+    let request = SeparateRequest {
+        bookmark_id: bookmark_id.to_string(),
+        audio_path: audio_path.to_string(),
+        start_seconds,
+        end_seconds,
+        model_name: model_name.to_string(),
+        segment_seconds,
+        overlap,
+        output_dir: output_dir.to_string(),
+    };
+    let response = client.separate_stems(request).await?;
     Ok(response.into_inner())
 }

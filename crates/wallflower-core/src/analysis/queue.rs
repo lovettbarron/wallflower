@@ -11,6 +11,7 @@ pub struct AnalysisJob {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum JobPriority {
     Normal,           // FIFO
+    Separation,       // Source separation jobs (Phase 5)
     ViewPriority,     // Currently viewed jam (D-16)
     RecordingResume,  // Re-queued after recording stops (D-17)
 }
