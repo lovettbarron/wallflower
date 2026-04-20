@@ -57,7 +57,7 @@ export function WaveformDetail({
   const splitChannelsConfig = useMemo(
     () => isStereo ? [
       { waveColor: "#E8863A", progressColor: "#B55E20" },
-      { waveColor: "#E8863A", progressColor: "#B55E20", overlay: true },
+      { waveColor: "#E8863A", progressColor: "#B55E20" },
     ] : undefined,
     [isStereo],
   );
