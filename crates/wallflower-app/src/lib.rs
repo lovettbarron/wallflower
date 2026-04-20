@@ -440,6 +440,8 @@ pub fn run() {
             // Jam queries
             commands::jams::list_jams,
             commands::jams::get_jam,
+            commands::jams::search_jams,
+            commands::jams::get_filter_options,
             // Import
             commands::import::import_files,
             commands::import::import_directory,

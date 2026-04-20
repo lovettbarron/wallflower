@@ -6,9 +6,37 @@ use schema::{
     AnalysisResults, AnalysisStatus, JamCollaborator, JamInstrument, JamMetadata, JamPhoto,
     JamRecord, JamTag, KeyResult, LoopRecord, NewJam, SectionRecord, TempoResult,
 };
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::Path;
 use tracing::info;
+
+/// Filter criteria for searching jams. All fields are optional;
+/// when multiple are provided they combine with AND logic (D-12).
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchFilter {
+    /// Free-text search query matched against FTS5 index (D-15).
+    pub query: Option<String>,
+    /// Multi-select key filter, e.g. ["Bb minor", "C major"] (D-14).
+    pub keys: Option<Vec<String>>,
+    /// BPM range lower bound (D-13).
+    pub tempo_min: Option<f64>,
+    /// BPM range upper bound (D-13).
+    pub tempo_max: Option<f64>,
+    /// Tag filter.
+    pub tags: Option<Vec<String>>,
+    /// Collaborator name filter.
+    pub collaborators: Option<Vec<String>>,
+    /// Instrument name filter.
+    pub instruments: Option<Vec<String>>,
+    /// Date range lower bound (ISO date string).
+    pub date_from: Option<String>,
+    /// Date range upper bound (ISO date string).
+    pub date_to: Option<String>,
+    /// Location filter (substring match).
+    pub location: Option<String>,
+}
 
 /// The initial schema SQL, embedded at compile time.
 const MIGRATION_V1: &str = include_str!("../../../../migrations/V1__initial_schema.sql");
@@ -976,6 +1004,227 @@ pub fn clear_manual_key(conn: &Connection, jam_id: &str) -> Result<()> {
     Ok(())
 }
 
+// ── Search & Filter ─────────────────────────────────────────
+
+/// Search and filter jams using the provided filter criteria.
+/// All filters combine with AND logic (D-12). Free-text search
+/// uses the FTS5 jam_search index (D-15).
+pub fn search_jams(conn: &Connection, filter: &SearchFilter) -> Result<Vec<JamRecord>> {
+    let mut joins = Vec::new();
+    let mut conditions = Vec::new();
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let mut param_idx = 1usize;
+
+    // Free-text search (D-15). Uses LIKE across searchable columns
+    // since the FTS5 table is contentless (content='') and doesn't
+    // support column value retrieval for JOIN correlation.
+    if let Some(ref q) = filter.query {
+        let trimmed = q.trim();
+        if !trimmed.is_empty() {
+            let like_pattern = format!("%{}%", trimmed);
+            let p = param_idx;
+            conditions.push(format!(
+                "(j.filename LIKE ?{p} OR j.original_filename LIKE ?{p} OR j.notes LIKE ?{p} OR j.location LIKE ?{p} \
+                 OR EXISTS (SELECT 1 FROM jam_tags WHERE jam_tags.jam_id = j.id AND jam_tags.tag LIKE ?{p}) \
+                 OR EXISTS (SELECT 1 FROM jam_collaborators WHERE jam_collaborators.jam_id = j.id AND jam_collaborators.name LIKE ?{p}) \
+                 OR EXISTS (SELECT 1 FROM jam_instruments WHERE jam_instruments.jam_id = j.id AND jam_instruments.name LIKE ?{p}))"
+            ));
+            param_values.push(Box::new(like_pattern));
+            param_idx += 1;
+        }
+    }
+
+    // Key filter (D-14) -- multi-select
+    if let Some(ref keys) = filter.keys {
+        if !keys.is_empty() {
+            let placeholders: Vec<String> = keys
+                .iter()
+                .map(|_| {
+                    let p = format!("?{}", param_idx);
+                    param_idx += 1;
+                    p
+                })
+                .collect();
+            joins.push("INNER JOIN jam_key ON jam_key.jam_id = j.id".to_string());
+            conditions.push(format!(
+                "(jam_key.key_name || ' ' || jam_key.scale) IN ({})",
+                placeholders.join(", ")
+            ));
+            for k in keys {
+                param_values.push(Box::new(k.clone()));
+            }
+        }
+    }
+
+    // Tempo range filter (D-13)
+    if filter.tempo_min.is_some() || filter.tempo_max.is_some() {
+        // Only join if not already joined via key filter
+        let already_has_tempo = joins.iter().any(|j| j.contains("jam_tempo"));
+        if !already_has_tempo {
+            joins.push("INNER JOIN jam_tempo ON jam_tempo.jam_id = j.id".to_string());
+        }
+        if let Some(min) = filter.tempo_min {
+            conditions.push(format!("jam_tempo.bpm >= ?{}", param_idx));
+            param_values.push(Box::new(min));
+            param_idx += 1;
+        }
+        if let Some(max) = filter.tempo_max {
+            conditions.push(format!("jam_tempo.bpm <= ?{}", param_idx));
+            param_values.push(Box::new(max));
+            param_idx += 1;
+        }
+    }
+
+    // Tags filter
+    if let Some(ref tags) = filter.tags {
+        if !tags.is_empty() {
+            let placeholders: Vec<String> = tags
+                .iter()
+                .map(|_| {
+                    let p = format!("?{}", param_idx);
+                    param_idx += 1;
+                    p
+                })
+                .collect();
+            joins.push("INNER JOIN jam_tags ON jam_tags.jam_id = j.id".to_string());
+            conditions.push(format!(
+                "jam_tags.tag IN ({})",
+                placeholders.join(", ")
+            ));
+            for t in tags {
+                param_values.push(Box::new(t.clone()));
+            }
+        }
+    }
+
+    // Collaborators filter
+    if let Some(ref collabs) = filter.collaborators {
+        if !collabs.is_empty() {
+            let placeholders: Vec<String> = collabs
+                .iter()
+                .map(|_| {
+                    let p = format!("?{}", param_idx);
+                    param_idx += 1;
+                    p
+                })
+                .collect();
+            joins.push(
+                "INNER JOIN jam_collaborators ON jam_collaborators.jam_id = j.id".to_string(),
+            );
+            conditions.push(format!(
+                "jam_collaborators.name IN ({})",
+                placeholders.join(", ")
+            ));
+            for c in collabs {
+                param_values.push(Box::new(c.clone()));
+            }
+        }
+    }
+
+    // Instruments filter
+    if let Some(ref instruments) = filter.instruments {
+        if !instruments.is_empty() {
+            let placeholders: Vec<String> = instruments
+                .iter()
+                .map(|_| {
+                    let p = format!("?{}", param_idx);
+                    param_idx += 1;
+                    p
+                })
+                .collect();
+            joins.push(
+                "INNER JOIN jam_instruments ON jam_instruments.jam_id = j.id".to_string(),
+            );
+            conditions.push(format!(
+                "jam_instruments.name IN ({})",
+                placeholders.join(", ")
+            ));
+            for i in instruments {
+                param_values.push(Box::new(i.clone()));
+            }
+        }
+    }
+
+    // Date range filter
+    if let Some(ref date_from) = filter.date_from {
+        conditions.push(format!("j.imported_at >= ?{}", param_idx));
+        param_values.push(Box::new(date_from.clone()));
+        param_idx += 1;
+    }
+    if let Some(ref date_to) = filter.date_to {
+        conditions.push(format!("j.imported_at <= ?{}", param_idx));
+        param_values.push(Box::new(date_to.clone()));
+        param_idx += 1;
+    }
+
+    // Location filter (substring match)
+    if let Some(ref loc) = filter.location {
+        if !loc.trim().is_empty() {
+            conditions.push(format!("j.location LIKE ?{}", param_idx));
+            param_values.push(Box::new(format!("%{}%", loc)));
+            let _ = param_idx; // suppress unused warning
+        }
+    }
+
+    // Build the final query
+    let join_clause = joins.join("\n");
+    let where_clause = if conditions.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", conditions.join(" AND "))
+    };
+
+    let sql = format!(
+        "SELECT DISTINCT j.id, j.filename, j.original_filename, j.content_hash, j.file_path,
+                j.format, j.duration_seconds, j.sample_rate, j.bit_depth, j.channels,
+                j.file_size_bytes, j.imported_at, j.created_at, j.location, j.notes,
+                j.patch_notes, j.peaks_generated
+         FROM jams j
+         {}
+         {}
+         ORDER BY j.imported_at DESC",
+        join_clause, where_clause
+    );
+
+    let params_refs: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
+
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params_refs.as_slice(), |row| map_jam_row(row))?;
+
+    let mut jams = Vec::new();
+    for row in rows {
+        jams.push(row?);
+    }
+    Ok(jams)
+}
+
+/// Get all distinct detected keys (as "KeyName Scale" strings) for filter options.
+pub fn get_distinct_keys(conn: &Connection) -> Result<Vec<String>> {
+    let mut stmt =
+        conn.prepare("SELECT DISTINCT key_name || ' ' || scale FROM jam_key ORDER BY key_name")?;
+    let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+    let mut keys = Vec::new();
+    for r in rows {
+        keys.push(r?);
+    }
+    Ok(keys)
+}
+
+/// Get the global BPM range across all analyzed jams.
+pub fn get_tempo_range(conn: &Connection) -> Result<(f64, f64)> {
+    let result = conn.query_row(
+        "SELECT MIN(bpm), MAX(bpm) FROM jam_tempo",
+        [],
+        |row| {
+            let min: Option<f64> = row.get(0)?;
+            let max: Option<f64> = row.get(1)?;
+            Ok((min.unwrap_or(60.0), max.unwrap_or(200.0)))
+        },
+    )?;
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1558,6 +1807,151 @@ mod tests {
         let pending = get_pending_analysis_jams(&db.conn).unwrap();
         assert_eq!(pending.len(), 1);
         assert_eq!(pending[0], r2.id);
+    }
+
+    #[test]
+    fn test_search_jams_no_filter() {
+        let db = Database::open_in_memory().unwrap();
+        let jam = test_jam();
+        insert_jam(&db.conn, &jam).unwrap();
+
+        let filter = SearchFilter::default();
+        let results = search_jams(&db.conn, &filter).unwrap();
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn test_search_jams_by_tempo_range() {
+        let db = Database::open_in_memory().unwrap();
+        let jam = test_jam();
+        let record = insert_jam(&db.conn, &jam).unwrap();
+        save_tempo_result(&db.conn, &record.id, 120.0, 0.9).unwrap();
+
+        // Should match
+        let filter = SearchFilter {
+            tempo_min: Some(100.0),
+            tempo_max: Some(140.0),
+            ..Default::default()
+        };
+        let results = search_jams(&db.conn, &filter).unwrap();
+        assert_eq!(results.len(), 1);
+
+        // Should not match
+        let filter = SearchFilter {
+            tempo_min: Some(130.0),
+            tempo_max: Some(200.0),
+            ..Default::default()
+        };
+        let results = search_jams(&db.conn, &filter).unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_search_jams_by_key() {
+        let db = Database::open_in_memory().unwrap();
+        let jam = test_jam();
+        let record = insert_jam(&db.conn, &jam).unwrap();
+        save_key_result(&db.conn, &record.id, "Bb", "minor", 0.87).unwrap();
+
+        let filter = SearchFilter {
+            keys: Some(vec!["Bb minor".into()]),
+            ..Default::default()
+        };
+        let results = search_jams(&db.conn, &filter).unwrap();
+        assert_eq!(results.len(), 1);
+
+        let filter = SearchFilter {
+            keys: Some(vec!["C major".into()]),
+            ..Default::default()
+        };
+        let results = search_jams(&db.conn, &filter).unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_search_jams_by_text_query() {
+        let db = Database::open_in_memory().unwrap();
+        let jam = test_jam();
+        let record = insert_jam(&db.conn, &jam).unwrap();
+        insert_tag(&db.conn, &record.id, "ambient").unwrap();
+
+        // Search by tag
+        let filter = SearchFilter {
+            query: Some("ambient".into()),
+            ..Default::default()
+        };
+        let results = search_jams(&db.conn, &filter).unwrap();
+        assert_eq!(results.len(), 1);
+
+        // Search by filename
+        let filter = SearchFilter {
+            query: Some("test-jam".into()),
+            ..Default::default()
+        };
+        let results = search_jams(&db.conn, &filter).unwrap();
+        assert_eq!(results.len(), 1);
+
+        // No match
+        let filter = SearchFilter {
+            query: Some("nonexistent".into()),
+            ..Default::default()
+        };
+        let results = search_jams(&db.conn, &filter).unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_search_jams_combined_filters() {
+        let db = Database::open_in_memory().unwrap();
+        let jam = test_jam();
+        let record = insert_jam(&db.conn, &jam).unwrap();
+        save_tempo_result(&db.conn, &record.id, 120.0, 0.9).unwrap();
+        save_key_result(&db.conn, &record.id, "Bb", "minor", 0.87).unwrap();
+        insert_tag(&db.conn, &record.id, "ambient").unwrap();
+
+        // Both match -> should find
+        let filter = SearchFilter {
+            keys: Some(vec!["Bb minor".into()]),
+            tempo_min: Some(100.0),
+            tempo_max: Some(140.0),
+            tags: Some(vec!["ambient".into()]),
+            ..Default::default()
+        };
+        let results = search_jams(&db.conn, &filter).unwrap();
+        assert_eq!(results.len(), 1);
+
+        // Key matches, tempo doesn't -> empty
+        let filter = SearchFilter {
+            keys: Some(vec!["Bb minor".into()]),
+            tempo_min: Some(200.0),
+            ..Default::default()
+        };
+        let results = search_jams(&db.conn, &filter).unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_get_distinct_keys() {
+        let db = Database::open_in_memory().unwrap();
+        let jam = test_jam();
+        let record = insert_jam(&db.conn, &jam).unwrap();
+        save_key_result(&db.conn, &record.id, "Bb", "minor", 0.87).unwrap();
+
+        let keys = get_distinct_keys(&db.conn).unwrap();
+        assert_eq!(keys.len(), 1);
+        assert_eq!(keys[0], "Bb minor");
+    }
+
+    #[test]
+    fn test_get_tempo_range() {
+        let db = Database::open_in_memory().unwrap();
+        let jam = test_jam();
+        let record = insert_jam(&db.conn, &jam).unwrap();
+        save_tempo_result(&db.conn, &record.id, 120.0, 0.9).unwrap();
+
+        let (min, max) = get_tempo_range(&db.conn).unwrap();
+        assert_eq!(min, 120.0);
+        assert_eq!(max, 120.0);
     }
 
     #[test]

@@ -16,6 +16,8 @@ import type {
   RecordingStatus,
   InputDeviceInfo,
   AnalysisResults,
+  SearchFilter,
+  FilterOptions,
 } from "./types";
 
 // --- Jam operations ---
@@ -266,6 +268,16 @@ export async function clearManualTempo(jamId: string): Promise<void> {
 /** Clear manual key override for a jam. */
 export async function clearManualKey(jamId: string): Promise<void> {
   return invoke("clear_manual_key", { jamId });
+}
+
+/** Search/filter jams with the given criteria. */
+export async function searchJams(filter: SearchFilter): Promise<JamRecord[]> {
+  return invoke("search_jams", { filter });
+}
+
+/** Get available filter options (distinct keys, tags, etc.). */
+export async function getFilterOptions(): Promise<FilterOptions> {
+  return invoke("get_filter_options");
 }
 
 /** Get analysis results for a jam. */

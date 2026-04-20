@@ -202,6 +202,30 @@ export interface AnalysisResults {
   loops: LoopRecord[];
 }
 
+/** Filter criteria for searching/filtering jams (D-12 through D-15). */
+export interface SearchFilter {
+  query?: string;
+  keys?: string[];
+  tempoMin?: number;
+  tempoMax?: number;
+  tags?: string[];
+  collaborators?: string[];
+  instruments?: string[];
+  dateFrom?: string;
+  dateTo?: string;
+  location?: string;
+}
+
+/** Available filter option values for populating dropdowns. */
+export interface FilterOptions {
+  keys: string[];
+  tags: string[];
+  collaborators: string[];
+  instruments: string[];
+  tempoMin: number;
+  tempoMax: number;
+}
+
 export interface AnalysisProgressPayload {
   jamId: string;
   step: "tempo" | "key" | "sections" | "loops";
