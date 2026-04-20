@@ -18,8 +18,12 @@ pub struct PeakData {
     pub channels: u16,
     /// Duration of the audio in seconds.
     pub duration: f64,
-    /// Each entry is [min, max] for one pixel/chunk of samples.
+    /// Each entry is [min, max] for one pixel/chunk of samples (mono-mixed).
     pub peaks: Vec<[f32; 2]>,
+    /// Per-channel peaks. Each inner Vec is one channel's [min, max] pairs.
+    /// Only populated for multichannel audio.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub channel_peaks: Option<Vec<Vec<[f32; 2]>>>,
 }
 
 /// Generate waveform peaks from an audio file.
@@ -77,8 +81,9 @@ pub fn generate_peaks(audio_path: &Path, samples_per_pixel: usize) -> Result<Pea
         .make(&codec_params, &DecoderOptions::default())
         .map_err(|e| WallflowerError::Config(format!("Failed to create decoder: {}", e)))?;
 
-    // Collect all mono samples (channel-averaged).
-    let mut mono_samples: Vec<f32> = Vec::with_capacity(n_frames as usize);
+    // Collect per-channel samples.
+    let num_channels_usize = channels as usize;
+    let mut channel_samples: Vec<Vec<f32>> = vec![Vec::with_capacity(n_frames as usize); num_channels_usize];
 
     loop {
         let packet = match format.next_packet() {
@@ -101,7 +106,7 @@ pub fn generate_peaks(audio_path: &Path, samples_per_pixel: usize) -> Result<Pea
         };
 
         let spec = *decoded.spec();
-        let num_channels = spec.channels.count();
+        let actual_channels = spec.channels.count();
         let num_frames = decoded.frames();
 
         let mut sample_buf = SampleBuffer::<f32>::new(num_frames as u64, spec);
@@ -109,12 +114,21 @@ pub fn generate_peaks(audio_path: &Path, samples_per_pixel: usize) -> Result<Pea
 
         let samples = sample_buf.samples();
         for frame in 0..num_frames {
-            let mut sum: f32 = 0.0;
-            for ch in 0..num_channels {
-                sum += samples[frame * num_channels + ch];
+            for ch in 0..num_channels_usize.min(actual_channels) {
+                channel_samples[ch].push(samples[frame * actual_channels + ch]);
             }
-            mono_samples.push(sum / num_channels as f32);
         }
+    }
+
+    // Build mono mix from channel samples
+    let frame_count = channel_samples[0].len();
+    let mut mono_samples: Vec<f32> = Vec::with_capacity(frame_count);
+    for i in 0..frame_count {
+        let mut sum: f32 = 0.0;
+        for ch in &channel_samples {
+            sum += ch[i];
+        }
+        mono_samples.push(sum / num_channels_usize as f32);
     }
 
     // Compute min/max peaks per chunk.
@@ -152,11 +166,37 @@ pub fn generate_peaks(audio_path: &Path, samples_per_pixel: usize) -> Result<Pea
         duration
     };
 
+    // Compute per-channel peaks for multichannel audio
+    let channel_peaks = if num_channels_usize > 1 {
+        let mut all_channel_peaks = Vec::with_capacity(num_channels_usize);
+        for ch_samples in &channel_samples {
+            let mut ch_peaks: Vec<[f32; 2]> = Vec::new();
+            let mut off = 0;
+            while off < ch_samples.len() {
+                let end = (off + samples_per_pixel).min(ch_samples.len());
+                let chunk = &ch_samples[off..end];
+                let mut min = f32::MAX;
+                let mut max = f32::MIN;
+                for &s in chunk {
+                    if s < min { min = s; }
+                    if s > max { max = s; }
+                }
+                ch_peaks.push([min.clamp(-1.0, 1.0), max.clamp(-1.0, 1.0)]);
+                off = end;
+            }
+            all_channel_peaks.push(ch_peaks);
+        }
+        Some(all_channel_peaks)
+    } else {
+        None
+    };
+
     Ok(PeakData {
         sample_rate,
         channels,
         duration: actual_duration,
         peaks,
+        channel_peaks,
     })
 }
 

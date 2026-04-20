@@ -112,6 +112,7 @@ export interface PeakData {
   channels: number;
   duration: number;
   peaks: [number, number][];
+  channelPeaks?: [number, number][][];
 }
 
 // ── Phase 3: Recording types ────────────────────────────

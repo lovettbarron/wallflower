@@ -35,7 +35,12 @@ export function WaveformDetail({
   const regionsRef = useRef<RegionsPlugin | null>(null);
 
   const flatPeaks = useMemo(
-    () => [peaks.peaks.map((p) => p[0])],
+    () => {
+      if (peaks.channelPeaks && peaks.channelPeaks.length > 1) {
+        return peaks.channelPeaks.map((ch) => ch.map((p) => p[0]));
+      }
+      return [peaks.peaks.map((p) => p[0])];
+    },
     [peaks],
   );
 
@@ -59,9 +64,8 @@ export function WaveformDetail({
 
   const { isReady } = useWavesurfer({
     container: containerRef,
-    url: isStereo ? audioUrl : undefined,
-    peaks: isStereo ? undefined : flatPeaks,
-    duration: isStereo ? undefined : peaks.duration,
+    peaks: flatPeaks,
+    duration: peaks.duration,
     waveColor: "#E8863A",
     progressColor: "#B55E20",
     cursorColor: "#E8863A",
