@@ -231,31 +231,30 @@ export function WaveformDetail({
   // Sync bookmarks to regions
   useEffect(() => {
     const regions = regionsRef.current;
-    if (!regions || !isReady || !regions.getRegions) return;
+    if (!regions || !isReady) return;
+
     try {
-      regions.getRegions();
-    } catch {
-      return;
-    }
-
-    const existing = regions.getRegions();
-    for (const region of existing) {
-      if (region.id.startsWith("bookmark-")) {
-        region.remove();
+      const existing = regions.getRegions();
+      for (const region of existing) {
+        if (region.id.startsWith("bookmark-")) {
+          region.remove();
+        }
       }
-    }
 
-    for (const bookmark of bookmarks) {
-      const colorKey = bookmark.color as BookmarkColor;
-      const colorInfo = BOOKMARK_COLORS[colorKey] || BOOKMARK_COLORS.coral;
-      regions.addRegion({
-        id: `bookmark-${bookmark.id}`,
-        start: bookmark.startSeconds,
-        end: bookmark.endSeconds,
-        color: colorInfo.fill,
-        drag: true,
-        resize: true,
-      });
+      for (const bookmark of bookmarks) {
+        const colorKey = bookmark.color as BookmarkColor;
+        const colorInfo = BOOKMARK_COLORS[colorKey] || BOOKMARK_COLORS.coral;
+        regions.addRegion({
+          id: `bookmark-${bookmark.id}`,
+          start: bookmark.startSeconds,
+          end: bookmark.endSeconds,
+          color: colorInfo.fill,
+          drag: true,
+          resize: true,
+        });
+      }
+    } catch {
+      // Plugin not yet initialized by wavesurfer — will retry on next render
     }
   }, [bookmarks, isReady]);
 
