@@ -3,13 +3,17 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ImagePlus } from "lucide-react";
-import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata } from "@/lib/tauri";
-import type { JamDetail as JamDetailType, PeakData } from "@/lib/types";
+import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, exportAudio, separateStems } from "@/lib/tauri";
+import type { JamDetail as JamDetailType, PeakData, BookmarkColor } from "@/lib/types";
 import { WaveformOverview } from "@/components/waveform/WaveformOverview";
 import { WaveformDetail } from "@/components/waveform/WaveformDetail";
 import { MetadataEditor } from "@/components/metadata/MetadataEditor";
+import { BookmarkList } from "@/components/bookmarks/BookmarkList";
+import { BookmarkPopover } from "@/components/bookmarks/BookmarkPopover";
 import { useTransportStore } from "@/lib/stores/transport";
 import { useRecordingStore } from "@/lib/stores/recording";
+import { useBookmarkStore } from "@/lib/stores/bookmarks";
+import { toast } from "sonner";
 
 interface JamDetailProps {
   jamId: string;
@@ -28,6 +32,27 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const setCurrentTime = useTransportStore((s) => s.setCurrentTime);
   const isPlaying = useTransportStore((s) => s.isPlaying);
   const setPlaying = useTransportStore((s) => s.setPlaying);
+
+  // Bookmark state
+  const bookmarks = useBookmarkStore((s) => s.bookmarks);
+  const loadBookmarks = useBookmarkStore((s) => s.loadBookmarks);
+  const addBookmark = useBookmarkStore((s) => s.addBookmark);
+  const editBookmark = useBookmarkStore((s) => s.editBookmark);
+  const selectBookmark = useBookmarkStore((s) => s.selectBookmark);
+  const getNextColor = useBookmarkStore((s) => s.getNextColor);
+  const getNextName = useBookmarkStore((s) => s.getNextName);
+
+  // Bookmark creation popover state
+  const [showBookmarkPopover, setShowBookmarkPopover] = useState(false);
+  const [pendingBookmarkRange, setPendingBookmarkRange] = useState<{ start: number; end: number } | null>(null);
+  const [editingBookmarkId, setEditingBookmarkId] = useState<string | null>(null);
+
+  // Load bookmarks when jamId changes
+  useEffect(() => {
+    if (jamId) {
+      loadBookmarks(jamId);
+    }
+  }, [jamId, loadBookmarks]);
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
@@ -120,6 +145,103 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
     [setCurrentTime],
   );
 
+  // Bookmark handlers
+  const handleBookmarkDragEnd = useCallback(
+    (start: number, end: number) => {
+      setPendingBookmarkRange({ start, end });
+      setShowBookmarkPopover(true);
+    },
+    [],
+  );
+
+  const handleBookmarkSave = useCallback(
+    async (name: string, color: BookmarkColor, notes: string) => {
+      if (!pendingBookmarkRange || !jamId) return;
+      await addBookmark({
+        jamId,
+        name,
+        startSeconds: pendingBookmarkRange.start,
+        endSeconds: pendingBookmarkRange.end,
+        color,
+        notes: notes || null,
+      });
+      setShowBookmarkPopover(false);
+      setPendingBookmarkRange(null);
+    },
+    [pendingBookmarkRange, jamId, addBookmark],
+  );
+
+  const handleBookmarkUpdate = useCallback(
+    async (id: string, start: number, end: number) => {
+      await editBookmark(id, { startSeconds: start, endSeconds: end });
+    },
+    [editBookmark],
+  );
+
+  const handleBookmarkSelect = useCallback(
+    (id: string) => {
+      selectBookmark(id);
+    },
+    [selectBookmark],
+  );
+
+  const handleBookmarkEdit = useCallback(
+    (id: string) => {
+      setEditingBookmarkId(id);
+    },
+    [],
+  );
+
+  const handleBookmarkClick = useCallback(
+    (bookmark: { startSeconds: number; endSeconds: number }) => {
+      // Scroll waveform to center on bookmark
+      const midpoint = (bookmark.startSeconds + bookmark.endSeconds) / 2;
+      setCurrentTime(midpoint);
+    },
+    [setCurrentTime],
+  );
+
+  const handleExportAudio = useCallback(
+    async (bookmarkId: string) => {
+      try {
+        const path = await exportAudio(bookmarkId);
+        toast.success(`Exported to ${path}`, {
+          action: {
+            label: "Show in Finder",
+            onClick: () => {
+              // Finder reveal would use Tauri shell open
+            },
+          },
+        });
+      } catch (err) {
+        toast.error("Export failed", {
+          description: err instanceof Error ? err.message : "Unknown error",
+        });
+      }
+    },
+    [],
+  );
+
+  const handleExportStems = useCallback(
+    async (bookmarkId: string) => {
+      try {
+        const stems = await separateStems(bookmarkId);
+        console.log("Stem separation result:", stems);
+        toast.success(`Separated ${stems.length} stems`);
+      } catch (err) {
+        toast.error("Stem separation failed", {
+          description: err instanceof Error ? err.message : "Unknown error",
+        });
+      }
+    },
+    [],
+  );
+
+  // Find editing bookmark for popover
+  const editingBookmark = editingBookmarkId
+    ? bookmarks.find((b) => b.id === editingBookmarkId)
+    : null;
+
   if (jamLoading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -204,6 +326,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           <WaveformOverview
             peaks={peaks}
             onSeek={handleSeek}
+            bookmarks={bookmarks}
           />
 
           <div className="h-6" />
@@ -213,6 +336,11 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
             audioUrl={audioUrl}
             peaks={peaks}
             onSeek={handleSeek}
+            bookmarks={bookmarks}
+            onBookmarkDragEnd={handleBookmarkDragEnd}
+            onBookmarkUpdate={handleBookmarkUpdate}
+            onBookmarkSelect={handleBookmarkSelect}
+            onBookmarkEdit={handleBookmarkEdit}
           />
         </>
       )}
@@ -228,9 +356,49 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
 
       <div className="h-6" />
 
+      {/* Bookmark list */}
+      <BookmarkList
+        jamId={jamId}
+        onBookmarkClick={handleBookmarkClick}
+        onExportAudio={handleExportAudio}
+        onExportStems={handleExportStems}
+      />
+
+      <div className="h-6" />
+
       {/* Metadata editor */}
       {jam && (
         <MetadataEditor jam={jam} onUpdate={() => refetchJam()} />
+      )}
+
+      {/* Bookmark creation popover */}
+      <BookmarkPopover
+        open={showBookmarkPopover}
+        onClose={() => {
+          setShowBookmarkPopover(false);
+          setPendingBookmarkRange(null);
+        }}
+        onSave={handleBookmarkSave}
+        initialName={getNextName()}
+        initialColor={getNextColor()}
+        initialNotes=""
+        mode="create"
+      />
+
+      {/* Bookmark edit popover */}
+      {editingBookmark && (
+        <BookmarkPopover
+          open={!!editingBookmark}
+          onClose={() => setEditingBookmarkId(null)}
+          onSave={async (name, color, notes) => {
+            await editBookmark(editingBookmarkId!, { name, color, notes });
+            setEditingBookmarkId(null);
+          }}
+          initialName={editingBookmark.name}
+          initialColor={editingBookmark.color as BookmarkColor}
+          initialNotes={editingBookmark.notes || ""}
+          mode="edit"
+        />
       )}
     </div>
   );

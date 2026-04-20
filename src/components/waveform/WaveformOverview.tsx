@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useEffect, useCallback, type MouseEvent } from "react";
-import type { PeakData } from "@/lib/types";
+import type { PeakData, BookmarkRecord, BookmarkColor } from "@/lib/types";
+import { BOOKMARK_COLORS } from "@/lib/types";
 import { useTransportStore } from "@/lib/stores/transport";
 
 interface WaveformOverviewProps {
@@ -9,6 +10,7 @@ interface WaveformOverviewProps {
   onSeek: (time: number) => void;
   viewportStart?: number;
   viewportEnd?: number;
+  bookmarks?: BookmarkRecord[];
 }
 
 export function WaveformOverview({
@@ -16,6 +18,7 @@ export function WaveformOverview({
   onSeek,
   viewportStart,
   viewportEnd,
+  bookmarks = [],
 }: WaveformOverviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
@@ -57,6 +60,36 @@ export function WaveformOverview({
         }
       }
 
+      // Draw bookmark indicators
+      const totalDuration = duration > 0 ? duration : peaks.duration;
+      if (totalDuration > 0) {
+        for (const bookmark of bookmarks) {
+          const colorKey = bookmark.color as BookmarkColor;
+          const colorInfo = BOOKMARK_COLORS[colorKey] || BOOKMARK_COLORS.coral;
+          const startX = (bookmark.startSeconds / totalDuration) * w;
+          const endX = (bookmark.endSeconds / totalDuration) * w;
+          const spanPx = endX - startX;
+
+          if (spanPx > 4) {
+            // Wide enough to render as a filled region
+            ctx.fillStyle = colorInfo.fill.replace("0.25", "0.15");
+            ctx.fillRect(startX, 0, spanPx, h);
+            // Left and right borders
+            ctx.fillStyle = colorInfo.solid;
+            ctx.globalAlpha = 0.6;
+            ctx.fillRect(startX, 0, 2, h);
+            ctx.fillRect(endX - 2, 0, 2, h);
+            ctx.globalAlpha = 1;
+          } else {
+            // Narrow: render as a single line
+            ctx.fillStyle = colorInfo.solid;
+            ctx.globalAlpha = 0.6;
+            ctx.fillRect(startX, 0, 2, h);
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+
       if (
         viewportStart !== undefined &&
         viewportEnd !== undefined &&
@@ -80,7 +113,7 @@ export function WaveformOverview({
     rafRef.current = requestAnimationFrame(drawFrame);
 
     return () => cancelAnimationFrame(rafRef.current);
-  }, [peaks, viewportStart, viewportEnd]);
+  }, [peaks, viewportStart, viewportEnd, bookmarks]);
 
   const handleClick = (e: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
