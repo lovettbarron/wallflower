@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRecordingStore } from "@/lib/stores/recording";
 import type { AnalysisProgressPayload } from "@/lib/types";
+import { queuePendingAnalysis } from "@/lib/tauri";
 
 interface PhotoAutoAttachedPayload {
   jamId: string;
@@ -254,6 +255,7 @@ export function TauriEventListener() {
               `Recording saved -- ${formatDuration(durationSeconds)} captured`,
               { duration: 4000 }
             );
+            queuePendingAnalysis().catch(() => {});
           }
         );
         cleanupFns.push(unlistenStopped);

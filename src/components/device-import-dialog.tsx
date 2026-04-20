@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { DeviceInfo, ImportResult } from '@/lib/types';
-import { getConnectedDevices, importFromDevice } from '@/lib/tauri';
+import { getConnectedDevices, importFromDevice, queuePendingAnalysis } from '@/lib/tauri';
 
 interface DeviceImportDialogProps {
   onClose: () => void;
@@ -84,6 +84,7 @@ export function DeviceImportDialog({ onClose }: DeviceImportDialogProps) {
 
     setResults(allResults);
     setImporting(false);
+    queuePendingAnalysis().catch(() => {});
   }, [devices, selectedFiles]);
 
   const totalSelected = Object.values(selectedFiles).reduce(
