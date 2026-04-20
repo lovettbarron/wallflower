@@ -3,13 +3,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ImagePlus } from "lucide-react";
-import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata } from "@/lib/tauri";
+import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, prioritizeAnalysis } from "@/lib/tauri";
 import type { JamDetail as JamDetailType, PeakData } from "@/lib/types";
 import { WaveformOverview } from "@/components/waveform/WaveformOverview";
 import { WaveformDetail } from "@/components/waveform/WaveformDetail";
 import { MetadataEditor } from "@/components/metadata/MetadataEditor";
 import { useTransportStore } from "@/lib/stores/transport";
 import { useRecordingStore } from "@/lib/stores/recording";
+import { AnalysisSummary } from "@/components/analysis/AnalysisSummary";
 
 interface JamDetailProps {
   jamId: string;
@@ -82,6 +83,13 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   useEffect(() => {
     if (jam) setTitle(jam.originalFilename || jam.filename);
   }, [jam]);
+
+  // Prioritize analysis for the currently-viewed jam (D-16)
+  useEffect(() => {
+    prioritizeAnalysis(jamId).catch(() => {
+      // Silently ignore -- analysis may not be available
+    });
+  }, [jamId]);
 
   const saveTitle = useCallback(
     async (newTitle: string) => {
@@ -225,6 +233,9 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           Waveform peaks not yet generated for this recording.
         </div>
       )}
+
+      {/* Analysis summary row */}
+      <AnalysisSummary jamId={jam.id} />
 
       <div className="h-6" />
 
