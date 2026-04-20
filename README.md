@@ -4,10 +4,33 @@ A local-first jam and sample manager for musicians who want to focus on creating
 
 ## Status
 
-**Phase 1 complete** -- Foundation. Import pipeline, folder watching, device detection, SQLite storage, Tauri app shell, CLI.
+**Phase 3 complete** -- Recording engine with system integration. Phases 1-3 ship a fully functional record/import/browse/playback workflow.
 
-## Features (Phase 1)
+## Features
 
+### Recording (Phase 3)
+- One-click recording from library view or global hotkey (Cmd+Shift+R)
+- Crash-safe WAV writing with periodic flush/fsync -- recoverable on crash
+- Live waveform visualization and input level meter during recording
+- Silence detection with visual overlays on the recording waveform
+- System tray icon with recording status and quick actions
+- Device disconnect detection with automatic reconnection
+- Edit metadata (tags, collaborators, instruments, notes, photos) while recording
+- Recording settings: configurable silence threshold (-60dB to -20dB)
+- Stop recording navigates to jam detail for immediate review
+
+### Playback & Metadata (Phase 2)
+- Timeline browser with date-grouped jam cards and waveform previews
+- Dual waveform view: overview (full track) + detail (zoomed, scrollable)
+- Audio playback with transport bar (play/pause, skip, scrub, time display)
+- Editable jam title with auto-save
+- Metadata editing: tags, collaborators, instruments, location, notes, patch notes
+- Drag-and-drop photo attachment with thumbnails
+- Autocomplete for tags, collaborators, and instruments
+- Native macOS notifications via Tauri
+- Design system: dark theme inspired by Mutable Instruments / Intellijel
+
+### Foundation (Phase 1)
 - Import WAV, FLAC, MP3 files with atomic copy-first operations (originals never modified)
 - Duplicate detection via SHA-256 content hashing
 - Auto-import from watched folder (default `~/wallflower`) with 5-second debounce
@@ -112,8 +135,9 @@ cargo build --release --workspace
 
 ## Roadmap
 
-- **Phase 2:** Timeline UI, metadata editing, audio playback
-- **Phase 3:** Recording with crash safety, silence detection
+- ~~**Phase 1:** Foundation -- import, storage, CLI, Tauri shell~~ Done
+- ~~**Phase 2:** Timeline UI, metadata editing, audio playback~~ Done
+- ~~**Phase 3:** Recording with crash safety, silence detection~~ Done
 - **Phase 4:** Audio analysis (key, tempo, sections) via Python ML sidecar
 - **Phase 5:** Source separation (demucs-mlx on Apple Silicon)
 - **Phase 6:** Spatial explorer, export to DAW, polish
