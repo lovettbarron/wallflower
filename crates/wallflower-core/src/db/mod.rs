@@ -50,6 +50,9 @@ const MIGRATION_V3: &str = include_str!("../../../../migrations/V3__recording_ta
 /// V4: Analysis result tables for ML pipeline.
 const V4_MIGRATION: &str = include_str!("../../../../migrations/V4__analysis_tables.sql");
 
+/// V5: Bookmarks, exports, and stem cache tables.
+const V5_MIGRATION: &str = include_str!("../../../../migrations/V5__bookmarks_exports.sql");
+
 /// Database wrapper around a SQLite connection.
 pub struct Database {
     pub conn: Connection,
@@ -172,6 +175,17 @@ impl Database {
         if current_version < 4 {
             info!("Running V4 migration: analysis tables");
             self.conn.execute_batch(V4_MIGRATION)?;
+        }
+
+        // Re-read after potential V4 migration
+        let current_version: i32 = self
+            .conn
+            .query_row("PRAGMA user_version", [], |row| row.get(0))?;
+
+        // V5: Bookmarks, exports, and stem cache tables
+        if current_version < 5 {
+            info!("Running V5 migration: bookmarks, exports, stem cache");
+            self.conn.execute_batch(V5_MIGRATION)?;
         }
 
         Ok(())

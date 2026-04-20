@@ -1,6 +1,8 @@
 pub mod analysis;
 pub mod audio;
+pub mod bookmarks;
 pub mod db;
+pub mod export;
 pub mod device;
 pub mod error;
 pub mod import;
