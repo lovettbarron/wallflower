@@ -116,7 +116,7 @@ Plans:
 
 Plans:
 - [x] 05-01-PLAN.md -- Backend foundation: SQLite V5 migration, bookmark CRUD, export pipeline (writer, sidecar, sanitizer)
-- [ ] 05-02-PLAN.md -- gRPC proto extension with SeparateStems RPC, Python SeparationAnalyzer with chunked demucs-mlx
+- [x] 05-02-PLAN.md -- gRPC proto extension with SeparateStems RPC, Python SeparationAnalyzer with chunked demucs-mlx
 - [ ] 05-03-PLAN.md -- Tauri commands for bookmark CRUD, export, separation bridge, TypeScript types and invoke wrappers
 - [ ] 05-04-PLAN.md -- Frontend bookmarks: zustand store, wavesurfer regions, popover, list, context menu, waveform integration
 - [ ] 05-05-PLAN.md -- Stem mixer panel, separation progress, export settings, Phase 5 verification checkpoint

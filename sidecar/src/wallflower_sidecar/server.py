@@ -9,6 +9,7 @@ from wallflower_sidecar.analyzers.tempo import TempoAnalyzer
 from wallflower_sidecar.analyzers.key import KeyAnalyzer
 from wallflower_sidecar.analyzers.sections import SectionAnalyzer
 from wallflower_sidecar.analyzers.loops import LoopAnalyzer
+from wallflower_sidecar.analyzers.separation import SeparationAnalyzer, SeparationProgress
 from wallflower_sidecar.analyzers.base import AnalyzerConfig
 from wallflower_sidecar.hardware import detect_hardware, recommend_profile
 
@@ -165,6 +166,149 @@ class AnalysisServer(pb2_grpc.AnalysisServiceServicer):
         else:
             yield pb2.AnalysisProgress(
                 jam_id=jam_id, step=pb2.LOOPS, status=pb2.SKIPPED
+            )
+
+    def SeparateStems(self, request, context):
+        """Server streaming RPC: yields SeparationProgress for chunked source separation."""
+        bookmark_id = request.bookmark_id
+        logger.info(f"Starting separation for bookmark {bookmark_id}: {request.audio_path}")
+
+        separator = SeparationAnalyzer(
+            AnalyzerConfig(name="demucs-mlx", version="0.1")
+        )
+
+        # Progress callback that yields gRPC messages
+        progress_messages = []
+
+        def on_progress(prog: SeparationProgress):
+            progress_messages.append(prog)
+
+        try:
+            # Yield initial status
+            yield pb2.SeparationProgress(
+                bookmark_id=bookmark_id,
+                status=pb2.SEPARATING,
+                current_chunk=0,
+                total_chunks=0,
+                percent_complete=0.0,
+            )
+
+            # Run separation (blocks until complete or cancelled)
+            import threading
+
+            result_holder = {"stems": {}, "error": None}
+
+            def run_separation():
+                try:
+                    stems = separator.separate(
+                        audio_path=request.audio_path,
+                        start_seconds=request.start_seconds,
+                        end_seconds=request.end_seconds,
+                        output_dir=request.output_dir,
+                        model_name=request.model_name or "htdemucs",
+                        segment_seconds=request.segment_seconds or 10.0,
+                        overlap=request.overlap or 0.25,
+                        on_progress=on_progress,
+                    )
+                    result_holder["stems"] = stems
+                except Exception as e:
+                    result_holder["error"] = str(e)
+
+            sep_thread = threading.Thread(target=run_separation)
+            sep_thread.start()
+
+            # Stream progress while separation runs
+            reported = 0
+            while sep_thread.is_alive():
+                # Check if client disconnected
+                if not context.is_active():
+                    separator.cancel()
+                    sep_thread.join(timeout=5.0)
+                    yield pb2.SeparationProgress(
+                        bookmark_id=bookmark_id,
+                        status=pb2.CANCELLED,
+                    )
+                    return
+
+                # Yield any new progress messages
+                while reported < len(progress_messages):
+                    prog = progress_messages[reported]
+                    yield pb2.SeparationProgress(
+                        bookmark_id=bookmark_id,
+                        status=pb2.CHUNK_COMPLETE,
+                        current_chunk=prog.current_chunk,
+                        total_chunks=prog.total_chunks,
+                        percent_complete=prog.percent_complete,
+                        estimated_seconds_remaining=prog.estimated_seconds_remaining,
+                    )
+                    reported += 1
+
+                sep_thread.join(timeout=0.1)
+
+            # Flush remaining progress
+            while reported < len(progress_messages):
+                prog = progress_messages[reported]
+                yield pb2.SeparationProgress(
+                    bookmark_id=bookmark_id,
+                    status=pb2.CHUNK_COMPLETE,
+                    current_chunk=prog.current_chunk,
+                    total_chunks=prog.total_chunks,
+                    percent_complete=prog.percent_complete,
+                    estimated_seconds_remaining=prog.estimated_seconds_remaining,
+                )
+                reported += 1
+
+            # Check for errors
+            if result_holder["error"]:
+                logger.error(f"Separation failed for {bookmark_id}: {result_holder['error']}")
+                yield pb2.SeparationProgress(
+                    bookmark_id=bookmark_id,
+                    status=pb2.SEPARATION_FAILED,
+                    error_message=result_holder["error"],
+                )
+                return
+
+            # Check for cancellation
+            stems = result_holder["stems"]
+            if not stems:
+                yield pb2.SeparationProgress(
+                    bookmark_id=bookmark_id,
+                    status=pb2.CANCELLED,
+                )
+                return
+
+            # Build stem file list
+            import os
+            stem_files = []
+            for stem_name, file_path in stems.items():
+                try:
+                    size = os.path.getsize(file_path)
+                except OSError:
+                    size = 0
+                stem_files.append(pb2.StemFile(
+                    stem_name=stem_name,
+                    file_path=file_path,
+                    file_size_bytes=size,
+                ))
+
+            # Yield completion
+            yield pb2.SeparationProgress(
+                bookmark_id=bookmark_id,
+                status=pb2.SEPARATION_COMPLETED,
+                current_chunk=len(progress_messages),
+                total_chunks=len(progress_messages),
+                percent_complete=100.0,
+                estimated_seconds_remaining=0.0,
+                stem_files=stem_files,
+            )
+            logger.info(f"Separation complete for {bookmark_id}: {len(stems)} stems")
+
+        except Exception as e:
+            logger.error(f"Separation error for {bookmark_id}: {e}")
+            yield pb2.SeparationProgress(
+                bookmark_id=bookmark_id,
+                status=pb2.SEPARATION_FAILED,
+                error_message=str(e),
             )
 
     def GetHealth(self, request, context):

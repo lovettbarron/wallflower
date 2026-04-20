@@ -3,6 +3,7 @@ package wallflower.analysis;
 
 service AnalysisService {
   rpc AnalyzeJam(AnalyzeRequest) returns (stream AnalysisProgress);
+  rpc SeparateStems(SeparateRequest) returns (stream SeparationProgress);
   rpc GetHealth(HealthRequest) returns (HealthResponse);
   rpc GetHardwareInfo(HardwareInfoRequest) returns (HardwareInfoResponse);
 }
@@ -83,6 +84,43 @@ message Loop {
   int32 repeat_count = 3;
   bool evolving = 4;
   string label = 5;
+}
+
+message SeparateRequest {
+  string bookmark_id = 1;
+  string audio_path = 2;
+  float start_seconds = 3;
+  float end_seconds = 4;
+  string model_name = 5;       // "htdemucs" or "htdemucs_6s"
+  float segment_seconds = 6;    // chunk size in seconds, default 10.0
+  float overlap = 7;            // overlap ratio 0.0-1.0, default 0.25
+  string output_dir = 8;        // directory to write stem WAV files
+}
+
+message SeparationProgress {
+  string bookmark_id = 1;
+  SeparationStatus status = 2;
+  int32 current_chunk = 3;
+  int32 total_chunks = 4;
+  float percent_complete = 5;
+  float estimated_seconds_remaining = 6;
+  repeated StemFile stem_files = 7;
+  string error_message = 8;
+}
+
+enum SeparationStatus {
+  SEPARATING = 0;
+  CHUNK_COMPLETE = 1;
+  SEPARATION_COMPLETED = 2;
+  SEPARATION_FAILED = 3;
+  CANCELLED = 4;
+  PAUSED = 5;
+}
+
+message StemFile {
+  string stem_name = 1;
+  string file_path = 2;
+  int64 file_size_bytes = 3;
 }
 
 message HealthRequest {}

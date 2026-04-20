@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v0.1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md
+stopped_at: Completed Wave 1 (05-01, 05-02)
 last_updated: "2026-04-20T11:04:03.123Z"
 last_activity: 2026-04-20
 progress:
@@ -60,6 +60,7 @@ Progress: [██████████] 100%
 | Phase 04 P04 | 9min | 2 tasks | 11 files |
 | Phase 04 P05 | 12min | 2 tasks | 14 files |
 | Phase 05 P01 | 5min | 2 tasks | 9 files |
+| Phase 05 P02 | 4min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,7 @@ Recent decisions affecting current work:
 - [Phase 04]: Used LIKE-based free-text search instead of FTS5 JOIN due to contentless table limitation
 - [Phase 05]: Hound-based WAV time slicing for export (simpler than Symphonia for WAV-only)
 - [Phase 05]: Dynamic SQL update pattern for bookmark partial updates
+- [Phase 05]: Used SEPARATION_COMPLETED/SEPARATION_FAILED enum names to avoid protobuf duplicate conflict
 
 ### Pending Todos
 
@@ -102,5 +104,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-20T11:04:03.120Z
-Stopped at: Completed 05-01-PLAN.md
+Stopped at: Completed Wave 1 (05-01, 05-02)
 Resume file: None
