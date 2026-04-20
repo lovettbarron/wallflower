@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { listJams, attachPhoto } from "@/lib/tauri";
+import { listJams, searchJams, attachPhoto } from "@/lib/tauri";
 import { useLibraryStore } from "@/lib/stores/library";
 import type { JamRecord } from "@/lib/types";
 import { DateGroup } from "./DateGroup";
+import { FilterBar } from "./FilterBar";
 import { JamCard } from "./JamCard";
 
 const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic"];
@@ -80,7 +81,7 @@ interface TimelineProps {
 }
 
 export function Timeline({ onImportClick }: TimelineProps) {
-  const { setSelectedJam } = useLibraryStore();
+  const { setSelectedJam, filter, hasActiveFilters } = useLibraryStore();
   const [dropTargetJamId, setDropTargetJamId] = useState<string | null>(null);
   const dropTargetRef = useRef<{ id: string; name: string } | null>(null);
   const queryClient = useQueryClient();
@@ -157,8 +158,8 @@ export function Timeline({ onImportClick }: TimelineProps) {
     isLoading,
     error,
   } = useQuery<JamRecord[]>({
-    queryKey: ["jams"],
-    queryFn: listJams,
+    queryKey: hasActiveFilters ? ["jams", filter] : ["jams"],
+    queryFn: () => (hasActiveFilters ? searchJams(filter) : listJams()),
   });
 
   if (isLoading) {
@@ -180,6 +181,30 @@ export function Timeline({ onImportClick }: TimelineProps) {
   }
 
   if (!jams || jams.length === 0) {
+    // Distinguish between empty library and no filter results
+    if (hasActiveFilters) {
+      return (
+        <div>
+          <FilterBar resultCount={0} />
+          <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
+            <h2 className="text-[28px] font-semibold leading-tight text-foreground">
+              No jams match your filters
+            </h2>
+            <p className="mt-3 max-w-sm text-sm text-muted-foreground">
+              Try adjusting your filters or search terms.
+            </p>
+            <button
+              type="button"
+              onClick={() => useLibraryStore.getState().clearFilter()}
+              className="mt-4 text-sm text-[#E8863A] hover:underline"
+            >
+              Clear all filters
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
         <h2 className="text-[28px] font-semibold leading-tight text-foreground">
@@ -205,6 +230,7 @@ export function Timeline({ onImportClick }: TimelineProps) {
 
   return (
     <div className="pb-14">
+      <FilterBar resultCount={jams.length} />
       {groups.map((group) => (
         <DateGroup key={group.label} label={group.label}>
           {group.jams.map((jam) => (
