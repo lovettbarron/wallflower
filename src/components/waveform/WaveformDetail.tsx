@@ -48,6 +48,8 @@ export function WaveformDetail({
     return plugin;
   }, []);
 
+  const plugins = useMemo(() => [regionsPlugin], [regionsPlugin]);
+
   const { wavesurfer, isReady } = useWavesurfer({
     container: containerRef,
     peaks: flatPeaks,
@@ -60,16 +62,17 @@ export function WaveformDetail({
     normalize: true,
     minPxPerSec: 1,
     interact: true,
-    plugins: [regionsPlugin],
+    plugins,
   });
 
-  // Enable drag selection when wavesurfer is ready
   useEffect(() => {
     if (!isReady || !regionsRef.current) return;
 
-    regionsRef.current.enableDragSelection({
+    const disableDragSelection = regionsRef.current.enableDragSelection({
       color: "rgba(232, 134, 58, 0.15)",
     });
+
+    return disableDragSelection;
   }, [isReady]);
 
   // Handle seek interaction
