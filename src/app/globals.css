@@ -78,9 +78,14 @@
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
+    height: 100vh;
     }
   html {
     @apply font-sans;
+    overflow: hidden;
+    overscroll-behavior: none;
+    height: 100vh;
     }
   input, textarea, [contenteditable="true"] {
     -webkit-user-select: text;

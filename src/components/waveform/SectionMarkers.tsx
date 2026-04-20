@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import type { SectionRecord } from "@/lib/types";
 
-// Section type color palette from UI-SPEC
 const SECTION_COLORS: Record<string, string> = {
   Intro: "hsl(210 60% 65%)",
   Outro: "hsl(210 60% 65%)",
@@ -26,6 +25,7 @@ interface SectionMarkersProps {
   totalDuration: number;
   containerWidth: number;
   showLabels?: boolean;
+  onSectionClick?: (section: SectionRecord) => void;
 }
 
 export function SectionMarkers({
@@ -33,8 +33,8 @@ export function SectionMarkers({
   totalDuration,
   containerWidth,
   showLabels = false,
+  onSectionClick,
 }: SectionMarkersProps) {
-  // Pre-compute positions and filter overlapping labels
   const markers = useMemo(() => {
     if (totalDuration <= 0 || containerWidth <= 0) return [];
 
@@ -66,10 +66,10 @@ export function SectionMarkers({
               opacity: 0.6,
             }}
           />
-          {/* Label (WaveformDetail only) */}
+          {/* Clickable label */}
           {showLabel && (
             <span
-              className="absolute text-xs"
+              className="pointer-events-auto absolute cursor-pointer text-xs transition-opacity hover:opacity-100"
               style={{
                 left: `${x + 4}px`,
                 top: "2px",
@@ -77,7 +77,18 @@ export function SectionMarkers({
                 fontSize: "12px",
                 lineHeight: "16px",
                 whiteSpace: "nowrap",
+                opacity: 0.8,
               }}
+              onClick={() => onSectionClick?.(section)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSectionClick?.(section);
+                }
+              }}
+              title={`Jump to ${section.label}`}
             >
               {section.label}
             </span>

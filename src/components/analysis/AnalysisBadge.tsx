@@ -21,10 +21,11 @@ export function AnalysisBadge({
   className,
 }: AnalysisBadgeProps) {
   return (
-    <button
-      type="button"
+    <span
+      role={onEdit ? "button" : undefined}
+      tabIndex={onEdit ? 0 : undefined}
       onClick={onEdit}
-      disabled={!onEdit}
+      onKeyDown={onEdit ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEdit(); } } : undefined}
       className={cn(
         "group relative inline-flex min-w-[52px] items-center justify-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold transition-colors",
         onEdit ? "cursor-pointer hover:bg-[#323844]" : "cursor-default",
@@ -45,18 +46,20 @@ export function AnalysisBadge({
       )}
 
       {manualOverride && onClearOverride && !pending && (
-        <button
-          type="button"
+        <span
+          role="button"
+          tabIndex={0}
           onClick={(e) => {
             e.stopPropagation();
             onClearOverride();
           }}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onClearOverride(); } }}
           className="hidden group-hover:inline-flex items-center justify-center"
           title="Clear manual value"
         >
           <X size={10} className="text-muted-foreground hover:text-foreground" />
-        </button>
+        </span>
       )}
-    </button>
+    </span>
   );
 }

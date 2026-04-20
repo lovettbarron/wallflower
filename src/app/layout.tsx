@@ -31,7 +31,7 @@ export default function RootLayout({
         }}
       >
         <Providers>
-          <div className="pb-14">
+          <div className="h-screen overflow-y-auto overscroll-none pb-14">
             {children}
           </div>
           <TransportBar />

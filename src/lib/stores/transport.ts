@@ -1,5 +1,11 @@
 import { create } from "zustand";
 
+export interface ActiveLoop {
+  startSeconds: number;
+  endSeconds: number;
+  label: string;
+}
+
 export interface TransportState {
   currentJamId: string | null;
   currentJamName: string | null;
@@ -7,6 +13,7 @@ export interface TransportState {
   isPlaying: boolean;
   currentTime: number;
   duration: number;
+  activeLoop: ActiveLoop | null;
   // Actions
   loadJam: (
     jamId: string,
@@ -17,6 +24,7 @@ export interface TransportState {
   setPlaying: (playing: boolean) => void;
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
+  setActiveLoop: (loop: ActiveLoop | null) => void;
   stop: () => void;
 }
 
@@ -27,6 +35,7 @@ export const useTransportStore = create<TransportState>((set) => ({
   isPlaying: false,
   currentTime: 0,
   duration: 0,
+  activeLoop: null,
 
   loadJam: (jamId, jamName, audioUrl, duration) =>
     set({
@@ -36,6 +45,7 @@ export const useTransportStore = create<TransportState>((set) => ({
       isPlaying: false,
       currentTime: 0,
       duration,
+      activeLoop: null,
     }),
 
   setPlaying: (playing) => set({ isPlaying: playing }),
@@ -43,6 +53,8 @@ export const useTransportStore = create<TransportState>((set) => ({
   setCurrentTime: (time) => set({ currentTime: time }),
 
   setDuration: (duration) => set({ duration }),
+
+  setActiveLoop: (loop) => set({ activeLoop: loop }),
 
   stop: () =>
     set({
@@ -52,5 +64,6 @@ export const useTransportStore = create<TransportState>((set) => ({
       isPlaying: false,
       currentTime: 0,
       duration: 0,
+      activeLoop: null,
     }),
 }));

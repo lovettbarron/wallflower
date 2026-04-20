@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useEffect, useMemo, useState } from "react";
+import { useRef, useEffect, useMemo, useState, useCallback } from "react";
 import { useWavesurfer } from "@wavesurfer/react";
 import { useQuery } from "@tanstack/react-query";
-import type { PeakData } from "@/lib/types";
+import type { PeakData, LoopRecord, SectionRecord } from "@/lib/types";
 import { getAnalysisResults } from "@/lib/tauri";
+import { useTransportStore } from "@/lib/stores/transport";
 import { SectionMarkers } from "./SectionMarkers";
 import { LoopBrackets } from "./LoopBrackets";
 
@@ -25,7 +26,9 @@ export function WaveformDetail({
   const seekingRef = useRef(false);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  // Fetch analysis results for section markers and loop brackets
+  const { activeLoop, setActiveLoop, setPlaying, setCurrentTime } =
+    useTransportStore();
+
   const { data: analysis } = useQuery({
     queryKey: ["jam", jamId, "analysis"],
     queryFn: () => getAnalysisResults(jamId!),
@@ -33,7 +36,6 @@ export function WaveformDetail({
     staleTime: 30000,
   });
 
-  // Track container width for overlay positioning
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -86,6 +88,37 @@ export function WaveformDetail({
     };
   }, [wavesurfer, onSeek]);
 
+  const handleLoopClick = useCallback(
+    (loop: LoopRecord) => {
+      const isSameLoop = activeLoop?.label === loop.label;
+      if (isSameLoop) {
+        setActiveLoop(null);
+        return;
+      }
+      setActiveLoop({
+        startSeconds: loop.startSeconds,
+        endSeconds: loop.endSeconds,
+        label: loop.evolving
+          ? `${loop.label} x${loop.repeatCount} (evolving)`
+          : `${loop.label} x${loop.repeatCount}`,
+      });
+      setCurrentTime(loop.startSeconds);
+      onSeek(loop.startSeconds);
+      setPlaying(true);
+    },
+    [activeLoop, setActiveLoop, setCurrentTime, setPlaying, onSeek],
+  );
+
+  const handleSectionClick = useCallback(
+    (section: SectionRecord) => {
+      setActiveLoop(null);
+      setCurrentTime(section.startSeconds);
+      onSeek(section.startSeconds);
+      setPlaying(true);
+    },
+    [setActiveLoop, setCurrentTime, setPlaying, onSeek],
+  );
+
   return (
     <div className="relative w-full">
       {!isReady && (
@@ -103,32 +136,30 @@ export function WaveformDetail({
         }}
       />
 
-      {/* Section markers overlay */}
       {isReady && analysis?.sections && analysis.sections.length > 0 && containerWidth > 0 && (
         <SectionMarkers
           sections={analysis.sections}
           totalDuration={peaks.duration}
           containerWidth={containerWidth}
           showLabels={true}
+          onSectionClick={handleSectionClick}
         />
       )}
 
-      {/* Loop brackets overlay */}
       {isReady && analysis?.loops && analysis.loops.length > 0 && containerWidth > 0 && (
         <LoopBrackets
           loops={analysis.loops}
           totalDuration={peaks.duration}
           containerWidth={containerWidth}
+          activeLoopLabel={activeLoop?.label?.split(" x")[0]}
+          onLoopClick={handleLoopClick}
         />
       )}
 
-      {/* Key/BPM overlay in top-right corner */}
       {isReady && analysis?.key && analysis?.tempo && (
         <div
           className="absolute right-2 top-2 rounded-lg px-1.5 py-0.5 text-xs text-foreground"
-          style={{
-            background: "rgba(21, 25, 33, 0.8)",
-          }}
+          style={{ background: "rgba(21, 25, 33, 0.8)" }}
         >
           {analysis.key.keyName}{analysis.key.scale === "minor" ? "m" : ""} | {Math.round(analysis.tempo.bpm)} BPM
         </div>

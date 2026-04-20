@@ -9,6 +9,8 @@ import {
   Circle,
   Square,
   AlertTriangle,
+  Repeat,
+  X,
 } from "lucide-react";
 import { useTransportStore } from "@/lib/stores/transport";
 import { useRecordingStore } from "@/lib/stores/recording";
@@ -30,9 +32,11 @@ export function TransportBar() {
     isPlaying,
     currentTime,
     duration,
+    activeLoop,
     setPlaying,
     setCurrentTime,
     setDuration,
+    setActiveLoop,
   } = useTransportStore();
 
   const {
@@ -66,9 +70,16 @@ export function TransportBar() {
 
   const handleTimeUpdate = useCallback(() => {
     const audio = audioRef.current;
-    if (audio) {
-      setCurrentTime(audio.currentTime);
+    if (!audio) return;
+
+    const loop = useTransportStore.getState().activeLoop;
+    if (loop && audio.currentTime >= loop.endSeconds) {
+      audio.currentTime = loop.startSeconds;
+      setCurrentTime(loop.startSeconds);
+      return;
     }
+
+    setCurrentTime(audio.currentTime);
   }, [setCurrentTime]);
 
   const handleEnded = useCallback(() => {
@@ -295,9 +306,28 @@ export function TransportBar() {
         <ChevronLast size={18} />
       </button>
 
-      {/* Jam name */}
+      {/* Jam name + active loop */}
       <div className="mx-4 min-w-0 flex-1">
-        <p className="truncate text-sm text-foreground">{currentJamName}</p>
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm text-foreground">{currentJamName}</p>
+          {activeLoop && (
+            <span
+              className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-semibold"
+              style={{ background: "hsl(270 30% 25%)", color: "hsl(270 60% 75%)" }}
+            >
+              <Repeat size={10} />
+              {activeLoop.label}
+              <button
+                type="button"
+                onClick={() => setActiveLoop(null)}
+                className="ml-0.5 rounded-sm hover:opacity-70"
+                aria-label="Stop looping"
+              >
+                <X size={10} />
+              </button>
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Time display */}
