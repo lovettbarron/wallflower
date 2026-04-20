@@ -34,13 +34,13 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **AI-01**: Application detects tempo (BPM) from recordings using local AI models
 - [ ] **AI-02**: Application detects musical key and chord progressions from recordings
 - [ ] **AI-03**: Application identifies structural sections and phrase boundaries in recordings
-- [ ] **AI-04**: Application performs source separation (isolate drums, bass, vocals, synths) using demucs-mlx on Apple Silicon
+- [x] **AI-04**: Application performs source separation (isolate drums, bass, vocals, synths) using demucs-mlx on Apple Silicon
 - [ ] **AI-05**: Application identifies repeated sections/loops and detects when loops change substantially (e.g., parameter changes over same sequence)
 - [x] **AI-06**: Analysis runs as a background pipeline — UI is fully usable before analysis completes, with results populating progressively via SSE
 - [x] **AI-07**: AI models are downloaded at runtime on first launch, cached in ~/Library/Application Support/wallflower/models, and reused across app updates unless model version changes
 - [ ] **AI-08**: Model interface is abstracted so models can be swapped via configuration as new capabilities emerge
 - [x] **AI-09**: Model downloads do not block any other application functionality — user can record and browse immediately
-- [ ] **AI-10**: Demucs processes long recordings in chunks with overlap-add to stay within memory limits (~8GB target for 60-min files)
+- [x] **AI-10**: Demucs processes long recordings in chunks with overlap-add to stay within memory limits (~8GB target for 60-min files)
 
 ### Playback & Visualization
 
@@ -200,8 +200,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AI-08 | Phase 4 | Pending |
 | AI-09 | Phase 4 | Complete |
 | META-08 | Phase 4 | Complete |
-| AI-04 | Phase 5 | Pending |
-| AI-10 | Phase 5 | Pending |
+| AI-04 | Phase 5 | Complete |
+| AI-10 | Phase 5 | Complete |
 | EXP-01 | Phase 5 | Pending |
 | EXP-02 | Phase 5 | Pending |
 | EXP-03 | Phase 5 | Pending |
