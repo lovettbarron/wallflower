@@ -1,5 +1,6 @@
 mod api;
 mod commands;
+mod sidecar;
 mod tray;
 
 use std::path::PathBuf;
