@@ -1,14 +1,18 @@
 "use client";
 
-import { useRef, useEffect, useCallback, type MouseEvent } from "react";
+import { useRef, useEffect, useState, type MouseEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { PeakData } from "@/lib/types";
+import { getAnalysisResults } from "@/lib/tauri";
 import { useTransportStore } from "@/lib/stores/transport";
+import { SectionMarkers } from "./SectionMarkers";
 
 interface WaveformOverviewProps {
   peaks: PeakData;
   onSeek: (time: number) => void;
   viewportStart?: number;
   viewportEnd?: number;
+  jamId?: string;
 }
 
 export function WaveformOverview({
@@ -16,9 +20,31 @@ export function WaveformOverview({
   onSeek,
   viewportStart,
   viewportEnd,
+  jamId,
 }: WaveformOverviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
+  const [overviewWidth, setOverviewWidth] = useState(0);
+
+  const { data: analysis } = useQuery({
+    queryKey: ["jam", jamId, "analysis"],
+    queryFn: () => getAnalysisResults(jamId!),
+    enabled: !!jamId,
+    staleTime: 30000,
+  });
+
+  // Track canvas width
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setOverviewWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -93,11 +119,21 @@ export function WaveformOverview({
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      onClick={handleClick}
-      className="h-12 w-full cursor-crosshair rounded-lg"
-      style={{ background: "#1D2129" }}
-    />
+    <div className="relative">
+      <canvas
+        ref={canvasRef}
+        onClick={handleClick}
+        className="h-12 w-full cursor-crosshair rounded-lg"
+        style={{ background: "#1D2129" }}
+      />
+      {analysis?.sections && analysis.sections.length > 0 && overviewWidth > 0 && (
+        <SectionMarkers
+          sections={analysis.sections}
+          totalDuration={peaks.duration}
+          containerWidth={overviewWidth}
+          showLabels={false}
+        />
+      )}
+    </div>
   );
 }

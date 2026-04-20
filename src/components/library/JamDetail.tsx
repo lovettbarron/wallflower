@@ -212,6 +212,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           <WaveformOverview
             peaks={peaks}
             onSeek={handleSeek}
+            jamId={jam.id}
           />
 
           <div className="h-6" />
@@ -221,6 +222,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
             audioUrl={audioUrl}
             peaks={peaks}
             onSeek={handleSeek}
+            jamId={jam.id}
           />
         </>
       )}
