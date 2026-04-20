@@ -231,7 +231,12 @@ export function WaveformDetail({
   // Sync bookmarks to regions
   useEffect(() => {
     const regions = regionsRef.current;
-    if (!regions || !isReady) return;
+    if (!regions || !isReady || !regions.getRegions) return;
+    try {
+      regions.getRegions();
+    } catch {
+      return;
+    }
 
     const existing = regions.getRegions();
     for (const region of existing) {
