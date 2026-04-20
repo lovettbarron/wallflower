@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft } from "lucide-react";
 import { getSettings, updateSettings } from "@/lib/tauri";
 import type { AppSettings } from "@/lib/types";
+import { ModelManagement } from "./ModelManagement";
+import { AnalysisProfileSelector } from "./AnalysisProfileSelector";
 
 /** Default silence threshold in dB. */
 const DEFAULT_SILENCE_THRESHOLD_DB = -40;
@@ -195,6 +197,22 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* ML Analysis settings card */}
+      <div
+        className="mb-4 rounded-xl border p-5"
+        style={{
+          background: "#1D2129",
+          borderColor: "#323844",
+        }}
+      >
+        <h2 className="mb-4 text-sm font-semibold text-foreground">
+          ML Analysis
+        </h2>
+
+        <AnalysisProfileSelector />
+        <ModelManagement />
       </div>
 
       {/* Slider styling */}

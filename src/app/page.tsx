@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, Circle } from "lucide-react";
 import { Timeline } from "@/components/library/Timeline";
 import { JamDetail } from "@/components/library/JamDetail";
@@ -9,6 +9,7 @@ import { SettingsPage } from "@/components/settings/SettingsPage";
 import { useLibraryStore } from "@/lib/stores/library";
 import { RecordingView } from "@/components/recording/RecordingView";
 import { useRecordingStore } from "@/lib/stores/recording";
+import { queuePendingAnalysis } from "@/lib/tauri";
 
 type ActiveTab = "library" | "settings";
 
@@ -18,6 +19,13 @@ export default function Home() {
   const { selectedJamId, setSelectedJam } = useLibraryStore();
   const isRecording = useRecordingStore((s) => s.isRecording);
   const startRec = useRecordingStore((s) => s.startRec);
+
+  // Queue pending analysis on mount so newly imported jams get analyzed
+  useEffect(() => {
+    queuePendingAnalysis().catch(() => {
+      // Silently ignore -- analysis may not be available
+    });
+  }, []);
 
   // When recording is active, lock navigation and show RecordingView
   if (isRecording) {

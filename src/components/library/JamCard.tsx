@@ -4,9 +4,11 @@ import { useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ImagePlus } from "lucide-react";
 import type { JamRecord, PeakData } from "@/lib/types";
-import { getPeaks } from "@/lib/tauri";
+import { getPeaks, getAnalysisResults } from "@/lib/tauri";
 import { formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { AnalysisBadge } from "@/components/analysis/AnalysisBadge";
+import { AnalysisStatus } from "@/components/analysis/AnalysisStatus";
 
 interface JamCardProps {
   jam: JamRecord;
@@ -83,6 +85,12 @@ export function JamCard({ jam, onClick, isDropTarget }: JamCardProps) {
     staleTime: Infinity,
   });
 
+  const { data: analysis } = useQuery({
+    queryKey: ["jam", jam.id, "analysis"],
+    queryFn: () => getAnalysisResults(jam.id),
+    staleTime: 60000,
+  });
+
   return (
     <button
       type="button"
@@ -117,6 +125,36 @@ export function JamCard({ jam, onClick, isDropTarget }: JamCardProps) {
         <span className="truncate text-sm font-semibold text-foreground">
           {jam.originalFilename || jam.filename}
         </span>
+
+        {/* Analysis badges or status */}
+        {analysis?.status?.status === "analyzing" ? (
+          <AnalysisStatus
+            currentStep={analysis.status.currentStep}
+            completedSteps={[]}
+            variant="card"
+          />
+        ) : (
+          <div className="flex items-center gap-1">
+            <AnalysisBadge
+              label={
+                analysis?.key
+                  ? `${analysis.key.keyName}${analysis.key.scale === "minor" ? "m" : ""}`
+                  : "--"
+              }
+              pending={!analysis?.key}
+            />
+            <AnalysisBadge
+              label={
+                analysis?.tempo
+                  ? `${Math.round(analysis.tempo.bpm)}`
+                  : "--"
+              }
+              pending={!analysis?.tempo}
+              className="tabular-nums"
+            />
+          </div>
+        )}
+
         <span className="shrink-0 text-xs text-muted-foreground">
           {formatDuration(jam.durationSeconds)}
         </span>

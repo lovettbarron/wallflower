@@ -2,7 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRecordingStore } from "@/lib/stores/recording";
+import type { AnalysisProgressPayload } from "@/lib/types";
 
 interface PhotoAutoAttachedPayload {
   jamId: string;
@@ -48,6 +50,7 @@ function formatDuration(totalSeconds: number): string {
 export function TauriEventListener() {
   const silenceStartRef = useRef<number | null>(null);
   const wasDisconnectedRef = useRef(false);
+  const queryClient = useQueryClient();
 
   // Recording store selectors
   const isRecording = useRecordingStore((s) => s.isRecording);
@@ -254,6 +257,56 @@ export function TauriEventListener() {
           }
         );
         cleanupFns.push(unlistenStopped);
+
+        // ---- Analysis event listeners ----
+
+        const unlistenAnalysis = await listen<AnalysisProgressPayload>(
+          "analysis-progress",
+          (event) => {
+            const { jamId, step, status } = event.payload;
+
+            // Invalidate react-query cache so components re-fetch
+            queryClient.invalidateQueries({ queryKey: ["jam", jamId, "analysis"] });
+
+            if (status === "completed" && step === "loops") {
+              // All steps done
+              const result = event.payload.result;
+              const keyStr = result?.key || "";
+              const bpmStr = result?.bpm ? Math.round(result.bpm) : "";
+              toast.success(
+                `Analysis complete${keyStr || bpmStr ? `: ${keyStr}${keyStr && bpmStr ? " at " : ""}${bpmStr ? `${bpmStr} BPM` : ""}` : ""}`,
+                { duration: 4000 }
+              );
+            } else if (status === "failed") {
+              toast.error(`Analysis failed for step: ${step}`, { duration: 6000 });
+            }
+          }
+        );
+        cleanupFns.push(unlistenAnalysis);
+
+        // Sidecar status events (D-08)
+        const unlistenSidecar = await listen<{ status: string }>(
+          "sidecar-status",
+          (event) => {
+            const s = event.payload.status;
+            if (s === "restarting") {
+              toast.loading("Restarting analysis engine...", {
+                id: "sidecar-restart",
+                duration: Infinity,
+              });
+            } else if (s === "failed") {
+              toast.dismiss("sidecar-restart");
+              toast.error(
+                "Analysis engine could not recover. Try restarting the app.",
+                { id: "sidecar-failed", duration: Infinity }
+              );
+            } else if (s === "recovered") {
+              toast.dismiss("sidecar-restart");
+              toast.dismiss("sidecar-failed");
+            }
+          }
+        );
+        cleanupFns.push(unlistenSidecar);
       } catch {
         // Not running in Tauri context (e.g., during SSR or dev in browser)
       }
@@ -272,6 +325,7 @@ export function TauriEventListener() {
     addSilenceRegion,
     requestStop,
     reset,
+    queryClient,
   ]);
 
   return null;
