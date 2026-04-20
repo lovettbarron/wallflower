@@ -68,7 +68,7 @@ export function BookmarkPopover({
 
   return (
     <Popover open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
-      <PopoverTrigger render={children ? undefined : <span className="hidden" />}>
+      <PopoverTrigger render={children ? undefined : <button className="hidden" />}>
         {children}
       </PopoverTrigger>
       <PopoverContent
