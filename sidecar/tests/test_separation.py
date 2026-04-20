@@ -116,19 +116,30 @@ class TestCancellation:
     """Tests for cancellation flag."""
 
     def test_cancel_flag_stops_processing(self, analyzer):
-        """Set cancel flag, verify separate returns empty dict."""
-        # Set the cancel flag before calling separate
-        analyzer._cancel_flag.set()
+        """Set cancel flag between chunks, verify separate returns empty dict."""
+        # Create a mock separator that sets the cancel flag after first chunk
+        mock_sep = MagicMock()
 
-        # Mock demucs import so we don't need real model
-        with patch.dict("sys.modules", {"demucs_mlx": MagicMock()}):
-            result = analyzer.separate(
-                audio_path="dummy.wav",
-                start_seconds=0.0,
-                end_seconds=10.0,
-                output_dir="/tmp/test_stems",
-                _test_audio=np.zeros((44100 * 10, 2), dtype=np.float32),
-            )
+        def fake_separate(chunk_input, sr=44100):
+            # After first call, set the cancel flag so processing stops
+            analyzer._cancel_flag.set()
+            n_stems = 4
+            n_channels = chunk_input.shape[0]
+            n_samples = chunk_input.shape[1]
+            return np.zeros((n_stems, n_channels, n_samples), dtype=np.float32)
+
+        mock_sep.separate = fake_separate
+        analyzer._separator = mock_sep
+
+        # Use audio long enough to need multiple chunks (20s > 10s segment)
+        result = analyzer.separate(
+            audio_path="dummy.wav",
+            start_seconds=0.0,
+            end_seconds=20.0,
+            output_dir="/tmp/test_stems",
+            segment_seconds=10.0,
+            _test_audio=np.zeros((44100 * 20, 2), dtype=np.float32),
+        )
         assert result == {}
 
 
