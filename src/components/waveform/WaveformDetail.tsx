@@ -47,18 +47,25 @@ export function WaveformDetail({
 
   const plugins = useMemo(() => [regionsPlugin], [regionsPlugin]);
 
+  const isStereo = peaks.channels > 1;
+
   const { isReady } = useWavesurfer({
     container: containerRef,
-    peaks: flatPeaks,
-    duration: peaks.duration,
+    url: isStereo ? audioUrl : undefined,
+    peaks: isStereo ? undefined : flatPeaks,
+    duration: isStereo ? undefined : peaks.duration,
     waveColor: "#E8863A",
     progressColor: "#B55E20",
     cursorColor: "#E8863A",
     cursorWidth: 2,
-    height: 200,
+    height: isStereo ? 160 : 200,
     normalize: true,
     minPxPerSec: 1,
     interact: false,
+    splitChannels: isStereo ? [
+      { waveColor: "#E8863A", progressColor: "#B55E20" },
+      { waveColor: "#E8863A", progressColor: "#B55E20", overlay: true },
+    ] : undefined,
     plugins,
   });
 
@@ -262,7 +269,7 @@ export function WaveformDetail({
     <div className="relative w-full">
       {!isReady && (
         <div
-          className="h-[200px] w-full animate-pulse rounded-lg"
+          className={`${isStereo ? "h-[160px]" : "h-[200px]"} w-full animate-pulse rounded-lg`}
           style={{ background: "#1D2129" }}
         />
       )}
