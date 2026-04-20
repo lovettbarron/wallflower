@@ -88,6 +88,19 @@ export function TransportBar() {
   }, [setPlaying, setCurrentTime]);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable) return;
+      e.preventDefault();
+      const { currentJamId, isPlaying: playing, setPlaying: sp } = useTransportStore.getState();
+      if (currentJamId) sp(!playing);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
