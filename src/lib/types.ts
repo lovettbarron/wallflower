@@ -226,6 +226,88 @@ export interface FilterOptions {
   tempoMax: number;
 }
 
+// === Bookmarks & Export (Phase 5) ===
+
+export interface BookmarkRecord {
+  id: string;
+  jam_id: string;
+  name: string;
+  start_seconds: number;
+  end_seconds: number;
+  color: string;
+  notes: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateBookmarkInput {
+  jam_id: string;
+  name: string;
+  start_seconds: number;
+  end_seconds: number;
+  color: string;
+  notes?: string | null;
+}
+
+export interface UpdateBookmarkInput {
+  name?: string | null;
+  start_seconds?: number | null;
+  end_seconds?: number | null;
+  color?: string | null;
+  notes?: string | null;
+  sort_order?: number | null;
+}
+
+export interface ExportRecord {
+  id: string;
+  bookmark_id: string;
+  export_type: "audio" | "stems";
+  export_path: string;
+  format: string;
+  bit_depth: number;
+  model_name: string | null;
+  metadata_path: string | null;
+  created_at: string;
+}
+
+export interface StemInfo {
+  stem_name: string;
+  file_path: string;
+  file_size_bytes: number;
+}
+
+export interface SeparationProgressEvent {
+  bookmark_id: string;
+  status: "separating" | "chunk_complete" | "completed" | "failed" | "cancelled" | "paused";
+  current_chunk: number;
+  total_chunks: number;
+  percent_complete: number;
+  estimated_seconds_remaining: number;
+}
+
+export type BookmarkColor = "coral" | "amber" | "lime" | "teal" | "sky" | "violet" | "rose" | "slate";
+
+export const BOOKMARK_COLORS: Record<BookmarkColor, { fill: string; border: string; solid: string }> = {
+  coral:  { fill: "hsla(12, 70%, 60%, 0.3)",  border: "hsla(12, 70%, 60%, 0.8)",  solid: "hsl(12, 70%, 60%)" },
+  amber:  { fill: "hsla(38, 75%, 55%, 0.3)",  border: "hsla(38, 75%, 55%, 0.8)",  solid: "hsl(38, 75%, 55%)" },
+  lime:   { fill: "hsla(85, 55%, 50%, 0.3)",  border: "hsla(85, 55%, 50%, 0.8)",  solid: "hsl(85, 55%, 50%)" },
+  teal:   { fill: "hsla(175, 55%, 45%, 0.3)", border: "hsla(175, 55%, 45%, 0.8)", solid: "hsl(175, 55%, 45%)" },
+  sky:    { fill: "hsla(200, 65%, 55%, 0.3)", border: "hsla(200, 65%, 55%, 0.8)", solid: "hsl(200, 65%, 55%)" },
+  violet: { fill: "hsla(255, 50%, 60%, 0.3)", border: "hsla(255, 50%, 60%, 0.8)", solid: "hsl(255, 50%, 60%)" },
+  rose:   { fill: "hsla(330, 55%, 55%, 0.3)", border: "hsla(330, 55%, 55%, 0.8)", solid: "hsl(330, 55%, 55%)" },
+  slate:  { fill: "hsla(220, 15%, 45%, 0.3)", border: "hsla(220, 15%, 45%, 0.8)", solid: "hsl(220, 15%, 45%)" },
+};
+
+export const STEM_COLORS: Record<string, string> = {
+  drums:  "hsl(200, 65%, 55%)",
+  bass:   "hsl(30, 70%, 50%)",
+  vocals: "hsl(340, 60%, 60%)",
+  other:  "hsl(150, 45%, 50%)",
+  guitar: "hsl(45, 65%, 55%)",
+  piano:  "hsl(270, 45%, 60%)",
+};
+
 export interface AnalysisProgressPayload {
   jamId: string;
   step: "tempo" | "key" | "sections" | "loops";
