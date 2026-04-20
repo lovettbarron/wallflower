@@ -59,7 +59,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **META-05**: User can attach patch notes (text descriptions of synth/eurorack settings) to jams
 - [ ] **META-06**: User can drag-and-drop photos (e.g., eurorack patch photos, sketches) into a jam's metadata
 - [ ] **META-07**: Application watches a configurable patches folder (e.g., ~/wallflower/patches/) and auto-attaches new photos to the active or most recent jam
-- [ ] **META-08**: User can search and filter jams by any metadata field (tags, key, tempo, collaborators, instruments, date, location)
+- [x] **META-08**: User can search and filter jams by any metadata field (tags, key, tempo, collaborators, instruments, date, location)
 - [ ] **META-09**: All metadata live-saves to prevent data loss
 
 ### Export & DAW Integration
@@ -199,7 +199,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AI-07 | Phase 4 | Pending |
 | AI-08 | Phase 4 | Pending |
 | AI-09 | Phase 4 | Complete |
-| META-08 | Phase 4 | Pending |
+| META-08 | Phase 4 | Complete |
 | AI-04 | Phase 5 | Pending |
 | AI-10 | Phase 5 | Pending |
 | EXP-01 | Phase 5 | Pending |
