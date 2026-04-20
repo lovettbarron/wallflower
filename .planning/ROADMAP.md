@@ -111,13 +111,15 @@ Plans:
   2. Source separation completes on a 60-minute recording without exceeding 8 GB memory usage
   3. Exported files appear in a folder that Ableton's browser can access, and are self-contained for sharing with collaborators
   4. 32-bit float recordings are downsampled to 24-bit on export for DAW compatibility
-**Plans**: TBD
+**Plans**: 5 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-PLAN.md -- Backend foundation: SQLite V5 migration, bookmark CRUD, export pipeline (writer, sidecar, sanitizer)
+- [ ] 05-02-PLAN.md -- gRPC proto extension with SeparateStems RPC, Python SeparationAnalyzer with chunked demucs-mlx
+- [ ] 05-03-PLAN.md -- Tauri commands for bookmark CRUD, export, separation bridge, TypeScript types and invoke wrappers
+- [ ] 05-04-PLAN.md -- Frontend bookmarks: zustand store, wavesurfer regions, popover, list, context menu, waveform integration
+- [ ] 05-05-PLAN.md -- Stem mixer panel, separation progress, export settings, Phase 5 verification checkpoint
 
 ### Phase 6: Spatial Explorer, Accessibility & Distribution
 **Goal**: Users can browse their jam library through a spatial similarity map, the entire application is keyboard-navigable and accessible, and the app is distribution-ready with auto-launch and code signing
@@ -149,5 +151,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Playback, Metadata, Design System & Notifications | 0/4 | Not started | - |
 | 3. Recording Engine & System Integration | 5/6 | In Progress|  |
 | 4. ML Analysis Pipeline | 0/6 | Not started | - |
-| 5. Source Separation & Export | 0/3 | Not started | - |
+| 5. Source Separation & Export | 0/5 | Not started | - |
 | 6. Spatial Explorer, Accessibility & Distribution | 0/3 | Not started | - |
