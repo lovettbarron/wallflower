@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from wallflower_sidecar import wallflower_analysis_pb2 as wallflower__analysis__pb2
+import wallflower_analysis_pb2 as wallflower__analysis__pb2
 
 GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
@@ -39,6 +39,11 @@ class AnalysisServiceStub(object):
                 request_serializer=wallflower__analysis__pb2.AnalyzeRequest.SerializeToString,
                 response_deserializer=wallflower__analysis__pb2.AnalysisProgress.FromString,
                 _registered_method=True)
+        self.SeparateStems = channel.unary_stream(
+                '/wallflower.analysis.AnalysisService/SeparateStems',
+                request_serializer=wallflower__analysis__pb2.SeparateRequest.SerializeToString,
+                response_deserializer=wallflower__analysis__pb2.SeparationProgress.FromString,
+                _registered_method=True)
         self.GetHealth = channel.unary_unary(
                 '/wallflower.analysis.AnalysisService/GetHealth',
                 request_serializer=wallflower__analysis__pb2.HealthRequest.SerializeToString,
@@ -55,6 +60,12 @@ class AnalysisServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def AnalyzeJam(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SeparateStems(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -79,6 +90,11 @@ def add_AnalysisServiceServicer_to_server(servicer, server):
                     servicer.AnalyzeJam,
                     request_deserializer=wallflower__analysis__pb2.AnalyzeRequest.FromString,
                     response_serializer=wallflower__analysis__pb2.AnalysisProgress.SerializeToString,
+            ),
+            'SeparateStems': grpc.unary_stream_rpc_method_handler(
+                    servicer.SeparateStems,
+                    request_deserializer=wallflower__analysis__pb2.SeparateRequest.FromString,
+                    response_serializer=wallflower__analysis__pb2.SeparationProgress.SerializeToString,
             ),
             'GetHealth': grpc.unary_unary_rpc_method_handler(
                     servicer.GetHealth,
@@ -118,6 +134,33 @@ class AnalysisService(object):
             '/wallflower.analysis.AnalysisService/AnalyzeJam',
             wallflower__analysis__pb2.AnalyzeRequest.SerializeToString,
             wallflower__analysis__pb2.AnalysisProgress.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SeparateStems(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/wallflower.analysis.AnalysisService/SeparateStems',
+            wallflower__analysis__pb2.SeparateRequest.SerializeToString,
+            wallflower__analysis__pb2.SeparationProgress.FromString,
             options,
             channel_credentials,
             insecure,

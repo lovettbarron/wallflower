@@ -24,19 +24,21 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x19wallflower_analysis.proto\x12\x13wallflower.analysis\"\x7f\n\x0e\x41nalyzeRequest\x12\x0e\n\x06jam_id\x18\x01 \x01(\t\x12\x12\n\naudio_path\x18\x02 \x01(\t\x12\x35\n\x07profile\x18\x03 \x01(\x0e\x32$.wallflower.analysis.AnalysisProfile\x12\x12\n\nskip_steps\x18\x04 \x03(\t\"\xdc\x02\n\x10\x41nalysisProgress\x12\x0e\n\x06jam_id\x18\x01 \x01(\t\x12/\n\x04step\x18\x02 \x01(\x0e\x32!.wallflower.analysis.AnalysisStep\x12/\n\x06status\x18\x03 \x01(\x0e\x32\x1f.wallflower.analysis.StepStatus\x12\x31\n\x05tempo\x18\x04 \x01(\x0b\x32 .wallflower.analysis.TempoResultH\x00\x12-\n\x03key\x18\x05 \x01(\x0b\x32\x1e.wallflower.analysis.KeyResultH\x00\x12\x37\n\x08sections\x18\x06 \x01(\x0b\x32#.wallflower.analysis.SectionsResultH\x00\x12\x31\n\x05loops\x18\x07 \x01(\x0b\x32 .wallflower.analysis.LoopsResultH\x00\x42\x08\n\x06result\"`\n\x0bTempoResult\x12\x0b\n\x03\x62pm\x18\x01 \x01(\x02\x12\x12\n\nconfidence\x18\x02 \x01(\x02\x12\x30\n\x05\x62\x65\x61ts\x18\x03 \x03(\x0b\x32!.wallflower.analysis.BeatPosition\"$\n\x0c\x42\x65\x61tPosition\x12\x14\n\x0ctime_seconds\x18\x01 \x01(\x02\"9\n\tKeyResult\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05scale\x18\x02 \x01(\t\x12\x10\n\x08strength\x18\x03 \x01(\x02\"@\n\x0eSectionsResult\x12.\n\x08sections\x18\x01 \x03(\x0b\x32\x1c.wallflower.analysis.Section\"X\n\x07Section\x12\x15\n\rstart_seconds\x18\x01 \x01(\x02\x12\x13\n\x0b\x65nd_seconds\x18\x02 \x01(\x02\x12\r\n\x05label\x18\x03 \x01(\t\x12\x12\n\ncluster_id\x18\x04 \x01(\x05\"7\n\x0bLoopsResult\x12(\n\x05loops\x18\x01 \x03(\x0b\x32\x19.wallflower.analysis.Loop\"i\n\x04Loop\x12\x15\n\rstart_seconds\x18\x01 \x01(\x02\x12\x13\n\x0b\x65nd_seconds\x18\x02 \x01(\x02\x12\x14\n\x0crepeat_count\x18\x03 \x01(\x05\x12\x10\n\x08\x65volving\x18\x04 \x01(\x08\x12\r\n\x05label\x18\x05 \x01(\t\"\x0f\n\rHealthRequest\"2\n\x0eHealthResponse\x12\x0f\n\x07healthy\x18\x01 \x01(\x08\x12\x0f\n\x07version\x18\x02 \x01(\t\"\x15\n\x13HardwareInfoRequest\"\x8c\x01\n\x14HardwareInfoResponse\x12\x0c\n\x04\x63hip\x18\x01 \x01(\t\x12\r\n\x05\x63ores\x18\x02 \x01(\x05\x12\x14\n\x0cmemory_bytes\x18\x03 \x01(\x03\x12\x41\n\x13recommended_profile\x18\x04 \x01(\x0e\x32$.wallflower.analysis.AnalysisProfile*:\n\x0f\x41nalysisProfile\x12\x08\n\x04\x46ULL\x10\x00\x12\x0c\n\x08STANDARD\x10\x01\x12\x0f\n\x0bLIGHTWEIGHT\x10\x02*;\n\x0c\x41nalysisStep\x12\t\n\x05TEMPO\x10\x00\x12\x07\n\x03KEY\x10\x01\x12\x0c\n\x08SECTIONS\x10\x02\x12\t\n\x05LOOPS\x10\x03*A\n\nStepStatus\x12\x0b\n\x07STARTED\x10\x00\x12\r\n\tCOMPLETED\x10\x01\x12\n\n\x06\x46\x41ILED\x10\x02\x12\x0b\n\x07SKIPPED\x10\x03\x32\xab\x02\n\x0f\x41nalysisService\x12Z\n\nAnalyzeJam\x12#.wallflower.analysis.AnalyzeRequest\x1a%.wallflower.analysis.AnalysisProgress0\x01\x12T\n\tGetHealth\x12\".wallflower.analysis.HealthRequest\x1a#.wallflower.analysis.HealthResponse\x12\x66\n\x0fGetHardwareInfo\x12(.wallflower.analysis.HardwareInfoRequest\x1a).wallflower.analysis.HardwareInfoResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x19wallflower_analysis.proto\x12\x13wallflower.analysis\"\x7f\n\x0e\x41nalyzeRequest\x12\x0e\n\x06jam_id\x18\x01 \x01(\t\x12\x12\n\naudio_path\x18\x02 \x01(\t\x12\x35\n\x07profile\x18\x03 \x01(\x0e\x32$.wallflower.analysis.AnalysisProfile\x12\x12\n\nskip_steps\x18\x04 \x03(\t\"\xdc\x02\n\x10\x41nalysisProgress\x12\x0e\n\x06jam_id\x18\x01 \x01(\t\x12/\n\x04step\x18\x02 \x01(\x0e\x32!.wallflower.analysis.AnalysisStep\x12/\n\x06status\x18\x03 \x01(\x0e\x32\x1f.wallflower.analysis.StepStatus\x12\x31\n\x05tempo\x18\x04 \x01(\x0b\x32 .wallflower.analysis.TempoResultH\x00\x12-\n\x03key\x18\x05 \x01(\x0b\x32\x1e.wallflower.analysis.KeyResultH\x00\x12\x37\n\x08sections\x18\x06 \x01(\x0b\x32#.wallflower.analysis.SectionsResultH\x00\x12\x31\n\x05loops\x18\x07 \x01(\x0b\x32 .wallflower.analysis.LoopsResultH\x00\x42\x08\n\x06result\"`\n\x0bTempoResult\x12\x0b\n\x03\x62pm\x18\x01 \x01(\x02\x12\x12\n\nconfidence\x18\x02 \x01(\x02\x12\x30\n\x05\x62\x65\x61ts\x18\x03 \x03(\x0b\x32!.wallflower.analysis.BeatPosition\"$\n\x0c\x42\x65\x61tPosition\x12\x14\n\x0ctime_seconds\x18\x01 \x01(\x02\"9\n\tKeyResult\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05scale\x18\x02 \x01(\t\x12\x10\n\x08strength\x18\x03 \x01(\x02\"@\n\x0eSectionsResult\x12.\n\x08sections\x18\x01 \x03(\x0b\x32\x1c.wallflower.analysis.Section\"X\n\x07Section\x12\x15\n\rstart_seconds\x18\x01 \x01(\x02\x12\x13\n\x0b\x65nd_seconds\x18\x02 \x01(\x02\x12\r\n\x05label\x18\x03 \x01(\t\x12\x12\n\ncluster_id\x18\x04 \x01(\x05\"7\n\x0bLoopsResult\x12(\n\x05loops\x18\x01 \x03(\x0b\x32\x19.wallflower.analysis.Loop\"i\n\x04Loop\x12\x15\n\rstart_seconds\x18\x01 \x01(\x02\x12\x13\n\x0b\x65nd_seconds\x18\x02 \x01(\x02\x12\x14\n\x0crepeat_count\x18\x03 \x01(\x05\x12\x10\n\x08\x65volving\x18\x04 \x01(\x08\x12\r\n\x05label\x18\x05 \x01(\t\"\xb8\x01\n\x0fSeparateRequest\x12\x13\n\x0b\x62ookmark_id\x18\x01 \x01(\t\x12\x12\n\naudio_path\x18\x02 \x01(\t\x12\x15\n\rstart_seconds\x18\x03 \x01(\x02\x12\x13\n\x0b\x65nd_seconds\x18\x04 \x01(\x02\x12\x12\n\nmodel_name\x18\x05 \x01(\t\x12\x17\n\x0fsegment_seconds\x18\x06 \x01(\x02\x12\x0f\n\x07overlap\x18\x07 \x01(\x02\x12\x12\n\noutput_dir\x18\x08 \x01(\t\"\x96\x02\n\x12SeparationProgress\x12\x13\n\x0b\x62ookmark_id\x18\x01 \x01(\t\x12\x35\n\x06status\x18\x02 \x01(\x0e\x32%.wallflower.analysis.SeparationStatus\x12\x15\n\rcurrent_chunk\x18\x03 \x01(\x05\x12\x14\n\x0ctotal_chunks\x18\x04 \x01(\x05\x12\x18\n\x10percent_complete\x18\x05 \x01(\x02\x12#\n\x1b\x65stimated_seconds_remaining\x18\x06 \x01(\x02\x12\x31\n\nstem_files\x18\x07 \x03(\x0b\x32\x1d.wallflower.analysis.StemFile\x12\x15\n\rerror_message\x18\x08 \x01(\t\"I\n\x08StemFile\x12\x11\n\tstem_name\x18\x01 \x01(\t\x12\x11\n\tfile_path\x18\x02 \x01(\t\x12\x17\n\x0f\x66ile_size_bytes\x18\x03 \x01(\x03\"\x0f\n\rHealthRequest\"2\n\x0eHealthResponse\x12\x0f\n\x07healthy\x18\x01 \x01(\x08\x12\x0f\n\x07version\x18\x02 \x01(\t\"\x15\n\x13HardwareInfoRequest\"\x8c\x01\n\x14HardwareInfoResponse\x12\x0c\n\x04\x63hip\x18\x01 \x01(\t\x12\r\n\x05\x63ores\x18\x02 \x01(\x05\x12\x14\n\x0cmemory_bytes\x18\x03 \x01(\x03\x12\x41\n\x13recommended_profile\x18\x04 \x01(\x0e\x32$.wallflower.analysis.AnalysisProfile*:\n\x0f\x41nalysisProfile\x12\x08\n\x04\x46ULL\x10\x00\x12\x0c\n\x08STANDARD\x10\x01\x12\x0f\n\x0bLIGHTWEIGHT\x10\x02*;\n\x0c\x41nalysisStep\x12\t\n\x05TEMPO\x10\x00\x12\x07\n\x03KEY\x10\x01\x12\x0c\n\x08SECTIONS\x10\x02\x12\t\n\x05LOOPS\x10\x03*A\n\nStepStatus\x12\x0b\n\x07STARTED\x10\x00\x12\r\n\tCOMPLETED\x10\x01\x12\n\n\x06\x46\x41ILED\x10\x02\x12\x0b\n\x07SKIPPED\x10\x03*\x82\x01\n\x10SeparationStatus\x12\x0e\n\nSEPARATING\x10\x00\x12\x12\n\x0e\x43HUNK_COMPLETE\x10\x01\x12\x18\n\x14SEPARATION_COMPLETED\x10\x02\x12\x15\n\x11SEPARATION_FAILED\x10\x03\x12\r\n\tCANCELLED\x10\x04\x12\n\n\x06PAUSED\x10\x05\x32\x8d\x03\n\x0f\x41nalysisService\x12Z\n\nAnalyzeJam\x12#.wallflower.analysis.AnalyzeRequest\x1a%.wallflower.analysis.AnalysisProgress0\x01\x12`\n\rSeparateStems\x12$.wallflower.analysis.SeparateRequest\x1a\'.wallflower.analysis.SeparationProgress0\x01\x12T\n\tGetHealth\x12\".wallflower.analysis.HealthRequest\x1a#.wallflower.analysis.HealthResponse\x12\x66\n\x0fGetHardwareInfo\x12(.wallflower.analysis.HardwareInfoRequest\x1a).wallflower.analysis.HardwareInfoResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'wallflower_analysis_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_ANALYSISPROFILE']._serialized_start=1280
-  _globals['_ANALYSISPROFILE']._serialized_end=1338
-  _globals['_ANALYSISSTEP']._serialized_start=1340
-  _globals['_ANALYSISSTEP']._serialized_end=1399
-  _globals['_STEPSTATUS']._serialized_start=1401
-  _globals['_STEPSTATUS']._serialized_end=1466
+  _globals['_ANALYSISPROFILE']._serialized_start=1823
+  _globals['_ANALYSISPROFILE']._serialized_end=1881
+  _globals['_ANALYSISSTEP']._serialized_start=1883
+  _globals['_ANALYSISSTEP']._serialized_end=1942
+  _globals['_STEPSTATUS']._serialized_start=1944
+  _globals['_STEPSTATUS']._serialized_end=2009
+  _globals['_SEPARATIONSTATUS']._serialized_start=2012
+  _globals['_SEPARATIONSTATUS']._serialized_end=2142
   _globals['_ANALYZEREQUEST']._serialized_start=50
   _globals['_ANALYZEREQUEST']._serialized_end=177
   _globals['_ANALYSISPROGRESS']._serialized_start=180
@@ -55,14 +57,20 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LOOPSRESULT']._serialized_end=936
   _globals['_LOOP']._serialized_start=938
   _globals['_LOOP']._serialized_end=1043
-  _globals['_HEALTHREQUEST']._serialized_start=1045
-  _globals['_HEALTHREQUEST']._serialized_end=1060
-  _globals['_HEALTHRESPONSE']._serialized_start=1062
-  _globals['_HEALTHRESPONSE']._serialized_end=1112
-  _globals['_HARDWAREINFOREQUEST']._serialized_start=1114
-  _globals['_HARDWAREINFOREQUEST']._serialized_end=1135
-  _globals['_HARDWAREINFORESPONSE']._serialized_start=1138
-  _globals['_HARDWAREINFORESPONSE']._serialized_end=1278
-  _globals['_ANALYSISSERVICE']._serialized_start=1469
-  _globals['_ANALYSISSERVICE']._serialized_end=1768
+  _globals['_SEPARATEREQUEST']._serialized_start=1046
+  _globals['_SEPARATEREQUEST']._serialized_end=1230
+  _globals['_SEPARATIONPROGRESS']._serialized_start=1233
+  _globals['_SEPARATIONPROGRESS']._serialized_end=1511
+  _globals['_STEMFILE']._serialized_start=1513
+  _globals['_STEMFILE']._serialized_end=1586
+  _globals['_HEALTHREQUEST']._serialized_start=1588
+  _globals['_HEALTHREQUEST']._serialized_end=1603
+  _globals['_HEALTHRESPONSE']._serialized_start=1605
+  _globals['_HEALTHRESPONSE']._serialized_end=1655
+  _globals['_HARDWAREINFOREQUEST']._serialized_start=1657
+  _globals['_HARDWAREINFOREQUEST']._serialized_end=1678
+  _globals['_HARDWAREINFORESPONSE']._serialized_start=1681
+  _globals['_HARDWAREINFORESPONSE']._serialized_end=1821
+  _globals['_ANALYSISSERVICE']._serialized_start=2145
+  _globals['_ANALYSISSERVICE']._serialized_end=2542
 # @@protoc_insertion_point(module_scope)
