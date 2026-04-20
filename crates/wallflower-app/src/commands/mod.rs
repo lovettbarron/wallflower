@@ -1,3 +1,4 @@
+pub mod analysis;
 pub mod import;
 pub mod jams;
 pub mod metadata;

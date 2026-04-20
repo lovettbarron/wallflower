@@ -1,10 +1,9 @@
 pub mod grpc_client;
 
 use std::process::{Child, Command, Stdio};
-use tracing::{error, info, warn};
+use tracing::info;
 
 const MAX_RESTARTS: u32 = 3;
-const HEALTH_CHECK_TIMEOUT_MS: u64 = 5000;
 const STARTUP_TIMEOUT_MS: u64 = 30000;
 
 pub struct SidecarManager {

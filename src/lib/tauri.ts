@@ -15,6 +15,7 @@ import type {
   RecordingStopResult,
   RecordingStatus,
   InputDeviceInfo,
+  AnalysisResults,
 } from "./types";
 
 // --- Jam operations ---
@@ -215,4 +216,60 @@ export async function listAudioDevices(): Promise<InputDeviceInfo[]> {
 /** Get current recording input level (RMS in dB). */
 export async function getRecordingLevel(): Promise<{ rmsDb: number }> {
   return invoke("get_recording_level");
+}
+
+// --- Analysis operations (Phase 4) ---
+
+/** Trigger analysis for a specific jam. Progress streams via Tauri events. */
+export async function analyzeJam(jamId: string): Promise<void> {
+  return invoke("analyze_jam", { jamId });
+}
+
+/** Queue analysis for all unanalyzed jams. */
+export async function queuePendingAnalysis(): Promise<number> {
+  return invoke("queue_pending_analysis");
+}
+
+/** Prioritize analysis for the currently-viewed jam. */
+export async function prioritizeAnalysis(jamId: string): Promise<void> {
+  return invoke("prioritize_analysis", { jamId });
+}
+
+/** Re-analyze a jam (clears previous results except manual overrides). */
+export async function reanalyzeJam(jamId: string): Promise<void> {
+  return invoke("reanalyze_jam", { jamId });
+}
+
+/** Manually override tempo for a jam. */
+export async function setManualTempo(
+  jamId: string,
+  bpm: number,
+): Promise<void> {
+  return invoke("set_manual_tempo", { jamId, bpm });
+}
+
+/** Manually override key for a jam. */
+export async function setManualKey(
+  jamId: string,
+  keyName: string,
+  scale: string,
+): Promise<void> {
+  return invoke("set_manual_key", { jamId, keyName, scale });
+}
+
+/** Clear manual tempo override for a jam. */
+export async function clearManualTempo(jamId: string): Promise<void> {
+  return invoke("clear_manual_tempo", { jamId });
+}
+
+/** Clear manual key override for a jam. */
+export async function clearManualKey(jamId: string): Promise<void> {
+  return invoke("clear_manual_key", { jamId });
+}
+
+/** Get analysis results for a jam. */
+export async function getAnalysisResults(
+  jamId: string,
+): Promise<AnalysisResults> {
+  return invoke("get_analysis_results", { jamId });
 }

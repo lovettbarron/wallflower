@@ -924,6 +924,52 @@ pub fn update_fts_index(conn: &Connection, jam_id: &str) -> Result<()> {
     Ok(())
 }
 
+/// Manually set tempo for a jam, marking it as a manual override (D-18).
+pub fn set_manual_tempo(conn: &Connection, jam_id: &str, bpm: f64) -> Result<()> {
+    conn.execute(
+        "INSERT INTO jam_tempo (jam_id, bpm, confidence, manual_override, created_at)
+         VALUES (?1, ?2, 1.0, 1, datetime('now'))
+         ON CONFLICT(jam_id) DO UPDATE SET
+            bpm = excluded.bpm,
+            manual_override = 1,
+            created_at = datetime('now')",
+        params![jam_id, bpm],
+    )?;
+    Ok(())
+}
+
+/// Manually set key for a jam, marking it as a manual override (D-18).
+pub fn set_manual_key(
+    conn: &Connection,
+    jam_id: &str,
+    key_name: &str,
+    scale: &str,
+) -> Result<()> {
+    conn.execute(
+        "INSERT INTO jam_key (jam_id, key_name, scale, strength, manual_override, created_at)
+         VALUES (?1, ?2, ?3, 1.0, 1, datetime('now'))
+         ON CONFLICT(jam_id) DO UPDATE SET
+            key_name = excluded.key_name,
+            scale = excluded.scale,
+            manual_override = 1,
+            created_at = datetime('now')",
+        params![jam_id, key_name, scale],
+    )?;
+    Ok(())
+}
+
+/// Clear manual tempo override for a jam (D-18).
+pub fn clear_manual_tempo(conn: &Connection, jam_id: &str) -> Result<()> {
+    conn.execute("DELETE FROM jam_tempo WHERE jam_id = ?1", params![jam_id])?;
+    Ok(())
+}
+
+/// Clear manual key override for a jam (D-18).
+pub fn clear_manual_key(conn: &Connection, jam_id: &str) -> Result<()> {
+    conn.execute("DELETE FROM jam_key WHERE jam_id = ?1", params![jam_id])?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

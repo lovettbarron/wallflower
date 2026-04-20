@@ -144,3 +144,86 @@ export interface SilenceRegion {
   startSeconds: number;
   endSeconds: number;
 }
+
+// -- Phase 4: Analysis types --
+
+export interface AnalysisStatus {
+  jamId: string;
+  status: "pending" | "analyzing" | "complete" | "failed";
+  currentStep: string | null;
+  analysisProfile: string;
+  errorMessage: string | null;
+  retryCount: number;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+export interface TempoResult {
+  jamId: string;
+  bpm: number;
+  confidence: number;
+  manualOverride: boolean;
+}
+
+export interface KeyResult {
+  jamId: string;
+  keyName: string;
+  scale: string;
+  strength: number;
+  manualOverride: boolean;
+}
+
+export interface SectionRecord {
+  id: string;
+  jamId: string;
+  startSeconds: number;
+  endSeconds: number;
+  label: string;
+  clusterId: number;
+  sortOrder: number;
+}
+
+export interface LoopRecord {
+  id: string;
+  jamId: string;
+  startSeconds: number;
+  endSeconds: number;
+  repeatCount: number;
+  evolving: boolean;
+  label: string;
+  sortOrder: number;
+}
+
+export interface AnalysisResults {
+  status: AnalysisStatus | null;
+  tempo: TempoResult | null;
+  key: KeyResult | null;
+  sections: SectionRecord[];
+  loops: LoopRecord[];
+}
+
+export interface AnalysisProgressPayload {
+  jamId: string;
+  step: "tempo" | "key" | "sections" | "loops";
+  status: "started" | "completed" | "failed" | "skipped" | "interrupted";
+  result?: {
+    bpm?: number;
+    confidence?: number;
+    key?: string;
+    scale?: string;
+    strength?: number;
+    sections?: Array<{
+      startSeconds: number;
+      endSeconds: number;
+      label: string;
+      clusterId: number;
+    }>;
+    loops?: Array<{
+      startSeconds: number;
+      endSeconds: number;
+      repeatCount: number;
+      evolving: boolean;
+      label: string;
+    }>;
+  };
+}

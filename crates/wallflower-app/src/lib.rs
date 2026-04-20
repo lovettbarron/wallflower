@@ -37,6 +37,7 @@ pub struct AppState {
     pub latest_rms_db: Arc<AtomicI32>,
     pub scheduler: PriorityScheduler,
     pub current_recording_jam_id: Mutex<Option<String>>,
+    pub sidecar: tokio::sync::Mutex<sidecar::SidecarManager>,
 }
 
 /// Send a native macOS notification via the Tauri notification plugin.
@@ -430,6 +431,10 @@ pub fn run() {
             latest_rms_db: latest_rms_for_state,
             scheduler,
             current_recording_jam_id: Mutex::new(None),
+            sidecar: tokio::sync::Mutex::new({
+                let sidecar_dir = sidecar::resolve_sidecar_dir(None);
+                sidecar::SidecarManager::new(50051, sidecar_dir)
+            }),
         })
         .invoke_handler(tauri::generate_handler![
             // Jam queries
@@ -468,6 +473,16 @@ pub fn run() {
             commands::recording::get_recording_status,
             commands::recording::list_audio_devices,
             commands::recording::get_recording_level,
+            // Analysis (Phase 4)
+            commands::analysis::analyze_jam,
+            commands::analysis::queue_pending_analysis,
+            commands::analysis::prioritize_analysis,
+            commands::analysis::reanalyze_jam,
+            commands::analysis::set_manual_tempo,
+            commands::analysis::set_manual_key,
+            commands::analysis::clear_manual_tempo,
+            commands::analysis::clear_manual_key,
+            commands::analysis::get_analysis_results,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

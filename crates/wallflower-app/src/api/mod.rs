@@ -1,7 +1,9 @@
+mod analysis;
+
 use std::path::PathBuf;
 
 use axum::http::StatusCode;
-use axum::routing::{get, post};
+use axum::routing::{get, post, put};
 use axum::{Json, Router};
 use serde_json::{json, Value};
 use tower_http::cors::{Any, CorsLayer};
@@ -44,10 +46,12 @@ pub fn api_router(audio_dir: PathBuf) -> Router {
         .route("/api/recording/start", post(not_implemented))
         .route("/api/recording/stop", post(not_implemented))
         .route("/api/recording/status", get(not_implemented))
-        // Analysis (Phase 4+)
-        .route("/api/analysis/start", post(not_implemented))
-        .route("/api/analysis/status/{id}", get(not_implemented))
-        .route("/api/analysis/results/{id}", get(not_implemented))
+        // Analysis (Phase 4)
+        .route("/api/jams/{id}/analysis", get(analysis::get_analysis))
+        .route("/api/jams/{id}/analyze", post(analysis::trigger_analysis))
+        .route("/api/jams/{id}/reanalyze", post(analysis::trigger_reanalysis))
+        .route("/api/jams/{id}/tempo", put(analysis::set_manual_tempo))
+        .route("/api/jams/{id}/key", put(analysis::set_manual_key))
         // Export (Phase 5+)
         .route("/api/export", post(not_implemented))
         .route("/api/export/status/{id}", get(not_implemented))

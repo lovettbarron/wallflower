@@ -22,6 +22,7 @@ pub async fn check_health(port: u16) -> anyhow::Result<bool> {
 }
 
 /// Get hardware info and recommended profile from sidecar.
+#[allow(dead_code)]
 pub async fn get_hardware_info(
     port: u16,
 ) -> anyhow::Result<wallflower_analysis::HardwareInfoResponse> {
