@@ -3,16 +3,18 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ImagePlus } from "lucide-react";
-import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, prioritizeAnalysis, exportAudio, separateStems } from "@/lib/tauri";
-import type { JamDetail as JamDetailType, PeakData, BookmarkColor } from "@/lib/types";
+import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, prioritizeAnalysis, exportAudio } from "@/lib/tauri";
+import type { JamDetail as JamDetailType, PeakData, BookmarkColor, SeparationProgressEvent } from "@/lib/types";
 import { WaveformOverview } from "@/components/waveform/WaveformOverview";
 import { WaveformDetail } from "@/components/waveform/WaveformDetail";
 import { MetadataEditor } from "@/components/metadata/MetadataEditor";
 import { BookmarkList } from "@/components/bookmarks/BookmarkList";
 import { BookmarkPopover } from "@/components/bookmarks/BookmarkPopover";
+import { StemMixer } from "@/components/stems/StemMixer";
 import { useTransportStore } from "@/lib/stores/transport";
 import { useRecordingStore } from "@/lib/stores/recording";
 import { useBookmarkStore } from "@/lib/stores/bookmarks";
+import { useSeparationStore } from "@/lib/stores/separation";
 import { AnalysisSummary } from "@/components/analysis/AnalysisSummary";
 import { toast } from "sonner";
 
@@ -42,6 +44,31 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const selectBookmark = useBookmarkStore((s) => s.selectBookmark);
   const getNextColor = useBookmarkStore((s) => s.getNextColor);
   const getNextName = useBookmarkStore((s) => s.getNextName);
+
+  // Separation state
+  const mixerOpen = useSeparationStore((s) => s.mixerOpen);
+  const separating = useSeparationStore((s) => s.separating);
+
+  // Listen for separation-progress events from Tauri
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let mounted = true;
+
+    async function setupSeparationListener() {
+      try {
+        const { listen } = await import("@tauri-apps/api/event");
+        const fn = await listen<SeparationProgressEvent>("separation-progress", (event) => {
+          if (!mounted) return;
+          useSeparationStore.getState().updateProgress(event.payload);
+        });
+        unlisten = fn;
+      } catch {
+        // Not running in Tauri
+      }
+    }
+    setupSeparationListener();
+    return () => { mounted = false; unlisten?.(); };
+  }, []);
 
   // Bookmark creation popover state
   const [showBookmarkPopover, setShowBookmarkPopover] = useState(false);
@@ -225,17 +252,17 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
 
   const handleExportStems = useCallback(
     async (bookmarkId: string) => {
+      const bookmark = bookmarks.find((b) => b.id === bookmarkId);
+      if (!bookmark) return;
       try {
-        const stems = await separateStems(bookmarkId);
-        console.log("Stem separation result:", stems);
-        toast.success(`Separated ${stems.length} stems`);
+        await useSeparationStore.getState().startSeparation(bookmark);
       } catch (err) {
         toast.error("Stem separation failed", {
           description: err instanceof Error ? err.message : "Unknown error",
         });
       }
     },
-    [],
+    [bookmarks],
   );
 
   // Find editing bookmark for popover
@@ -406,6 +433,13 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           mode="edit"
         />
       )}
+
+      {/* Stem Mixer */}
+      <StemMixer
+        open={mixerOpen || separating}
+        onClose={() => useSeparationStore.getState().closeMixer()}
+        bookmark={null}
+      />
     </div>
   );
 }
