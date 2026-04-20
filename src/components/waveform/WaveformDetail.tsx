@@ -32,10 +32,7 @@ export function WaveformDetail({
   onBookmarkEdit,
 }: WaveformDetailProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const seekingRef = useRef(false);
   const regionsRef = useRef<RegionsPlugin | null>(null);
-  const bookmarksRef = useRef<BookmarkRecord[]>(bookmarks);
-  bookmarksRef.current = bookmarks;
 
   const flatPeaks = useMemo(
     () => [peaks.peaks.map((p) => p[0])],
@@ -50,7 +47,7 @@ export function WaveformDetail({
 
   const plugins = useMemo(() => [regionsPlugin], [regionsPlugin]);
 
-  const { wavesurfer, isReady } = useWavesurfer({
+  const { isReady } = useWavesurfer({
     container: containerRef,
     peaks: flatPeaks,
     duration: peaks.duration,
@@ -61,47 +58,15 @@ export function WaveformDetail({
     height: 200,
     normalize: true,
     minPxPerSec: 1,
-    interact: true,
+    interact: false,
     plugins,
   });
-
-  useEffect(() => {
-    if (!isReady || !regionsRef.current) return;
-
-    const disableDragSelection = regionsRef.current.enableDragSelection({
-      color: "rgba(232, 134, 58, 0.15)",
-    });
-
-    return disableDragSelection;
-  }, [isReady]);
-
-  // Handle seek interaction
-  useEffect(() => {
-    if (!wavesurfer) return;
-
-    const handleInteraction = (time: number) => {
-      if (!seekingRef.current) {
-        seekingRef.current = true;
-        onSeek(time);
-        requestAnimationFrame(() => {
-          seekingRef.current = false;
-        });
-      }
-    };
-
-    wavesurfer.on("interaction", handleInteraction);
-
-    return () => {
-      wavesurfer.un("interaction", handleInteraction);
-    };
-  }, [wavesurfer, onSeek]);
 
   // Snap helper: find nearest section/loop boundary within threshold
   const snapToNearestBoundary = useCallback(
     (time: number, altKeyHeld: boolean): number => {
       if (altKeyHeld) return time;
 
-      // Calculate snap threshold: 20px in seconds
       const container = containerRef.current;
       if (!container || peaks.duration <= 0) return time;
       const pixelsPerSecond = container.clientWidth / peaks.duration;
@@ -110,7 +75,6 @@ export function WaveformDetail({
       let nearest = time;
       let minDist = snapThreshold;
 
-      // Check section boundaries
       for (const section of sections) {
         const distStart = Math.abs(section.startSeconds - time);
         if (distStart < minDist) {
@@ -124,7 +88,6 @@ export function WaveformDetail({
         }
       }
 
-      // Check loop boundaries
       for (const loop of loops) {
         const distStart = Math.abs(loop.startSeconds - time);
         if (distStart < minDist) {
@@ -143,25 +106,72 @@ export function WaveformDetail({
     [sections, loops, peaks.duration],
   );
 
-  // Handle region events (drag-create, update, click, dblclick)
+  // Drag-to-select bookmark creation + click-to-seek
+  // Uses pointer events on the container (outside shadow DOM) to avoid
+  // lifecycle conflicts with wavesurfer's internal enableDragSelection.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!isReady || !container) return;
+
+    const DRAG_THRESHOLD = 4;
+    let startX = 0;
+    let isDragging = false;
+
+    const pxToTime = (px: number): number => {
+      const rect = container.getBoundingClientRect();
+      const relX = Math.max(0, Math.min(1, (px - rect.left) / rect.width));
+      return relX * peaks.duration;
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      startX = e.clientX;
+      isDragging = false;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (startX === 0) return;
+      if (!isDragging && Math.abs(e.clientX - startX) > DRAG_THRESHOLD) {
+        isDragging = true;
+      }
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (startX === 0) return;
+
+      if (isDragging) {
+        const startTime = pxToTime(startX);
+        const endTime = pxToTime(e.clientX);
+        const t0 = Math.min(startTime, endTime);
+        const t1 = Math.max(startTime, endTime);
+        if (t1 - t0 > 0.1 && onBookmarkDragEnd) {
+          const snappedStart = snapToNearestBoundary(t0, e.altKey);
+          const snappedEnd = snapToNearestBoundary(t1, e.altKey);
+          onBookmarkDragEnd(snappedStart, snappedEnd);
+        }
+      } else {
+        onSeek(pxToTime(e.clientX));
+      }
+
+      startX = 0;
+      isDragging = false;
+    };
+
+    container.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp);
+
+    return () => {
+      container.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+    };
+  }, [isReady, peaks.duration, onSeek, onBookmarkDragEnd, snapToNearestBoundary]);
+
+  // Handle region events (resize, click, dblclick on existing bookmark regions)
   useEffect(() => {
     const regions = regionsRef.current;
     if (!regions) return;
-
-    const handleRegionCreated = (region: { id: string; start: number; end: number; remove: () => void }) => {
-      // Only handle user-dragged regions (not bookmark synced ones)
-      if (region.id.startsWith("bookmark-")) return;
-
-      const start = snapToNearestBoundary(region.start, false);
-      const end = snapToNearestBoundary(region.end, false);
-
-      // Remove the temp drag region
-      region.remove();
-
-      if (onBookmarkDragEnd && Math.abs(end - start) > 0.1) {
-        onBookmarkDragEnd(Math.min(start, end), Math.max(start, end));
-      }
-    };
 
     const handleRegionUpdated = (region: { id: string; start: number; end: number }) => {
       if (!region.id.startsWith("bookmark-")) return;
@@ -185,25 +195,22 @@ export function WaveformDetail({
       onBookmarkEdit?.(bookmarkId);
     };
 
-    regions.on("region-created", handleRegionCreated);
     regions.on("region-updated", handleRegionUpdated);
     regions.on("region-clicked", handleRegionClicked);
     regions.on("region-double-clicked", handleRegionDblClicked);
 
     return () => {
-      regions.un("region-created", handleRegionCreated);
       regions.un("region-updated", handleRegionUpdated);
       regions.un("region-clicked", handleRegionClicked);
       regions.un("region-double-clicked", handleRegionDblClicked);
     };
-  }, [snapToNearestBoundary, onBookmarkDragEnd, onBookmarkUpdate, onBookmarkSelect, onBookmarkEdit]);
+  }, [snapToNearestBoundary, onBookmarkUpdate, onBookmarkSelect, onBookmarkEdit]);
 
   // Sync bookmarks to regions
   useEffect(() => {
     const regions = regionsRef.current;
     if (!regions || !isReady) return;
 
-    // Remove old bookmark regions
     const existing = regions.getRegions();
     for (const region of existing) {
       if (region.id.startsWith("bookmark-")) {
@@ -211,7 +218,6 @@ export function WaveformDetail({
       }
     }
 
-    // Add new bookmark regions
     for (const bookmark of bookmarks) {
       const colorKey = bookmark.color as BookmarkColor;
       const colorInfo = BOOKMARK_COLORS[colorKey] || BOOKMARK_COLORS.coral;
