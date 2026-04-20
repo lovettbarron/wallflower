@@ -225,12 +225,16 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   );
 
   const handleBookmarkClick = useCallback(
-    (bookmark: { startSeconds: number; endSeconds: number }) => {
-      // Scroll waveform to center on bookmark
-      const midpoint = (bookmark.startSeconds + bookmark.endSeconds) / 2;
-      setCurrentTime(midpoint);
+    (bookmark: { startSeconds: number; endSeconds: number; name?: string }) => {
+      setCurrentTime(bookmark.startSeconds);
+      setActiveLoop({
+        startSeconds: bookmark.startSeconds,
+        endSeconds: bookmark.endSeconds,
+        label: bookmark.name || "Bookmark",
+      });
+      setPlaying(true);
     },
-    [setCurrentTime],
+    [setCurrentTime, setActiveLoop, setPlaying],
   );
 
   const handleExportAudio = useCallback(
