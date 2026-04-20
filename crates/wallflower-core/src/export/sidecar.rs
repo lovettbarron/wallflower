@@ -62,3 +62,71 @@ pub fn generate_sidecar(
     std::fs::rename(&temp, path)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    fn sample_sidecar() -> ExportSidecar {
+        ExportSidecar {
+            wallflower_version: "0.1.0".to_string(),
+            source_jam: SourceJamInfo {
+                name: "Sunday Jam".to_string(),
+                id: "jam-123".to_string(),
+                duration_seconds: 3600.0,
+                recorded_at: Some("2026-04-20T10:00:00Z".to_string()),
+            },
+            bookmark: BookmarkInfo {
+                name: "Cool Riff".to_string(),
+                start_seconds: 120.0,
+                end_seconds: 150.0,
+                notes: Some("Nice bass line".to_string()),
+            },
+            analysis: AnalysisInfo {
+                key: Some("Bb minor".to_string()),
+                bpm: Some(120.0),
+                tags: vec!["ambient".to_string()],
+                collaborators: vec!["Alice".to_string()],
+                instruments: vec!["synth".to_string(), "drums".to_string()],
+            },
+            export: ExportInfo {
+                format: "wav".to_string(),
+                bit_depth: 24,
+                sample_rate: 44100,
+                channels: 2,
+                stems: None,
+                model: None,
+                exported_at: "2026-04-20T11:00:00Z".to_string(),
+            },
+        }
+    }
+
+    #[test]
+    fn test_generate_sidecar_produces_valid_json() {
+        let tmp = TempDir::new().unwrap();
+        let path = tmp.path().join("export.json");
+        let sidecar = sample_sidecar();
+
+        generate_sidecar(&sidecar, &path).unwrap();
+
+        let content = std::fs::read_to_string(&path).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&content).unwrap();
+
+        assert_eq!(parsed["wallflower_version"], "0.1.0");
+        assert_eq!(parsed["source_jam"]["name"], "Sunday Jam");
+        assert_eq!(parsed["source_jam"]["id"], "jam-123");
+        assert_eq!(parsed["bookmark"]["name"], "Cool Riff");
+        assert_eq!(parsed["bookmark"]["start_seconds"], 120.0);
+        assert_eq!(parsed["bookmark"]["end_seconds"], 150.0);
+        assert_eq!(parsed["analysis"]["key"], "Bb minor");
+        assert_eq!(parsed["analysis"]["bpm"], 120.0);
+        assert_eq!(parsed["analysis"]["tags"][0], "ambient");
+        assert_eq!(parsed["analysis"]["collaborators"][0], "Alice");
+        assert_eq!(parsed["analysis"]["instruments"][0], "synth");
+        assert_eq!(parsed["export"]["format"], "wav");
+        assert_eq!(parsed["export"]["bit_depth"], 24);
+        assert_eq!(parsed["export"]["sample_rate"], 44100);
+        assert_eq!(parsed["export"]["channels"], 2);
+    }
+}

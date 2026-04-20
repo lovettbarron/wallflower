@@ -180,3 +180,76 @@ pub fn export_time_slice(
         duration_seconds,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hound::{SampleFormat, WavSpec, WavWriter};
+    use tempfile::TempDir;
+
+    fn create_float32_wav(
+        dir: &Path,
+        name: &str,
+        samples: &[f32],
+        channels: u16,
+        sample_rate: u32,
+    ) -> std::path::PathBuf {
+        let path = dir.join(name);
+        let spec = WavSpec {
+            channels,
+            sample_rate,
+            bits_per_sample: 32,
+            sample_format: SampleFormat::Float,
+        };
+        let mut writer = WavWriter::create(&path, spec).unwrap();
+        for &s in samples {
+            writer.write_sample(s).unwrap();
+        }
+        writer.finalize().unwrap();
+        path
+    }
+
+    #[test]
+    fn test_export_time_slice_extracts_correct_range() {
+        let tmp = TempDir::new().unwrap();
+        // Create a 2-second mono file at 4 samples/sec for simplicity
+        // Actually use 44100 sample rate for realism
+        let sample_rate = 100_u32; // 100 Hz for easy math
+        let channels = 1_u16;
+        // 3 seconds of audio: samples 0..300
+        let samples: Vec<f32> = (0..300).map(|i| i as f32 / 300.0).collect();
+        let source = create_float32_wav(tmp.path(), "source.wav", &samples, channels, sample_rate);
+        let dest = tmp.path().join("output.wav");
+
+        // Export seconds 1.0 to 2.0 (samples 100..200)
+        let result = export_time_slice(&source, &dest, 1.0, 2.0, 24).unwrap();
+
+        assert_eq!(result.bit_depth, 24);
+        assert_eq!(result.sample_rate, sample_rate);
+        assert_eq!(result.channels, channels);
+        assert!((result.duration_seconds - 1.0).abs() < 0.01);
+
+        // Verify output has correct number of samples
+        let reader = hound::WavReader::open(&dest).unwrap();
+        assert_eq!(reader.spec().bits_per_sample, 24);
+        assert_eq!(reader.spec().sample_format, SampleFormat::Int);
+        let output_samples: Vec<i32> = reader.into_samples::<i32>().map(|s| s.unwrap()).collect();
+        assert_eq!(output_samples.len(), 100); // 1 second at 100Hz, mono
+    }
+
+    #[test]
+    fn test_export_time_slice_32f_to_32f() {
+        let tmp = TempDir::new().unwrap();
+        let sample_rate = 100_u32;
+        let samples: Vec<f32> = (0..200).map(|i| i as f32 / 200.0).collect();
+        let source = create_float32_wav(tmp.path(), "source.wav", &samples, 1, sample_rate);
+        let dest = tmp.path().join("output_32.wav");
+
+        let result = export_time_slice(&source, &dest, 0.0, 1.0, 32).unwrap();
+        assert_eq!(result.bit_depth, 32);
+
+        let reader = hound::WavReader::open(&dest).unwrap();
+        assert_eq!(reader.spec().bits_per_sample, 32);
+        assert_eq!(reader.spec().sample_format, SampleFormat::Float);
+    }
+}
