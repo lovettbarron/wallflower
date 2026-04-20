@@ -31,11 +31,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### AI Analysis
 
-- [ ] **AI-01**: Application detects tempo (BPM) from recordings using local AI models
-- [ ] **AI-02**: Application detects musical key and chord progressions from recordings
-- [ ] **AI-03**: Application identifies structural sections and phrase boundaries in recordings
+- [x] **AI-01**: Application detects tempo (BPM) from recordings using local AI models
+- [x] **AI-02**: Application detects musical key and chord progressions from recordings
+- [x] **AI-03**: Application identifies structural sections and phrase boundaries in recordings
 - [ ] **AI-04**: Application performs source separation (isolate drums, bass, vocals, synths) using demucs-mlx on Apple Silicon
-- [ ] **AI-05**: Application identifies repeated sections/loops and detects when loops change substantially (e.g., parameter changes over same sequence)
+- [x] **AI-05**: Application identifies repeated sections/loops and detects when loops change substantially (e.g., parameter changes over same sequence)
 - [ ] **AI-06**: Analysis runs as a background pipeline — UI is fully usable before analysis completes, with results populating progressively via SSE
 - [ ] **AI-07**: AI models are downloaded at runtime on first launch, cached in ~/Library/Application Support/wallflower/models, and reused across app updates unless model version changes
 - [ ] **AI-08**: Model interface is abstracted so models can be swapped via configuration as new capabilities emerge
@@ -191,10 +191,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REC-09 | Phase 3 | Pending |
 | INFRA-10 | Phase 3 | Pending |
 | INFRA-12 | Phase 3 | Pending |
-| AI-01 | Phase 4 | Pending |
-| AI-02 | Phase 4 | Pending |
-| AI-03 | Phase 4 | Pending |
-| AI-05 | Phase 4 | Pending |
+| AI-01 | Phase 4 | Complete |
+| AI-02 | Phase 4 | Complete |
+| AI-03 | Phase 4 | Complete |
+| AI-05 | Phase 4 | Complete |
 | AI-06 | Phase 4 | Pending |
 | AI-07 | Phase 4 | Pending |
 | AI-08 | Phase 4 | Pending |

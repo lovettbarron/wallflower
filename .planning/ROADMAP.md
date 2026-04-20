@@ -96,7 +96,7 @@ Plans:
 Plans:
 - [ ] 04-01: TBD
 - [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [x] 04-03: TBD
 
 ### Phase 5: Source Separation & Export
 **Goal**: Users can isolate instruments from recordings, bookmark interesting sections, and export stems ready for use in Ableton
