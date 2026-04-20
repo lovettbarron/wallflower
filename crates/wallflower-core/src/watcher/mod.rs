@@ -47,10 +47,12 @@ impl Drop for WatcherHandle {
 ///
 /// Files are debounced for 5 seconds after last modification before being imported.
 /// Only files with supported audio extensions are processed.
+/// Paths under any entry in `exclude_dirs` are silently ignored.
 pub fn start_watcher(
     watch_path: PathBuf,
     db_path: PathBuf,
     storage_dir: PathBuf,
+    exclude_dirs: Vec<PathBuf>,
 ) -> crate::error::Result<WatcherHandle> {
     // Ensure the watch directory exists
     if !watch_path.exists() {
@@ -99,7 +101,10 @@ pub fn start_watcher(
                     match event.kind {
                         EventKind::Create(_) | EventKind::Modify(_) => {
                             for path in event.paths {
-                                if path.is_file() && import::is_audio_file(&path) {
+                                if path.is_file()
+                                    && !import::is_under_any(&path, &exclude_dirs)
+                                    && import::is_audio_file(&path)
+                                {
                                     pending.insert(path, Instant::now());
                                 }
                             }
@@ -179,6 +184,7 @@ mod tests {
             watch_dir.path().to_path_buf(),
             db_path.clone(),
             storage_dir.path().to_path_buf(),
+            vec![],
         )
         .unwrap();
 

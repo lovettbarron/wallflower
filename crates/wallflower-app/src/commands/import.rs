@@ -56,7 +56,8 @@ pub async fn import_directory(
 ) -> Result<Vec<ImportResult>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let config = state.config.lock().map_err(|e| e.to_string())?;
-    let results = import::import_directory(&db.conn, &config.storage_dir, &PathBuf::from(path))
+    let exclude_dirs = vec![config.export_root.clone(), config.storage_dir.clone()];
+    let results = import::import_directory(&db.conn, &config.storage_dir, &PathBuf::from(path), &exclude_dirs)
         .map_err(|e| e.to_string())?;
     notify_import_complete(&app, &results);
     Ok(results)

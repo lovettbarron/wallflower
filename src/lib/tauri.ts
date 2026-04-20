@@ -324,3 +324,7 @@ export async function exportStems(bookmarkId: string, stemNames: string[]): Prom
 export async function cancelSeparation(): Promise<void> {
   return invoke("cancel_separation");
 }
+
+export async function revealInFinder(path: string): Promise<void> {
+  return invoke("reveal_in_finder", { path });
+}

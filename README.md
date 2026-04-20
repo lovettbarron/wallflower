@@ -4,9 +4,30 @@ A local-first jam and sample manager for musicians who want to focus on creating
 
 ## Status
 
-**Phase 3 complete** -- Recording engine with system integration. Phases 1-3 ship a fully functional record/import/browse/playback workflow.
+**Phase 5 in progress** -- Source separation and export. Phases 1-4 complete (import, playback, recording, analysis). Phase 5 adds bookmarking, stem separation via demucs-mlx, and DAW-ready export.
 
 ## Features
+
+### Source Separation & Export (Phase 5 - in progress)
+- Bookmark regions on the waveform with drag-to-select and snap-to-section
+- Bookmark management: list, edit, delete, color coding, context menu
+- Export bookmarked audio as time-sliced WAV with JSON metadata sidecar
+- Source separation via demucs-mlx (Apple Silicon optimized, 4-stem or 6-stem)
+- Stem mixer panel with per-stem solo/mute and synchronized Web Audio playback
+- Export all or selected stems to configurable folder
+- Export settings: folder, format/bit-depth, model selection, memory limit
+- Separation pauses during active recording (recording priority)
+- Chunked processing with progress streaming and cancel support
+
+### Analysis (Phase 4)
+- Automatic tempo detection (BPM) via essentia TempoCNN
+- Key/scale detection with confidence scoring
+- Section boundary detection for structural analysis
+- Loop detection for repeating patterns
+- Beat grid alignment
+- Manual override for tempo and key
+- Background analysis queue with priority scheduling
+- Python ML sidecar (gRPC) with lazy startup and health monitoring
 
 ### Recording (Phase 3)
 - One-click recording from library view or global hotkey (Cmd+Shift+R)
@@ -33,7 +54,9 @@ A local-first jam and sample manager for musicians who want to focus on creating
 ### Foundation (Phase 1)
 - Import WAV, FLAC, MP3 files with atomic copy-first operations (originals never modified)
 - Duplicate detection via SHA-256 content hashing
+- All files stored in user-accessible `~/wallflower/` (audio, exports -- easy to rsync/sync)
 - Auto-import from watched folder (default `~/wallflower`) with 5-second debounce
+- Exports folder excluded from auto-import
 - USB audio recorder detection (Zoom F3 and similar devices)
 - SQLite database with WAL mode for concurrent access
 - Native macOS app (Tauri v2) with React frontend

@@ -9,6 +9,7 @@ import { SeparationProgress } from "./SeparationProgress";
 import { useSeparationStore } from "@/lib/stores/separation";
 import { STEM_COLORS } from "@/lib/types";
 import type { BookmarkRecord } from "@/lib/types";
+import { revealInFinder } from "@/lib/tauri";
 import { toast } from "sonner";
 
 interface StemMixerProps {
@@ -173,7 +174,7 @@ export function StemMixer({ open, onClose, bookmark }: StemMixerProps) {
         action: {
           label: "Show in Finder",
           onClick: () => {
-            // Finder reveal would use Tauri shell open
+            revealInFinder(path);
           },
         },
       });
@@ -193,7 +194,7 @@ export function StemMixer({ open, onClose, bookmark }: StemMixerProps) {
         action: {
           label: "Show in Finder",
           onClick: () => {
-            // Finder reveal would use Tauri shell open
+            revealInFinder(path);
           },
         },
       });

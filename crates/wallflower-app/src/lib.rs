@@ -298,6 +298,7 @@ pub fn run() {
         config.watch_folder.clone(),
         db_path,
         config.storage_dir.clone(),
+        vec![config.export_root.clone(), config.storage_dir.clone()],
     ) {
         Ok(w) => {
             tracing::info!(
@@ -496,6 +497,7 @@ pub fn run() {
             commands::export::separate_stems,
             commands::export::export_stems,
             commands::export::cancel_separation,
+            commands::export::reveal_in_finder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

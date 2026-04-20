@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ImagePlus } from "lucide-react";
-import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, prioritizeAnalysis, exportAudio } from "@/lib/tauri";
+import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, prioritizeAnalysis, exportAudio, revealInFinder } from "@/lib/tauri";
 import type { JamDetail as JamDetailType, PeakData, BookmarkColor, SeparationProgressEvent } from "@/lib/types";
 import { WaveformOverview } from "@/components/waveform/WaveformOverview";
 import { WaveformDetail } from "@/components/waveform/WaveformDetail";
@@ -245,7 +245,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           action: {
             label: "Show in Finder",
             onClick: () => {
-              // Finder reveal would use Tauri shell open
+              revealInFinder(path);
             },
           },
         });

@@ -171,20 +171,21 @@ class SeparationAnalyzer(AnalyzerBase):
                 stop=int(end_seconds * sample_rate),
                 dtype="float32",
             )
+        # Normalize to (channels, samples) for demucs-mlx
         if audio.ndim == 1:
-            audio = audio[:, np.newaxis]  # mono -> (samples, 1)
-        # audio shape: (samples, channels)
+            audio = audio[np.newaxis, :]  # mono -> (1, samples)
+        else:
+            audio = audio.T  # (samples, channels) -> (channels, samples)
 
-        total_samples = audio.shape[0]
+        total_samples = audio.shape[1]
         segment_samples = int(segment_seconds * sr)
         chunks = self.calculate_chunks(total_samples, segment_samples, overlap)
         total_chunks = len(chunks)
         overlap_samples = int(segment_samples * overlap)
 
-        # Initialize output arrays: one per stem
-        n_stems = len(stem_names)
-        n_channels = audio.shape[1]
-        result = np.zeros((n_stems, n_channels, total_samples), dtype=np.float32)
+        # demucs-mlx always outputs stereo (2 channels)
+        out_channels = 2
+        result = np.zeros((len(stem_names), out_channels, total_samples), dtype=np.float32)
 
         start_time = time.time()
 
@@ -196,18 +197,23 @@ class SeparationAnalyzer(AnalyzerBase):
         prev_chunk_output = None
 
         for i, chunk in enumerate(chunks):
-            # Check cancellation between chunks
             if self._cancel_flag.is_set():
                 logger.info("Separation cancelled after chunk %d/%d", i, total_chunks)
                 return {}
 
-            # Extract chunk audio
-            chunk_audio = audio[chunk.start_sample:chunk.end_sample]
+            # Extract chunk: (channels, chunk_samples)
+            chunk_audio = audio[:, chunk.start_sample:chunk.end_sample]
 
-            # Run demucs on chunk -- expects (channels, samples)
-            chunk_input = chunk_audio.T  # (channels, samples)
-            separated = self._separator.separate(chunk_input, sr=sr)
-            # separated shape expected: (stems, channels, samples)
+            # Run demucs-mlx: returns (full_mix, {"stem_name": (2, samples), ...})
+            _, stems_dict = self._separator.separate_tensor(chunk_audio)
+
+            # Stack stems into (n_stems, 2, chunk_samples) in canonical order
+            chunk_samples = chunk.end_sample - chunk.start_sample
+            separated = np.zeros((len(stem_names), out_channels, chunk_samples), dtype=np.float32)
+            for j, name in enumerate(stem_names):
+                if name in stems_dict:
+                    stem_arr = np.array(stems_dict[name])
+                    separated[j, :, :stem_arr.shape[1]] = stem_arr[:, :chunk_samples]
 
             # Apply crossfade with previous chunk overlap region
             if prev_chunk_output is not None and chunk.fade_in_samples > 0:
@@ -216,11 +222,9 @@ class SeparationAnalyzer(AnalyzerBase):
                 )
                 write_start = chunk.start_sample
                 result[:, :, write_start:write_start + overlap_samples] = blended
-                # Write non-overlap portion of current chunk
                 result[:, :, write_start + overlap_samples:chunk.end_sample] = \
                     separated[:, :, overlap_samples:]
             else:
-                # First chunk or no overlap
                 result[:, :, chunk.start_sample:chunk.end_sample] = separated
 
             prev_chunk_output = separated
@@ -246,7 +250,7 @@ class SeparationAnalyzer(AnalyzerBase):
         stem_paths: dict[str, str] = {}
         for j, name in enumerate(stem_names):
             stem_path = out / f"{name}.wav"
-            stem_audio = result[j].T  # (samples, channels)
+            stem_audio = result[j].T  # (samples, 2)
             sf.write(str(stem_path), stem_audio, sr, subtype="FLOAT")
             stem_paths[name] = str(stem_path)
 

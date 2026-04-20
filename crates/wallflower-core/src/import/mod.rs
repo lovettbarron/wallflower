@@ -187,11 +187,18 @@ pub fn import_files(
         .collect()
 }
 
+/// Check whether a path is inside any of the given directories.
+pub fn is_under_any(path: &Path, dirs: &[PathBuf]) -> bool {
+    dirs.iter().any(|d| path.starts_with(d))
+}
+
 /// Import all audio files from a directory (recursively).
+/// Paths under any entry in `exclude_dirs` are skipped.
 pub fn import_directory(
     conn: &Connection,
     storage_dir: &Path,
     dir: &Path,
+    exclude_dirs: &[PathBuf],
 ) -> Result<Vec<ImportResult>> {
     if !dir.is_dir() {
         return Err(WallflowerError::Import(format!(
@@ -204,6 +211,7 @@ pub fn import_directory(
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_file())
+        .filter(|e| !is_under_any(e.path(), exclude_dirs))
         .filter(|e| is_audio_file(e.path()))
         .map(|e| e.path().to_path_buf())
         .collect();
@@ -345,7 +353,7 @@ mod tests {
         // Non-audio file should be skipped
         std::fs::write(source_dir.path().join("readme.txt"), "skip me").unwrap();
 
-        let results = import_directory(&db.conn, storage.path(), source_dir.path()).unwrap();
+        let results = import_directory(&db.conn, storage.path(), source_dir.path(), &[]).unwrap();
         assert_eq!(results.len(), 2);
         for r in &results {
             assert!(matches!(r, ImportResult::Imported { .. }));

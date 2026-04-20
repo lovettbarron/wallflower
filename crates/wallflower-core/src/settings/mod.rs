@@ -58,12 +58,7 @@ pub fn load_config(conn: &Connection) -> Result<AppConfig> {
     let export_root = expand_tilde(&export_root_raw);
 
     let storage_dir = if storage_raw.is_empty() {
-        dirs::data_dir()
-            .ok_or_else(|| {
-                WallflowerError::Config("Could not determine app data directory".into())
-            })?
-            .join("wallflower")
-            .join("audio")
+        watch_folder.join("audio")
     } else {
         expand_tilde(&storage_raw)
     };

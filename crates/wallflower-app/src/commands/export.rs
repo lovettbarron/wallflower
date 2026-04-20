@@ -584,6 +584,17 @@ pub async fn cancel_separation(
     Ok(())
 }
 
+/// Reveal a file or directory in Finder (macOS).
+#[command]
+pub async fn reveal_in_finder(path: String) -> Result<(), String> {
+    std::process::Command::new("open")
+        .arg("-R")
+        .arg(&path)
+        .spawn()
+        .map_err(|e| format!("Failed to open Finder: {}", e))?;
+    Ok(())
+}
+
 /// Get current timestamp as ISO 8601 string.
 fn chrono_now() -> String {
     // Use std::time to avoid adding chrono dependency

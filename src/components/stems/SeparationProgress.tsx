@@ -47,6 +47,8 @@ export function SeparationProgress({
           </span>
         ) : isPaused ? (
           <span>Paused -- recording in progress</span>
+        ) : totalChunks === 0 ? (
+          <span>Preparing separation...</span>
         ) : (
           <>
             <span>

@@ -61,7 +61,8 @@ fn main() -> anyhow::Result<()> {
             }
 
             if p.is_dir() {
-                let results = import::import_directory(&db.conn, &config.storage_dir, p)?;
+                let exclude_dirs = vec![config.export_root.clone(), config.storage_dir.clone()];
+                let results = import::import_directory(&db.conn, &config.storage_dir, p, &exclude_dirs)?;
                 print_import_results(&results);
             } else if p.is_file() {
                 let result = import::import_file(&db.conn, &config.storage_dir, p);
