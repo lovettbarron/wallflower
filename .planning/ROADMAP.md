@@ -100,7 +100,7 @@ Plans:
 - [x] 04-03-PLAN.md -- Python ML analyzers (tempo, key, sections, loops) and gRPC server
 - [x] 04-04-PLAN.md -- Rust sidecar manager, gRPC client bridge, Tauri commands, event streaming
 - [x] 04-05-PLAN.md -- Search and filter: SQLite queries, API endpoints, frontend filter bar
-- [ ] 04-06-PLAN.md -- Analysis UI: badges, waveform markers, summary row, settings page, verification
+- [x] 04-06-PLAN.md -- Analysis UI: badges, waveform markers, summary row, settings page, verification
 
 ### Phase 5: Source Separation & Export
 **Goal**: Users can isolate instruments from recordings, bookmark interesting sections, and export stems ready for use in Ableton
