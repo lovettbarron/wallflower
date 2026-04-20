@@ -109,9 +109,12 @@ export function WaveformDetail({
   // Drag-to-select bookmark creation + click-to-seek
   // Uses pointer events on the container (outside shadow DOM) to avoid
   // lifecycle conflicts with wavesurfer's internal enableDragSelection.
+  const dragOverlayRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const container = containerRef.current;
-    if (!isReady || !container) return;
+    const overlay = dragOverlayRef.current;
+    if (!isReady || !container || !overlay) return;
 
     const DRAG_THRESHOLD = 4;
     let startX = 0;
@@ -121,6 +124,15 @@ export function WaveformDetail({
       const rect = container.getBoundingClientRect();
       const relX = Math.max(0, Math.min(1, (px - rect.left) / rect.width));
       return relX * peaks.duration;
+    };
+
+    const updateOverlay = (currentX: number) => {
+      const rect = container.getBoundingClientRect();
+      const left = Math.min(startX, currentX) - rect.left;
+      const width = Math.abs(currentX - startX);
+      overlay.style.left = `${left}px`;
+      overlay.style.width = `${width}px`;
+      overlay.style.display = "block";
     };
 
     const onPointerDown = (e: PointerEvent) => {
@@ -134,12 +146,20 @@ export function WaveformDetail({
       if (!isDragging && Math.abs(e.clientX - startX) > DRAG_THRESHOLD) {
         isDragging = true;
       }
+      if (isDragging) {
+        updateOverlay(e.clientX);
+      }
     };
+
+    let blockNextClick = false;
 
     const onPointerUp = (e: PointerEvent) => {
       if (startX === 0) return;
 
+      overlay.style.display = "none";
+
       if (isDragging) {
+        blockNextClick = true;
         const startTime = pxToTime(startX);
         const endTime = pxToTime(e.clientX);
         const t0 = Math.min(startTime, endTime);
@@ -157,14 +177,26 @@ export function WaveformDetail({
       isDragging = false;
     };
 
+    // Block the trailing click event after a drag so it doesn't
+    // trigger "dismiss on outside click" on the popover that just opened.
+    const onClickCapture = (e: MouseEvent) => {
+      if (blockNextClick) {
+        blockNextClick = false;
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    };
+
     container.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("pointermove", onPointerMove);
     document.addEventListener("pointerup", onPointerUp);
+    container.addEventListener("click", onClickCapture, { capture: true });
 
     return () => {
       container.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerup", onPointerUp);
+      container.removeEventListener("click", onClickCapture, { capture: true });
     };
   }, [isReady, peaks.duration, onSeek, onBookmarkDragEnd, snapToNearestBoundary]);
 
@@ -242,12 +274,22 @@ export function WaveformDetail({
       )}
       <div
         ref={containerRef}
-        className="w-full rounded-lg"
+        className="relative w-full rounded-lg"
         style={{
           background: "#1D2129",
           display: isReady ? "block" : "none",
         }}
-      />
+      >
+        <div
+          ref={dragOverlayRef}
+          className="pointer-events-none absolute inset-y-0 z-10 rounded"
+          style={{
+            background: "rgba(232, 134, 58, 0.2)",
+            border: "1px solid rgba(232, 134, 58, 0.5)",
+            display: "none",
+          }}
+        />
+      </div>
     </div>
   );
 }
