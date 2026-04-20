@@ -64,7 +64,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Export & DAW Integration
 
-- [ ] **EXP-01**: User can bookmark sections of a recording for later extraction
+- [x] **EXP-01**: User can bookmark sections of a recording for later extraction
 - [ ] **EXP-02**: User can export bookmarked sections as audio files (time-sliced segments of the original)
 - [ ] **EXP-03**: User can export bookmarked sections as source-separated stems (individual instruments)
 - [ ] **EXP-04**: Exports are placed in a configurable folder that Ableton's browser can access
@@ -202,7 +202,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | META-08 | Phase 4 | Pending |
 | AI-04 | Phase 5 | Pending |
 | AI-10 | Phase 5 | Pending |
-| EXP-01 | Phase 5 | Pending |
+| EXP-01 | Phase 5 | Complete |
 | EXP-02 | Phase 5 | Pending |
 | EXP-03 | Phase 5 | Pending |
 | EXP-04 | Phase 5 | Pending |
