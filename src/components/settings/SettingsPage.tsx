@@ -6,6 +6,8 @@ import { getSettings, updateSettings } from "@/lib/tauri";
 import type { AppSettings } from "@/lib/types";
 import { ModelManagement } from "./ModelManagement";
 import { AnalysisProfileSelector } from "./AnalysisProfileSelector";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 /** Default silence threshold in dB. */
 const DEFAULT_SILENCE_THRESHOLD_DB = -40;
@@ -57,6 +59,68 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         .catch(() => {
           // Silently fail -- the slider still shows the local value
         });
+    },
+    [],
+  );
+
+  const handleExportFolderChange = useCallback(async () => {
+    // Prompt user for a folder path (native dialog plugin not yet installed)
+    const path = window.prompt("Enter export folder path:", settings?.exportRoot ?? "~/wallflower/exports");
+    if (path) {
+      try {
+        const updated = await updateSettings({ exportRoot: path });
+        setSettings(updated);
+        toast.success(`Export folder set to ${path}`);
+      } catch {
+        // Silently fail
+      }
+    }
+  }, [settings?.exportRoot]);
+
+  const handleExportFormatChange = useCallback(
+    async (format: string) => {
+      try {
+        const updated = await updateSettings({ exportFormat: format });
+        setSettings(updated);
+      } catch {
+        // Silently fail
+      }
+    },
+    [],
+  );
+
+  const handleExportBitDepthChange = useCallback(
+    async (bitDepth: number) => {
+      try {
+        const updated = await updateSettings({ exportBitDepth: bitDepth });
+        setSettings(updated);
+      } catch {
+        // Silently fail
+      }
+    },
+    [],
+  );
+
+  const handleSeparationModelChange = useCallback(
+    async (model: string) => {
+      try {
+        const updated = await updateSettings({ separationModel: model });
+        setSettings(updated);
+      } catch {
+        // Silently fail
+      }
+    },
+    [],
+  );
+
+  const handleMemoryLimitChange = useCallback(
+    async (limit: number) => {
+      try {
+        const updated = await updateSettings({ separationMemoryLimitGb: limit });
+        setSettings(updated);
+      } catch {
+        // Silently fail
+      }
     },
     [],
   );
@@ -194,6 +258,118 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             </span>
             <p className="mt-1 text-xs text-muted-foreground">
               Shortcut customization coming in a future update.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Export settings card */}
+      <div
+        className="mb-4 rounded-xl border p-5"
+        style={{
+          background: "#1D2129",
+          borderColor: "#323844",
+        }}
+      >
+        <h2 className="mb-4 text-[20px] font-semibold text-foreground">
+          Export
+        </h2>
+
+        <div className="space-y-5">
+          {/* Export Folder */}
+          <div>
+            <label className="mb-1 block text-sm text-foreground">
+              Export Folder
+            </label>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                {settings?.exportRoot ?? "~/wallflower/exports"}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExportFolderChange}
+                className="text-[#E8863A] hover:text-[#E8863A]/80"
+              >
+                Change...
+              </Button>
+            </div>
+          </div>
+
+          {/* Default Format */}
+          <div>
+            <label className="mb-1 block text-sm text-foreground">
+              Default Format
+            </label>
+            <div className="flex items-center gap-3">
+              <select
+                value={settings?.exportFormat ?? "wav"}
+                onChange={(e) => handleExportFormatChange(e.target.value)}
+                className="rounded-md border px-3 py-1.5 text-sm text-foreground"
+                style={{
+                  background: "#272C36",
+                  borderColor: "#323844",
+                }}
+              >
+                <option value="wav">WAV</option>
+                <option value="flac">FLAC</option>
+              </select>
+              <select
+                value={settings?.exportBitDepth ?? 24}
+                onChange={(e) => handleExportBitDepthChange(Number(e.target.value))}
+                className="rounded-md border px-3 py-1.5 text-sm text-foreground"
+                style={{
+                  background: "#272C36",
+                  borderColor: "#323844",
+                }}
+              >
+                <option value={16}>16-bit</option>
+                <option value={24}>24-bit</option>
+                <option value={32}>32-bit float</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Source Separation Model */}
+          <div>
+            <label className="mb-1 block text-sm text-foreground">
+              Source Separation Model
+            </label>
+            <select
+              value={settings?.separationModel ?? "htdemucs"}
+              onChange={(e) => handleSeparationModelChange(e.target.value)}
+              className="rounded-md border px-3 py-1.5 text-sm text-foreground"
+              style={{
+                background: "#272C36",
+                borderColor: "#323844",
+              }}
+            >
+              <option value="htdemucs">4-stem (htdemucs) -- drums, bass, vocals, other</option>
+              <option value="htdemucs_6s">6-stem (htdemucs_6s) -- drums, bass, vocals, guitar, piano, other</option>
+            </select>
+          </div>
+
+          {/* Memory Limit */}
+          <div>
+            <label className="mb-1 block text-sm text-foreground">
+              Memory Limit
+            </label>
+            <select
+              value={settings?.separationMemoryLimitGb ?? 4}
+              onChange={(e) => handleMemoryLimitChange(Number(e.target.value))}
+              className="rounded-md border px-3 py-1.5 text-sm text-foreground"
+              style={{
+                background: "#272C36",
+                borderColor: "#323844",
+              }}
+            >
+              <option value={2}>2 GB</option>
+              <option value={4}>4 GB</option>
+              <option value={6}>6 GB</option>
+              <option value={8}>8 GB</option>
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Leave headroom for other apps
             </p>
           </div>
         </div>

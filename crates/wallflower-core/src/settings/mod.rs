@@ -15,6 +15,16 @@ pub struct AppConfig {
     pub duplicate_handling: String,
     /// Silence detection threshold in dB. Default: -40.0. Range: -60.0 to -20.0.
     pub silence_threshold_db: f32,
+    /// Export root directory. Default: ~/wallflower/exports
+    pub export_root: PathBuf,
+    /// Export audio format: "wav" or "flac". Default: "wav".
+    pub export_format: String,
+    /// Export bit depth: 16, 24, or 32. Default: 24.
+    pub export_bit_depth: i32,
+    /// Source separation model name. Default: "htdemucs".
+    pub separation_model: String,
+    /// Memory limit for separation in GB. Default: 4.
+    pub separation_memory_limit_gb: i32,
 }
 
 /// Load application configuration from the database settings table.
@@ -31,7 +41,21 @@ pub fn load_config(conn: &Connection) -> Result<AppConfig> {
         .and_then(|v| v.parse::<f32>().ok())
         .unwrap_or(-40.0);
 
+    let export_root_raw = db::get_setting(conn, "export_root")?
+        .unwrap_or_else(|| "~/wallflower/exports".to_string());
+    let export_format = db::get_setting(conn, "export_format")?
+        .unwrap_or_else(|| "wav".to_string());
+    let export_bit_depth = db::get_setting(conn, "export_bit_depth")?
+        .and_then(|v| v.parse::<i32>().ok())
+        .unwrap_or(24);
+    let separation_model = db::get_setting(conn, "separation_model")?
+        .unwrap_or_else(|| "htdemucs".to_string());
+    let separation_memory_limit_gb = db::get_setting(conn, "separation_memory_limit_gb")?
+        .and_then(|v| v.parse::<i32>().ok())
+        .unwrap_or(4);
+
     let watch_folder = expand_tilde(&watch_raw);
+    let export_root = expand_tilde(&export_root_raw);
 
     let storage_dir = if storage_raw.is_empty() {
         dirs::data_dir()
@@ -49,6 +73,11 @@ pub fn load_config(conn: &Connection) -> Result<AppConfig> {
         storage_dir,
         duplicate_handling: dup,
         silence_threshold_db,
+        export_root,
+        export_format,
+        export_bit_depth,
+        separation_model,
+        separation_memory_limit_gb,
     })
 }
 
@@ -69,6 +98,23 @@ pub fn save_config(conn: &Connection, config: &AppConfig) -> Result<()> {
         conn,
         "silence_threshold_db",
         &config.silence_threshold_db.to_string(),
+    )?;
+    db::set_setting(
+        conn,
+        "export_root",
+        &config.export_root.to_string_lossy(),
+    )?;
+    db::set_setting(conn, "export_format", &config.export_format)?;
+    db::set_setting(
+        conn,
+        "export_bit_depth",
+        &config.export_bit_depth.to_string(),
+    )?;
+    db::set_setting(conn, "separation_model", &config.separation_model)?;
+    db::set_setting(
+        conn,
+        "separation_memory_limit_gb",
+        &config.separation_memory_limit_gb.to_string(),
     )?;
     Ok(())
 }
@@ -195,6 +241,11 @@ mod tests {
             storage_dir: tmp.path().join("new_subdir"),
             duplicate_handling: "skip".into(),
             silence_threshold_db: -40.0,
+            export_root: PathBuf::from("/tmp/exports"),
+            export_format: "wav".into(),
+            export_bit_depth: 24,
+            separation_model: "htdemucs".into(),
+            separation_memory_limit_gb: 4,
         };
         ensure_storage_dir(&config).unwrap();
         assert!(config.storage_dir.exists());

@@ -33,6 +33,11 @@ export interface AppSettings {
   storageDir: string;
   duplicateHandling: "skip" | "copy";
   silenceThresholdDb: number;
+  exportRoot: string;
+  exportFormat: string;
+  exportBitDepth: number;
+  separationModel: string;
+  separationMemoryLimitGb: number;
 }
 
 /** Progress information for an active import operation. */

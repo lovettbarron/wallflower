@@ -12,6 +12,11 @@ pub struct SettingsResponse {
     pub storage_dir: String,
     pub duplicate_handling: String,
     pub silence_threshold_db: f32,
+    pub export_root: String,
+    pub export_format: String,
+    pub export_bit_depth: i32,
+    pub separation_model: String,
+    pub separation_memory_limit_gb: i32,
 }
 
 impl From<&settings::AppConfig> for SettingsResponse {
@@ -21,6 +26,11 @@ impl From<&settings::AppConfig> for SettingsResponse {
             storage_dir: config.storage_dir.to_string_lossy().to_string(),
             duplicate_handling: config.duplicate_handling.clone(),
             silence_threshold_db: config.silence_threshold_db,
+            export_root: config.export_root.to_string_lossy().to_string(),
+            export_format: config.export_format.clone(),
+            export_bit_depth: config.export_bit_depth,
+            separation_model: config.separation_model.clone(),
+            separation_memory_limit_gb: config.separation_memory_limit_gb,
         }
     }
 }
@@ -51,6 +61,21 @@ pub async fn update_settings(
     }
     if let Some(v) = settings.get("silenceThresholdDb").and_then(|v| v.as_f64()) {
         config.silence_threshold_db = v as f32;
+    }
+    if let Some(v) = settings.get("exportRoot").and_then(|v| v.as_str()) {
+        config.export_root = PathBuf::from(v);
+    }
+    if let Some(v) = settings.get("exportFormat").and_then(|v| v.as_str()) {
+        config.export_format = v.to_string();
+    }
+    if let Some(v) = settings.get("exportBitDepth").and_then(|v| v.as_i64()) {
+        config.export_bit_depth = v as i32;
+    }
+    if let Some(v) = settings.get("separationModel").and_then(|v| v.as_str()) {
+        config.separation_model = v.to_string();
+    }
+    if let Some(v) = settings.get("separationMemoryLimitGb").and_then(|v| v.as_i64()) {
+        config.separation_memory_limit_gb = v as i32;
     }
 
     settings::save_config(&db.conn, &config).map_err(|e| e.to_string())?;
