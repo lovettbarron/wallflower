@@ -137,6 +137,7 @@ export function WaveformDetail({
 
     const onPointerDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
+      overlay.style.display = "none";
       startX = e.clientX;
       isDragging = false;
     };
@@ -151,15 +152,11 @@ export function WaveformDetail({
       }
     };
 
-    let blockNextClick = false;
-
     const onPointerUp = (e: PointerEvent) => {
       if (startX === 0) return;
 
-      overlay.style.display = "none";
-
       if (isDragging) {
-        blockNextClick = true;
+        // Keep overlay visible — it hides on next pointerdown
         const startTime = pxToTime(startX);
         const endTime = pxToTime(e.clientX);
         const t0 = Math.min(startTime, endTime);
@@ -167,9 +164,14 @@ export function WaveformDetail({
         if (t1 - t0 > 0.1 && onBookmarkDragEnd) {
           const snappedStart = snapToNearestBoundary(t0, e.altKey);
           const snappedEnd = snapToNearestBoundary(t1, e.altKey);
-          onBookmarkDragEnd(snappedStart, snappedEnd);
+          // Delay callback to next frame so pointer/click event cycle
+          // completes before the popover mounts its outside-click handler
+          requestAnimationFrame(() => {
+            onBookmarkDragEnd(snappedStart, snappedEnd);
+          });
         }
       } else {
+        overlay.style.display = "none";
         onSeek(pxToTime(e.clientX));
       }
 
@@ -177,26 +179,14 @@ export function WaveformDetail({
       isDragging = false;
     };
 
-    // Block the trailing click event after a drag so it doesn't
-    // trigger "dismiss on outside click" on the popover that just opened.
-    const onClickCapture = (e: MouseEvent) => {
-      if (blockNextClick) {
-        blockNextClick = false;
-        e.stopPropagation();
-        e.preventDefault();
-      }
-    };
-
     container.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("pointermove", onPointerMove);
     document.addEventListener("pointerup", onPointerUp);
-    container.addEventListener("click", onClickCapture, { capture: true });
 
     return () => {
       container.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerup", onPointerUp);
-      container.removeEventListener("click", onClickCapture, { capture: true });
     };
   }, [isReady, peaks.duration, onSeek, onBookmarkDragEnd, snapToNearestBoundary]);
 
