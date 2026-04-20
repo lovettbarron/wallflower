@@ -202,6 +202,58 @@ export interface AnalysisResults {
   loops: LoopRecord[];
 }
 
+// -- Phase 5: Bookmark and Export types --
+
+export interface BookmarkRecord {
+  id: string;
+  jamId: string;
+  name: string;
+  startSeconds: number;
+  endSeconds: number;
+  color: string;
+  notes: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBookmarkInput {
+  jamId: string;
+  name: string;
+  startSeconds: number;
+  endSeconds: number;
+  color: string;
+  notes?: string | null;
+}
+
+export interface UpdateBookmarkInput {
+  name?: string | null;
+  startSeconds?: number | null;
+  endSeconds?: number | null;
+  color?: string | null;
+  notes?: string | null;
+  sortOrder?: number | null;
+}
+
+export type BookmarkColor = "coral" | "amber" | "lime" | "teal" | "sky" | "violet" | "rose" | "slate";
+
+export const BOOKMARK_COLORS: Record<BookmarkColor, { fill: string; border: string; solid: string }> = {
+  coral: { fill: "rgba(255, 127, 80, 0.25)", border: "rgba(255, 127, 80, 0.7)", solid: "#FF7F50" },
+  amber: { fill: "rgba(255, 191, 0, 0.25)", border: "rgba(255, 191, 0, 0.7)", solid: "#FFBF00" },
+  lime: { fill: "rgba(50, 205, 50, 0.25)", border: "rgba(50, 205, 50, 0.7)", solid: "#32CD32" },
+  teal: { fill: "rgba(0, 206, 209, 0.25)", border: "rgba(0, 206, 209, 0.7)", solid: "#00CED1" },
+  sky: { fill: "rgba(135, 206, 235, 0.25)", border: "rgba(135, 206, 235, 0.7)", solid: "#87CEEB" },
+  violet: { fill: "rgba(138, 43, 226, 0.25)", border: "rgba(138, 43, 226, 0.7)", solid: "#8A2BE2" },
+  rose: { fill: "rgba(255, 105, 180, 0.25)", border: "rgba(255, 105, 180, 0.7)", solid: "#FF69B4" },
+  slate: { fill: "rgba(112, 128, 144, 0.25)", border: "rgba(112, 128, 144, 0.7)", solid: "#708090" },
+};
+
+export interface StemInfo {
+  stemName: string;
+  filePath: string;
+  durationSeconds: number;
+}
+
 export interface AnalysisProgressPayload {
   jamId: string;
   step: "tempo" | "key" | "sections" | "loops";

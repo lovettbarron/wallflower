@@ -16,6 +16,10 @@ import type {
   RecordingStatus,
   InputDeviceInfo,
   AnalysisResults,
+  BookmarkRecord,
+  CreateBookmarkInput,
+  UpdateBookmarkInput,
+  StemInfo,
 } from "./types";
 
 // --- Jam operations ---
@@ -273,4 +277,36 @@ export async function getAnalysisResults(
   jamId: string,
 ): Promise<AnalysisResults> {
   return invoke("get_analysis_results", { jamId });
+}
+
+// --- Bookmark operations (Phase 5) ---
+
+/** Create a new bookmark for a jam. */
+export async function createBookmark(input: CreateBookmarkInput): Promise<BookmarkRecord> {
+  return invoke("create_bookmark", { input });
+}
+
+/** Get all bookmarks for a jam. */
+export async function getBookmarks(jamId: string): Promise<BookmarkRecord[]> {
+  return invoke("get_bookmarks", { jamId });
+}
+
+/** Update an existing bookmark. */
+export async function updateBookmark(id: string, input: UpdateBookmarkInput): Promise<BookmarkRecord> {
+  return invoke("update_bookmark", { id, input });
+}
+
+/** Delete a bookmark by its ID. */
+export async function deleteBookmark(id: string): Promise<void> {
+  return invoke("delete_bookmark", { id });
+}
+
+/** Export a bookmark's audio as a WAV file. */
+export async function exportAudio(bookmarkId: string): Promise<string> {
+  return invoke("export_audio", { bookmarkId });
+}
+
+/** Separate stems for a bookmark's audio region. */
+export async function separateStems(bookmarkId: string): Promise<StemInfo[]> {
+  return invoke("separate_stems", { bookmarkId });
 }
