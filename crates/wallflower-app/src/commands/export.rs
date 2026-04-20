@@ -12,6 +12,7 @@ use wallflower_core::export;
 
 /// Information about a separated stem file.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StemInfo {
     pub stem_name: String,
     pub file_path: String,

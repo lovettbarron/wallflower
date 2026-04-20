@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BookmarkRecord {
     pub id: String,
     pub jam_id: String,
@@ -15,6 +16,7 @@ pub struct BookmarkRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateBookmark {
     pub jam_id: String,
     pub name: String,
@@ -25,6 +27,7 @@ pub struct CreateBookmark {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateBookmark {
     pub name: Option<String>,
     pub start_seconds: Option<f64>,
@@ -35,6 +38,7 @@ pub struct UpdateBookmark {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ExportRecord {
     pub id: String,
     pub bookmark_id: String,
@@ -48,6 +52,7 @@ pub struct ExportRecord {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StemCacheRecord {
     pub id: String,
     pub bookmark_id: String,

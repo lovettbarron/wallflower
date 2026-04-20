@@ -226,64 +226,64 @@ export interface FilterOptions {
   tempoMax: number;
 }
 
-// === Bookmarks & Export (Phase 5) ===
+// -- Phase 5: Bookmark and Export types --
 
 export interface BookmarkRecord {
   id: string;
-  jam_id: string;
+  jamId: string;
   name: string;
-  start_seconds: number;
-  end_seconds: number;
+  startSeconds: number;
+  endSeconds: number;
   color: string;
   notes: string | null;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateBookmarkInput {
-  jam_id: string;
+  jamId: string;
   name: string;
-  start_seconds: number;
-  end_seconds: number;
+  startSeconds: number;
+  endSeconds: number;
   color: string;
   notes?: string | null;
 }
 
 export interface UpdateBookmarkInput {
   name?: string | null;
-  start_seconds?: number | null;
-  end_seconds?: number | null;
+  startSeconds?: number | null;
+  endSeconds?: number | null;
   color?: string | null;
   notes?: string | null;
-  sort_order?: number | null;
+  sortOrder?: number | null;
 }
 
 export interface ExportRecord {
   id: string;
-  bookmark_id: string;
-  export_type: "audio" | "stems";
-  export_path: string;
+  bookmarkId: string;
+  exportType: "audio" | "stems";
+  exportPath: string;
   format: string;
-  bit_depth: number;
-  model_name: string | null;
-  metadata_path: string | null;
-  created_at: string;
+  bitDepth: number;
+  modelName: string | null;
+  metadataPath: string | null;
+  createdAt: string;
 }
 
 export interface StemInfo {
-  stem_name: string;
-  file_path: string;
-  file_size_bytes: number;
+  stemName: string;
+  filePath: string;
+  fileSizeBytes: number;
 }
 
 export interface SeparationProgressEvent {
-  bookmark_id: string;
+  bookmarkId: string;
   status: "separating" | "chunk_complete" | "completed" | "failed" | "cancelled" | "paused";
-  current_chunk: number;
-  total_chunks: number;
-  percent_complete: number;
-  estimated_seconds_remaining: number;
+  currentChunk: number;
+  totalChunks: number;
+  percentComplete: number;
+  estimatedSecondsRemaining: number;
 }
 
 export type BookmarkColor = "coral" | "amber" | "lime" | "teal" | "sky" | "violet" | "rose" | "slate";

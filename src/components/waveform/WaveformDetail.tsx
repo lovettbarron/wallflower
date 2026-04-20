@@ -1,58 +1,52 @@
 "use client";
 
-import { useRef, useEffect, useMemo, useState, useCallback } from "react";
+import { useRef, useEffect, useMemo, useCallback } from "react";
 import { useWavesurfer } from "@wavesurfer/react";
-import { useQuery } from "@tanstack/react-query";
-import type { PeakData, LoopRecord, SectionRecord } from "@/lib/types";
-import { getAnalysisResults } from "@/lib/tauri";
-import { useTransportStore } from "@/lib/stores/transport";
-import { SectionMarkers } from "./SectionMarkers";
-import { LoopBrackets } from "./LoopBrackets";
+import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
+import type { PeakData, BookmarkRecord, BookmarkColor, SectionRecord, LoopRecord } from "@/lib/types";
+import { BOOKMARK_COLORS } from "@/lib/types";
 
 interface WaveformDetailProps {
   audioUrl: string;
   peaks: PeakData;
   onSeek: (time: number) => void;
-  jamId?: string;
+  bookmarks?: BookmarkRecord[];
+  sections?: SectionRecord[];
+  loops?: LoopRecord[];
+  onBookmarkDragEnd?: (start: number, end: number) => void;
+  onBookmarkUpdate?: (id: string, start: number, end: number) => void;
+  onBookmarkSelect?: (id: string) => void;
+  onBookmarkEdit?: (id: string) => void;
 }
 
 export function WaveformDetail({
   audioUrl,
   peaks,
   onSeek,
-  jamId,
+  bookmarks = [],
+  sections = [],
+  loops = [],
+  onBookmarkDragEnd,
+  onBookmarkUpdate,
+  onBookmarkSelect,
+  onBookmarkEdit,
 }: WaveformDetailProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const seekingRef = useRef(false);
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  const { activeLoop, setActiveLoop, setPlaying, setCurrentTime } =
-    useTransportStore();
-
-  const { data: analysis } = useQuery({
-    queryKey: ["jam", jamId, "analysis"],
-    queryFn: () => getAnalysisResults(jamId!),
-    enabled: !!jamId,
-    staleTime: 30000,
-  });
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+  const regionsRef = useRef<RegionsPlugin | null>(null);
+  const bookmarksRef = useRef<BookmarkRecord[]>(bookmarks);
+  bookmarksRef.current = bookmarks;
 
   const flatPeaks = useMemo(
     () => [peaks.peaks.map((p) => p[0])],
     [peaks],
   );
+
+  const regionsPlugin = useMemo(() => {
+    const plugin = RegionsPlugin.create();
+    regionsRef.current = plugin;
+    return plugin;
+  }, []);
 
   const { wavesurfer, isReady } = useWavesurfer({
     container: containerRef,
@@ -66,8 +60,19 @@ export function WaveformDetail({
     normalize: true,
     minPxPerSec: 1,
     interact: true,
+    plugins: [regionsPlugin],
   });
 
+  // Enable drag selection when wavesurfer is ready
+  useEffect(() => {
+    if (!isReady || !regionsRef.current) return;
+
+    regionsRef.current.enableDragSelection({
+      color: "rgba(232, 134, 58, 0.15)",
+    });
+  }, [isReady]);
+
+  // Handle seek interaction
   useEffect(() => {
     if (!wavesurfer) return;
 
@@ -88,36 +93,135 @@ export function WaveformDetail({
     };
   }, [wavesurfer, onSeek]);
 
-  const handleLoopClick = useCallback(
-    (loop: LoopRecord) => {
-      const isSameLoop = activeLoop?.label === loop.label;
-      if (isSameLoop) {
-        setActiveLoop(null);
-        return;
+  // Snap helper: find nearest section/loop boundary within threshold
+  const snapToNearestBoundary = useCallback(
+    (time: number, altKeyHeld: boolean): number => {
+      if (altKeyHeld) return time;
+
+      // Calculate snap threshold: 20px in seconds
+      const container = containerRef.current;
+      if (!container || peaks.duration <= 0) return time;
+      const pixelsPerSecond = container.clientWidth / peaks.duration;
+      const snapThreshold = 20 / pixelsPerSecond;
+
+      let nearest = time;
+      let minDist = snapThreshold;
+
+      // Check section boundaries
+      for (const section of sections) {
+        const distStart = Math.abs(section.startSeconds - time);
+        if (distStart < minDist) {
+          minDist = distStart;
+          nearest = section.startSeconds;
+        }
+        const distEnd = Math.abs(section.endSeconds - time);
+        if (distEnd < minDist) {
+          minDist = distEnd;
+          nearest = section.endSeconds;
+        }
       }
-      setActiveLoop({
-        startSeconds: loop.startSeconds,
-        endSeconds: loop.endSeconds,
-        label: loop.evolving
-          ? `${loop.label} x${loop.repeatCount} (evolving)`
-          : `${loop.label} x${loop.repeatCount}`,
-      });
-      setCurrentTime(loop.startSeconds);
-      onSeek(loop.startSeconds);
-      setPlaying(true);
+
+      // Check loop boundaries
+      for (const loop of loops) {
+        const distStart = Math.abs(loop.startSeconds - time);
+        if (distStart < minDist) {
+          minDist = distStart;
+          nearest = loop.startSeconds;
+        }
+        const distEnd = Math.abs(loop.endSeconds - time);
+        if (distEnd < minDist) {
+          minDist = distEnd;
+          nearest = loop.endSeconds;
+        }
+      }
+
+      return nearest;
     },
-    [activeLoop, setActiveLoop, setCurrentTime, setPlaying, onSeek],
+    [sections, loops, peaks.duration],
   );
 
-  const handleSectionClick = useCallback(
-    (section: SectionRecord) => {
-      setActiveLoop(null);
-      setCurrentTime(section.startSeconds);
-      onSeek(section.startSeconds);
-      setPlaying(true);
-    },
-    [setActiveLoop, setCurrentTime, setPlaying, onSeek],
-  );
+  // Handle region events (drag-create, update, click, dblclick)
+  useEffect(() => {
+    const regions = regionsRef.current;
+    if (!regions) return;
+
+    const handleRegionCreated = (region: { id: string; start: number; end: number; remove: () => void }) => {
+      // Only handle user-dragged regions (not bookmark synced ones)
+      if (region.id.startsWith("bookmark-")) return;
+
+      const start = snapToNearestBoundary(region.start, false);
+      const end = snapToNearestBoundary(region.end, false);
+
+      // Remove the temp drag region
+      region.remove();
+
+      if (onBookmarkDragEnd && Math.abs(end - start) > 0.1) {
+        onBookmarkDragEnd(Math.min(start, end), Math.max(start, end));
+      }
+    };
+
+    const handleRegionUpdated = (region: { id: string; start: number; end: number }) => {
+      if (!region.id.startsWith("bookmark-")) return;
+      const bookmarkId = region.id.replace("bookmark-", "");
+      const start = snapToNearestBoundary(region.start, false);
+      const end = snapToNearestBoundary(region.end, false);
+      onBookmarkUpdate?.(bookmarkId, Math.min(start, end), Math.max(start, end));
+    };
+
+    const handleRegionClicked = (region: { id: string }, e: MouseEvent) => {
+      e.stopPropagation();
+      if (!region.id.startsWith("bookmark-")) return;
+      const bookmarkId = region.id.replace("bookmark-", "");
+      onBookmarkSelect?.(bookmarkId);
+    };
+
+    const handleRegionDblClicked = (region: { id: string }, e: MouseEvent) => {
+      e.stopPropagation();
+      if (!region.id.startsWith("bookmark-")) return;
+      const bookmarkId = region.id.replace("bookmark-", "");
+      onBookmarkEdit?.(bookmarkId);
+    };
+
+    regions.on("region-created", handleRegionCreated);
+    regions.on("region-updated", handleRegionUpdated);
+    regions.on("region-clicked", handleRegionClicked);
+    regions.on("region-double-clicked", handleRegionDblClicked);
+
+    return () => {
+      regions.un("region-created", handleRegionCreated);
+      regions.un("region-updated", handleRegionUpdated);
+      regions.un("region-clicked", handleRegionClicked);
+      regions.un("region-double-clicked", handleRegionDblClicked);
+    };
+  }, [snapToNearestBoundary, onBookmarkDragEnd, onBookmarkUpdate, onBookmarkSelect, onBookmarkEdit]);
+
+  // Sync bookmarks to regions
+  useEffect(() => {
+    const regions = regionsRef.current;
+    if (!regions || !isReady) return;
+
+    // Remove old bookmark regions
+    const existing = regions.getRegions();
+    for (const region of existing) {
+      if (region.id.startsWith("bookmark-")) {
+        region.remove();
+      }
+    }
+
+    // Add new bookmark regions
+    for (const bookmark of bookmarks) {
+      const colorKey = bookmark.color as BookmarkColor;
+      const colorInfo = BOOKMARK_COLORS[colorKey] || BOOKMARK_COLORS.coral;
+      regions.addRegion({
+        id: `bookmark-${bookmark.id}`,
+        start: bookmark.startSeconds,
+        end: bookmark.endSeconds,
+        color: colorInfo.fill,
+        drag: true,
+        resize: true,
+      });
+    }
+  }, [bookmarks, isReady]);
 
   return (
     <div className="relative w-full">
@@ -135,35 +239,6 @@ export function WaveformDetail({
           display: isReady ? "block" : "none",
         }}
       />
-
-      {isReady && analysis?.sections && analysis.sections.length > 0 && containerWidth > 0 && (
-        <SectionMarkers
-          sections={analysis.sections}
-          totalDuration={peaks.duration}
-          containerWidth={containerWidth}
-          showLabels={true}
-          onSectionClick={handleSectionClick}
-        />
-      )}
-
-      {isReady && analysis?.loops && analysis.loops.length > 0 && containerWidth > 0 && (
-        <LoopBrackets
-          loops={analysis.loops}
-          totalDuration={peaks.duration}
-          containerWidth={containerWidth}
-          activeLoopLabel={activeLoop?.label?.split(" x")[0]}
-          onLoopClick={handleLoopClick}
-        />
-      )}
-
-      {isReady && analysis?.key && analysis?.tempo && (
-        <div
-          className="absolute right-2 top-2 rounded-lg px-1.5 py-0.5 text-xs text-foreground"
-          style={{ background: "rgba(21, 25, 33, 0.8)" }}
-        >
-          {analysis.key.keyName}{analysis.key.scale === "minor" ? "m" : ""} | {Math.round(analysis.tempo.bpm)} BPM
-        </div>
-      )}
     </div>
   );
 }

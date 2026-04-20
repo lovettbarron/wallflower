@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-04-20T11:16:58.969Z"
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-04-20T11:25:00.495Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 25
-  completed_plans: 22
+  completed_phases: 2
+  total_plans: 20
+  completed_plans: 18
   percent: 100
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-18)
 
 **Core value:** A musician can go from "I just finished a 2-hour jam" to "here's the interesting 8-bar synth loop in Bb minor at 120bpm" with minimal effort, staying in creative flow.
-**Current focus:** Phase 05 — source-separation-export
+**Current focus:** Phase 03 — recording-engine-system-integration
 
 ## Current Position
 
 Phase: 05 (source-separation-export) — EXECUTING
-Plan: 3 of 5
-Status: Ready to execute
+Plan: 4 of 5
+Status: Executing
 Last activity: 2026-04-20
 
 Progress: [██████████] 100%
@@ -58,10 +58,7 @@ Progress: [██████████] 100%
 | Phase 03 P04 | 2m | 2 tasks | 5 files |
 | Phase 03 P06 | 1min | 1 tasks | 1 files |
 | Phase 04 P04 | 9min | 2 tasks | 11 files |
-| Phase 04 P05 | 12min | 2 tasks | 14 files |
-| Phase 05 P01 | 5min | 2 tasks | 9 files |
-| Phase 05 P02 | 4min | 2 tasks | 5 files |
-| Phase 05 P03 | 9min | 2 tasks | 8 files |
+| Phase 05 P04 | 5min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -86,11 +83,8 @@ Recent decisions affecting current work:
 - [Phase 03]: Elapsed timer uses Date.now() delta for simplicity; 48kHz default for silence sample conversion
 - [Phase 03]: Used zustand static setState for Tauri event-to-store bridging pattern
 - [Phase 04]: Upgraded prost from 0.13 to 0.14 to match tonic-prost runtime codec
-- [Phase 04]: Used LIKE-based free-text search instead of FTS5 JOIN due to contentless table limitation
-- [Phase 05]: Hound-based WAV time slicing for export (simpler than Symphonia for WAV-only)
-- [Phase 05]: Dynamic SQL update pattern for bookmark partial updates
-- [Phase 05]: Used SEPARATION_COMPLETED/SEPARATION_FAILED enum names to avoid protobuf duplicate conflict
-- [Phase 05]: Arc<AtomicBool> for separation cancellation, stem cache validated by DB+disk, export defaults to 24-bit WAV
+- [Phase 05]: RegionsPlugin drag-to-select creates temp region, snaps edges, opens popover for metadata entry
+- [Phase 05]: Canvas-based overview bookmark indicators for performance (no extra DOM)
 
 ### Pending Todos
 
@@ -105,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-20T11:16:58.966Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-04-20T11:25:00.492Z
+Stopped at: Completed 05-04-PLAN.md
 Resume file: None

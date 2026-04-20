@@ -1,18 +1,16 @@
 "use client";
 
-import { useRef, useEffect, useState, type MouseEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { PeakData } from "@/lib/types";
-import { getAnalysisResults } from "@/lib/tauri";
+import { useRef, useEffect, useCallback, type MouseEvent } from "react";
+import type { PeakData, BookmarkRecord, BookmarkColor } from "@/lib/types";
+import { BOOKMARK_COLORS } from "@/lib/types";
 import { useTransportStore } from "@/lib/stores/transport";
-import { SectionMarkers } from "./SectionMarkers";
 
 interface WaveformOverviewProps {
   peaks: PeakData;
   onSeek: (time: number) => void;
   viewportStart?: number;
   viewportEnd?: number;
-  jamId?: string;
+  bookmarks?: BookmarkRecord[];
 }
 
 export function WaveformOverview({
@@ -20,31 +18,10 @@ export function WaveformOverview({
   onSeek,
   viewportStart,
   viewportEnd,
-  jamId,
+  bookmarks = [],
 }: WaveformOverviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
-  const [overviewWidth, setOverviewWidth] = useState(0);
-
-  const { data: analysis } = useQuery({
-    queryKey: ["jam", jamId, "analysis"],
-    queryFn: () => getAnalysisResults(jamId!),
-    enabled: !!jamId,
-    staleTime: 30000,
-  });
-
-  // Track canvas width
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setOverviewWidth(entry.contentRect.width);
-      }
-    });
-    observer.observe(canvas);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -83,6 +60,36 @@ export function WaveformOverview({
         }
       }
 
+      // Draw bookmark indicators
+      const totalDuration = duration > 0 ? duration : peaks.duration;
+      if (totalDuration > 0) {
+        for (const bookmark of bookmarks) {
+          const colorKey = bookmark.color as BookmarkColor;
+          const colorInfo = BOOKMARK_COLORS[colorKey] || BOOKMARK_COLORS.coral;
+          const startX = (bookmark.startSeconds / totalDuration) * w;
+          const endX = (bookmark.endSeconds / totalDuration) * w;
+          const spanPx = endX - startX;
+
+          if (spanPx > 4) {
+            // Wide enough to render as a filled region
+            ctx.fillStyle = colorInfo.fill.replace("0.25", "0.15");
+            ctx.fillRect(startX, 0, spanPx, h);
+            // Left and right borders
+            ctx.fillStyle = colorInfo.solid;
+            ctx.globalAlpha = 0.6;
+            ctx.fillRect(startX, 0, 2, h);
+            ctx.fillRect(endX - 2, 0, 2, h);
+            ctx.globalAlpha = 1;
+          } else {
+            // Narrow: render as a single line
+            ctx.fillStyle = colorInfo.solid;
+            ctx.globalAlpha = 0.6;
+            ctx.fillRect(startX, 0, 2, h);
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+
       if (
         viewportStart !== undefined &&
         viewportEnd !== undefined &&
@@ -106,7 +113,7 @@ export function WaveformOverview({
     rafRef.current = requestAnimationFrame(drawFrame);
 
     return () => cancelAnimationFrame(rafRef.current);
-  }, [peaks, viewportStart, viewportEnd]);
+  }, [peaks, viewportStart, viewportEnd, bookmarks]);
 
   const handleClick = (e: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -119,21 +126,11 @@ export function WaveformOverview({
   };
 
   return (
-    <div className="relative">
-      <canvas
-        ref={canvasRef}
-        onClick={handleClick}
-        className="h-12 w-full cursor-crosshair rounded-lg"
-        style={{ background: "#1D2129" }}
-      />
-      {analysis?.sections && analysis.sections.length > 0 && overviewWidth > 0 && (
-        <SectionMarkers
-          sections={analysis.sections}
-          totalDuration={peaks.duration}
-          containerWidth={overviewWidth}
-          showLabels={false}
-        />
-      )}
-    </div>
+    <canvas
+      ref={canvasRef}
+      onClick={handleClick}
+      className="h-12 w-full cursor-crosshair rounded-lg"
+      style={{ background: "#1D2129" }}
+    />
   );
 }
