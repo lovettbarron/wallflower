@@ -144,14 +144,15 @@ export async function listAllInstruments(): Promise<string[]> {
 
 // --- Metadata operations ---
 
-/** Update jam metadata (location, notes, patch_notes). */
+/** Update jam metadata (title, location, notes, patch_notes). */
 export async function updateJamMetadata(
   jamId: string,
+  originalFilename: string | null,
   location: string | null,
   notes: string | null,
   patchNotes: string | null,
 ): Promise<void> {
-  return invoke("update_jam_metadata", { jamId, location, notes, patchNotes });
+  return invoke("update_jam_metadata", { jamId, originalFilename, location, notes, patchNotes });
 }
 
 // --- Photo operations ---

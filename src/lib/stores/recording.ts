@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { startRecording, stopRecording } from "@/lib/tauri";
+import { useLibraryStore } from "@/lib/stores/library";
 
 export interface RecordingState {
   isRecording: boolean;
@@ -60,6 +61,7 @@ export const useRecordingStore = create<RecordingState>((set) => ({
   cancelStop: () => set({ showStopDialog: false }),
 
   confirmStop: async () => {
+    const jamId = useRecordingStore.getState().recordingJamId;
     try {
       await stopRecording();
     } catch (e) {
@@ -76,6 +78,9 @@ export const useRecordingStore = create<RecordingState>((set) => ({
       showStopDialog: false,
       levelHistory: [],
     });
+    if (jamId) {
+      useLibraryStore.getState().setSelectedJam(jamId);
+    }
   },
 
   setElapsed: (seconds) => set({ elapsedSeconds: seconds }),

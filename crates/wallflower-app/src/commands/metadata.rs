@@ -140,12 +140,14 @@ pub async fn list_all_instruments(
 pub async fn update_jam_metadata(
     state: tauri::State<'_, AppState>,
     jam_id: String,
+    original_filename: Option<String>,
     location: Option<String>,
     notes: Option<String>,
     patch_notes: Option<String>,
 ) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let metadata = wallflower_core::db::schema::JamMetadata {
+        original_filename,
         location,
         notes,
         patch_notes,

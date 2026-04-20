@@ -505,6 +505,12 @@ pub fn update_jam_metadata(
     jam_id: &str,
     metadata: &JamMetadata,
 ) -> Result<()> {
+    if let Some(ref original_filename) = metadata.original_filename {
+        conn.execute(
+            "UPDATE jams SET original_filename = ?1 WHERE id = ?2",
+            params![original_filename, jam_id],
+        )?;
+    }
     if let Some(ref location) = metadata.location {
         conn.execute(
             "UPDATE jams SET location = ?1 WHERE id = ?2",
@@ -1268,6 +1274,7 @@ mod tests {
         let record = insert_jam(&db.conn, &jam).unwrap();
 
         let meta = JamMetadata {
+            original_filename: None,
             location: Some("Brooklyn Studio".into()),
             notes: Some("Great session".into()),
             patch_notes: Some("Moog Sub37 -> Strymon BigSky".into()),

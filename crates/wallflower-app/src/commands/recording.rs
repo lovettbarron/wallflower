@@ -65,7 +65,7 @@ pub async fn start_recording(
                     jam_id,
                     filename,
                     filename,
-                    "",  // content_hash computed on stop
+                    format!("recording-{}", jam_id),  // placeholder until stop computes real hash
                     storage_dir.join(&filename).to_string_lossy().to_string(),
                     "wav",
                     32i32,

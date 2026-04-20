@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Settings } from "lucide-react";
+import { Settings, Circle } from "lucide-react";
 import { Timeline } from "@/components/library/Timeline";
 import { JamDetail } from "@/components/library/JamDetail";
 import { DeviceImportDialog } from "@/components/device-import-dialog";
@@ -17,6 +17,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("library");
   const { selectedJamId, setSelectedJam } = useLibraryStore();
   const isRecording = useRecordingStore((s) => s.isRecording);
+  const startRec = useRecordingStore((s) => s.startRec);
 
   // When recording is active, lock navigation and show RecordingView
   if (isRecording) {
@@ -66,6 +67,16 @@ export default function Home() {
             aria-label="Settings"
           >
             <Settings size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={() => startRec()}
+            className="flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#E53E3E] focus:ring-offset-2 focus:ring-offset-[#151921]"
+            style={{ background: "#E53E3E", color: "#fff" }}
+            aria-label="Start Recording"
+          >
+            <Circle size={10} fill="currentColor" stroke="currentColor" />
+            Record
           </button>
           <button
             type="button"

@@ -1,9 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ImagePlus } from "lucide-react";
-import { getJamWithMetadata, getPeaks, generatePeaksForJam } from "@/lib/tauri";
+import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata } from "@/lib/tauri";
 import type { JamDetail as JamDetailType, PeakData } from "@/lib/types";
 import { WaveformOverview } from "@/components/waveform/WaveformOverview";
 import { WaveformDetail } from "@/components/waveform/WaveformDetail";
@@ -20,6 +20,9 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const isRecording = useRecordingStore((s) => s.isRecording);
   const recordingJamId = useRecordingStore((s) => s.recordingJamId);
   const [isDragOver, setIsDragOver] = useState(false);
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState("");
+  const titleSaveTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const currentJamId = useTransportStore((s) => s.currentJamId);
   const loadJam = useTransportStore((s) => s.loadJam);
   const setCurrentTime = useTransportStore((s) => s.setCurrentTime);
@@ -75,6 +78,29 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
     },
     enabled: !!jamId && !!jam,
   });
+
+  useEffect(() => {
+    if (jam) setTitle(jam.originalFilename || jam.filename);
+  }, [jam]);
+
+  const saveTitle = useCallback(
+    async (newTitle: string) => {
+      if (!jam || newTitle === (jam.originalFilename || jam.filename)) return;
+      await updateJamMetadata(jam.id, newTitle, null, null, null);
+      queryClient.invalidateQueries({ queryKey: ["jam", jamId] });
+      queryClient.invalidateQueries({ queryKey: ["jams"] });
+    },
+    [jam, jamId, queryClient],
+  );
+
+  const handleTitleChange = useCallback(
+    (val: string) => {
+      setTitle(val);
+      if (titleSaveTimeout.current) clearTimeout(titleSaveTimeout.current);
+      titleSaveTimeout.current = setTimeout(() => saveTitle(val), 600);
+    },
+    [saveTitle],
+  );
 
   useEffect(() => {
     if (!jam || currentJamId === jam.id) return;
@@ -148,10 +174,15 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
         Library
       </button>
 
-      {/* Jam title */}
-      <h1 className="mb-6 text-xl font-semibold text-foreground">
-        {jam.originalFilename || jam.filename}
-      </h1>
+      {/* Jam title (editable) */}
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => handleTitleChange(e.target.value)}
+        onBlur={() => saveTitle(title)}
+        className="mb-6 w-full bg-transparent text-xl font-semibold text-foreground outline-none border-b border-transparent focus:border-[#E8863A] transition-colors"
+        spellCheck={false}
+      />
 
       {/* Waveforms */}
       {peaksLoading && (

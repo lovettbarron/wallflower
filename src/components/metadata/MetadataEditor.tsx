@@ -65,6 +65,7 @@ function useDebouncedSave(
       try {
         await updateJamMetadata(
           jamId,
+          null,
           field === "location" ? val : null,
           field === "notes" ? val : null,
           field === "patchNotes" ? val : null

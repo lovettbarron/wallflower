@@ -98,6 +98,7 @@ pub struct JamPhoto {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JamMetadata {
+    pub original_filename: Option<String>,
     pub location: Option<String>,
     pub notes: Option<String>,
     pub patch_notes: Option<String>,
