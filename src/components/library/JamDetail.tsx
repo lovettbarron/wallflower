@@ -35,6 +35,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const setCurrentTime = useTransportStore((s) => s.setCurrentTime);
   const isPlaying = useTransportStore((s) => s.isPlaying);
   const setPlaying = useTransportStore((s) => s.setPlaying);
+  const setActiveLoop = useTransportStore((s) => s.setActiveLoop);
 
   // Bookmark state
   const bookmarks = useBookmarkStore((s) => s.bookmarks);
@@ -178,8 +179,11 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
     (start: number, end: number) => {
       setPendingBookmarkRange({ start, end });
       setShowBookmarkPopover(true);
+      setCurrentTime(start);
+      setActiveLoop({ startSeconds: start, endSeconds: end, label: "Selection" });
+      setPlaying(true);
     },
-    [],
+    [setCurrentTime, setActiveLoop, setPlaying],
   );
 
   const handleBookmarkSave = useCallback(
@@ -410,6 +414,8 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
         onClose={() => {
           setShowBookmarkPopover(false);
           setPendingBookmarkRange(null);
+          setActiveLoop(null);
+          setPlaying(false);
         }}
         onSave={handleBookmarkSave}
         initialName={getNextName()}
