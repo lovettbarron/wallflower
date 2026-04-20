@@ -192,7 +192,7 @@ New and modified components for Phase 5. Existing Phase 2/3/4 components are reu
 ```
 
 - Bookmark list: Positioned between analysis summary row and metadata editor. Heading "Bookmarks" at heading size (20px/600) with count badge. Left-aligned.
-- Each bookmark row: 36px height. Color dot (8px circle), name (body/14px, truncate at 200px), time range (label/12px, muted-foreground, format "M:SS-M:SS"), context menu trigger (lucide `MoreHorizontal`, 16px) right-aligned.
+- Each bookmark row: 36px height. Color dot (8px circle), name (body/14px, truncate at 200px), time range (label/12px, muted-foreground, format "M:SS-M:SS"), context menu trigger (lucide `MoreHorizontal`, 16px, `aria-label="Bookmark options for {bookmark name}"`) right-aligned.
 - Click bookmark row: scrolls waveform detail to center on that bookmark region, highlights the region border to accent color briefly (300ms transition).
 - Empty bookmarks state: shown when no bookmarks exist (see Copywriting).
 
@@ -212,7 +212,7 @@ New and modified components for Phase 5. Existing Phase 2/3/4 components are reu
 | Notes: [                   ] |
 |        [                   ] |
 |                               |
-|        [Cancel]  [Save]       |
+|     [Discard]  [Save Bookmark]|
 +------------------------------+
 ```
 
@@ -222,7 +222,7 @@ New and modified components for Phase 5. Existing Phase 2/3/4 components are reu
 - Name field: shadcn Input, auto-focused, default value "Bookmark {N}" (auto-incrementing). Selects all on focus for easy renaming.
 - Color palette: 8 circular swatches (16px diameter), sm (8px) gap, inline row. Selected swatch shows 2px accent border ring. Default: next unused color in palette order.
 - Notes field: shadcn Textarea, 2 rows, placeholder "Add notes...". Optional.
-- Cancel: ghost button. Save: primary button (accent background).
+- Discard: ghost button. Save Bookmark: primary button (accent background).
 - After save: region converts to a BookmarkRegion with the chosen color. Popover closes. Toast: "Bookmark saved".
 
 ### Bookmark Region on Waveform (D-04)
@@ -296,15 +296,15 @@ When "Export stems" is triggered and separation has not been cached:
 |  [==============>                    ] 62%         |
 |  Chunk 7/12    ~18s remaining                      |
 |                                                    |
-|                               [Cancel]             |
+|                         [Cancel Separation]        |
 +--------------------------------------------------+
 ```
 
 - Replaces the stem mixer content area during separation. Same panel dimensions.
 - Progress bar: shadcn Progress, accent fill, full width minus md padding.
 - Chunk info: label size (12px), muted-foreground. Format: "Chunk {N}/{total}" and "~{seconds}s remaining".
-- Cancel button: ghost button, destructive text. Cancels separation, closes panel, shows toast "Separation cancelled".
-- Recording priority interruption (D-14): If recording starts during separation, progress bar pauses and text changes to: "Paused -- recording in progress". Cancel button remains available. When recording stops, separation resumes automatically and progress text returns to chunk display.
+- Cancel Separation button: ghost button, destructive text. Cancels separation, closes panel, shows toast "Separation cancelled".
+- Recording priority interruption (D-14): If recording starts during separation, progress bar pauses and text changes to: "Paused -- recording in progress". Cancel Separation button remains available. When recording stops, separation resumes automatically and progress text returns to chunk display.
 - Completion: progress bar fills to 100%, brief 500ms hold, then panel transitions to the StemMixer layout.
 
 ### Bookmark Indicators on WaveformOverview
@@ -397,7 +397,7 @@ When "Export stems" is triggered and separation has not been cached:
 
 | State | Visual |
 |-------|--------|
-| Confirmation dialog | Dialog: "Delete {bookmark name}?" body: "This will remove the bookmark and any cached stems. Exported files will not be deleted." Buttons: [Cancel] [Delete] (destructive) |
+| Confirmation dialog | Dialog: "Delete {bookmark name}?" body: "This will remove the bookmark and any cached stems. Exported files will not be deleted." Buttons: [Keep Bookmark] [Delete] (destructive) |
 | Deleting | Region fades out (opacity 0 over 200ms), removed from bookmark list |
 
 ---
@@ -445,16 +445,18 @@ When "Export stems" is triggered and separation has not been cached:
 | Destructive confirmation heading | "Delete {bookmark name}?" |
 | Destructive confirmation body | "This will remove the bookmark and any cached stems. Exported files will not be deleted." |
 | Destructive confirmation button | "Delete" |
+| Destructive confirmation dismiss | "Keep Bookmark" |
 | Bookmark default name | "Bookmark {N}" (auto-incrementing integer) |
-| Bookmark popover save button | "Save" |
-| Bookmark popover cancel button | "Cancel" |
+| Bookmark popover save button | "Save Bookmark" |
+| Bookmark popover cancel button | "Discard" |
 | Bookmark list heading | "Bookmarks" |
+| Bookmark row context menu trigger | `aria-label="Bookmark options for {bookmark name}"` (lucide `MoreHorizontal` icon button) |
 | Bookmark time range format | "{M:SS}-{M:SS}" (e.g., "1:42-2:18") |
 | Snap tooltip | "Snapped to {section name}" |
 | Separation progress text | "Chunk {N}/{total}" |
 | Separation ETA text | "~{N}s remaining" |
 | Separation paused text | "Paused -- recording in progress" |
-| Separation cancel button | "Cancel" |
+| Separation cancel button | "Cancel Separation" |
 | Separation retry button | "Retry" |
 | Mixer header | "Stems: {bookmark name}" |
 | Mixer dismiss button | Tooltip: "Close stem mixer" |
