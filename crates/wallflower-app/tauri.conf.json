@@ -9,6 +9,15 @@
     "devUrl": "http://localhost:3000",
     "frontendDist": "../../out"
   },
+  "bundle": {
+    "active": true,
+    "targets": ["dmg", "app"],
+    "macOS": {
+      "signingIdentity": null,
+      "entitlements": null,
+      "minimumSystemVersion": "13.0"
+    }
+  },
   "app": {
     "windows": [
       {

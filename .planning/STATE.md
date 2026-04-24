@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v0.1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-01-PLAN.md
+stopped_at: Completed 06-01-PLAN.md and 06-04-PLAN.md (Wave 1)
 last_updated: "2026-04-24T09:59:33.746Z"
 last_activity: 2026-04-24
 progress:
@@ -60,6 +60,7 @@ Progress: [██████████] 100%
 | Phase 04 P04 | 9min | 2 tasks | 11 files |
 | Phase 05 P04 | 5min | 2 tasks | 11 files |
 | Phase 06 P01 | 6min | 2 tasks | 16 files |
+| Phase 06 P04 | 1min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,7 @@ Recent decisions affecting current work:
 - [Phase 05]: Canvas-based overview bookmark indicators for performance (no extra DOM)
 - [Phase 06]: GROUP_CONCAT with LEFT JOINs for single-query spatial data (avoids N+1)
 - [Phase 06]: useRovingTabIndex uses external state (activeIndex + onChange) for parent control
+- [Phase 06]: Push-to-main CI/CD trigger per D-14; draft releases for review; minimumSystemVersion 13.0 for SMAppService
 
 ### Pending Todos
 
@@ -103,5 +105,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-24T09:59:33.742Z
-Stopped at: Completed 06-01-PLAN.md
+Stopped at: Completed Wave 1 (06-01, 06-04)
 Resume file: None

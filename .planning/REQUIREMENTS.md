@@ -95,7 +95,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **INFRA-11**: Application uses native macOS notifications for events (device connected, analysis complete, etc.)
 - [ ] **INFRA-12**: Global keyboard shortcuts work even when the app is not focused (e.g., start/stop recording)
 - [ ] **INFRA-13**: Application can be configured to auto-launch on login
-- [ ] **INFRA-14**: macOS app is properly signed and notarized for distribution
+- [x] **INFRA-14**: macOS app is properly signed and notarized for distribution
 
 ## v2 Requirements
 
@@ -213,7 +213,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DES-03 | Phase 6 | Pending |
 | DES-04 | Phase 6 | Pending |
 | INFRA-13 | Phase 6 | Pending |
-| INFRA-14 | Phase 6 | Pending |
+| INFRA-14 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 66 total
