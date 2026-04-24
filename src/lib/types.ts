@@ -314,6 +314,23 @@ export const STEM_COLORS: Record<string, string> = {
   piano:  "hsl(270, 45%, 60%)",
 };
 
+// -- Phase 6: Spatial explorer types --
+
+/** A jam with analysis and metadata for the spatial explorer view. */
+export interface SpatialJam {
+  id: string;
+  filename: string;
+  durationSeconds: number | null;
+  importedAt: string;
+  createdAt: string | null;
+  tempoBpm: number | null;
+  keyName: string | null;
+  keyScale: string | null;
+  tags: string[];
+  collaborators: string[];
+  instruments: string[];
+}
+
 export interface AnalysisProgressPayload {
   jamId: string;
   step: "tempo" | "key" | "sections" | "loops";

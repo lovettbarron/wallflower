@@ -4,7 +4,7 @@ use crate::error::{Result, WallflowerError};
 use rusqlite::{params, Connection};
 use schema::{
     AnalysisResults, AnalysisStatus, JamCollaborator, JamInstrument, JamMetadata, JamPhoto,
-    JamRecord, JamTag, KeyResult, LoopRecord, NewJam, SectionRecord, TempoResult,
+    JamRecord, JamTag, KeyResult, LoopRecord, NewJam, SectionRecord, SpatialJam, TempoResult,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -1239,6 +1239,62 @@ pub fn get_tempo_range(conn: &Connection) -> Result<(f64, f64)> {
     Ok(result)
 }
 
+// ── Spatial data ────────────────────────────────────────
+
+/// List all jams with analysis and metadata in a single query.
+/// Uses GROUP_CONCAT with LEFT JOINs to avoid N+1 queries.
+/// Returns data optimized for the spatial explorer view.
+pub fn list_jams_spatial(conn: &Connection) -> Result<Vec<SpatialJam>> {
+    let mut stmt = conn.prepare(
+        "SELECT j.id, j.filename, j.duration_seconds, j.imported_at, j.created_at,
+                tr.bpm as tempo_bpm,
+                kr.key_name, kr.scale as key_scale,
+                GROUP_CONCAT(DISTINCT t.tag) as tags,
+                GROUP_CONCAT(DISTINCT c.name) as collaborators,
+                GROUP_CONCAT(DISTINCT i.name) as instruments
+         FROM jams j
+         LEFT JOIN jam_tempo tr ON j.id = tr.jam_id
+         LEFT JOIN jam_key kr ON j.id = kr.jam_id
+         LEFT JOIN jam_tags t ON j.id = t.jam_id
+         LEFT JOIN jam_collaborators c ON j.id = c.jam_id
+         LEFT JOIN jam_instruments i ON j.id = i.jam_id
+         GROUP BY j.id
+         ORDER BY j.imported_at DESC",
+    )?;
+
+    let rows = stmt.query_map([], |row| {
+        let tags_str: Option<String> = row.get(8)?;
+        let collabs_str: Option<String> = row.get(9)?;
+        let instruments_str: Option<String> = row.get(10)?;
+
+        Ok(SpatialJam {
+            id: row.get(0)?,
+            filename: row.get(1)?,
+            duration_seconds: row.get(2)?,
+            imported_at: row.get(3)?,
+            created_at: row.get(4)?,
+            tempo_bpm: row.get(5)?,
+            key_name: row.get(6)?,
+            key_scale: row.get(7)?,
+            tags: tags_str
+                .map(|s| s.split(',').map(|v| v.to_string()).collect())
+                .unwrap_or_default(),
+            collaborators: collabs_str
+                .map(|s| s.split(',').map(|v| v.to_string()).collect())
+                .unwrap_or_default(),
+            instruments: instruments_str
+                .map(|s| s.split(',').map(|v| v.to_string()).collect())
+                .unwrap_or_default(),
+        })
+    })?;
+
+    let mut jams = Vec::new();
+    for row in rows {
+        jams.push(row?);
+    }
+    Ok(jams)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1987,5 +2043,63 @@ mod tests {
             )
             .unwrap();
         assert_eq!(count, 1);
+    }
+
+    // ── Spatial data tests ────────────────────────────────
+
+    #[test]
+    fn test_list_jams_spatial() {
+        let db = Database::open_in_memory().unwrap();
+        let jam = test_jam();
+        let record = insert_jam(&db.conn, &jam).unwrap();
+
+        // Add analysis data
+        save_tempo_result(&db.conn, &record.id, 120.0, 0.95).unwrap();
+        save_key_result(&db.conn, &record.id, "Bb", "minor", 0.87).unwrap();
+
+        // Add metadata
+        insert_tag(&db.conn, &record.id, "ambient").unwrap();
+        insert_tag(&db.conn, &record.id, "drone").unwrap();
+        insert_collaborator(&db.conn, &record.id, "Alice").unwrap();
+        insert_instrument(&db.conn, &record.id, "Modular Synth").unwrap();
+        insert_instrument(&db.conn, &record.id, "Guitar").unwrap();
+
+        let spatial = list_jams_spatial(&db.conn).unwrap();
+        assert_eq!(spatial.len(), 1);
+
+        let sj = &spatial[0];
+        assert_eq!(sj.id, record.id);
+        assert_eq!(sj.filename, "test-jam.wav");
+        assert_eq!(sj.duration_seconds, Some(120.5));
+        assert_eq!(sj.tempo_bpm, Some(120.0));
+        assert_eq!(sj.key_name, Some("Bb".into()));
+        assert_eq!(sj.key_scale, Some("minor".into()));
+        assert_eq!(sj.tags.len(), 2);
+        assert!(sj.tags.contains(&"ambient".to_string()));
+        assert!(sj.tags.contains(&"drone".to_string()));
+        assert_eq!(sj.collaborators, vec!["Alice".to_string()]);
+        assert_eq!(sj.instruments.len(), 2);
+        assert!(sj.instruments.contains(&"Modular Synth".to_string()));
+        assert!(sj.instruments.contains(&"Guitar".to_string()));
+    }
+
+    #[test]
+    fn test_list_jams_spatial_empty_metadata() {
+        let db = Database::open_in_memory().unwrap();
+        let jam = test_jam();
+        let record = insert_jam(&db.conn, &jam).unwrap();
+
+        // No analysis or metadata added
+        let spatial = list_jams_spatial(&db.conn).unwrap();
+        assert_eq!(spatial.len(), 1);
+
+        let sj = &spatial[0];
+        assert_eq!(sj.id, record.id);
+        assert_eq!(sj.tempo_bpm, None);
+        assert_eq!(sj.key_name, None);
+        assert_eq!(sj.key_scale, None);
+        assert!(sj.tags.is_empty());
+        assert!(sj.collaborators.is_empty());
+        assert!(sj.instruments.is_empty());
     }
 }

@@ -179,3 +179,23 @@ pub struct AnalysisResults {
     pub sections: Vec<SectionRecord>,
     pub loops: Vec<LoopRecord>,
 }
+
+/// A jam with analysis and metadata combined for the spatial explorer.
+/// Returned by the single-query spatial data endpoint to avoid N+1 queries.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpatialJam {
+    pub id: String,
+    pub filename: String,
+    pub duration_seconds: Option<f64>,
+    pub imported_at: String,
+    pub created_at: Option<String>,
+    // Analysis
+    pub tempo_bpm: Option<f64>,
+    pub key_name: Option<String>,
+    pub key_scale: Option<String>,
+    // Metadata
+    pub tags: Vec<String>,
+    pub collaborators: Vec<String>,
+    pub instruments: Vec<String>,
+}

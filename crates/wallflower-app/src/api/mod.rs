@@ -1,4 +1,5 @@
 mod analysis;
+mod spatial;
 
 use std::path::PathBuf;
 
@@ -46,6 +47,8 @@ pub fn api_router(audio_dir: PathBuf) -> Router {
         .route("/api/recording/start", post(not_implemented))
         .route("/api/recording/stop", post(not_implemented))
         .route("/api/recording/status", get(not_implemented))
+        // Spatial explorer (Phase 6)
+        .route("/api/jams/spatial", get(spatial::get_spatial_data))
         // Search & filter (Phase 4)
         .route("/api/jams/search", get(analysis::search_jams_api))
         .route("/api/jams/filter-options", get(analysis::get_filter_options_api))

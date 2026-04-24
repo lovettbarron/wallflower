@@ -22,6 +22,7 @@ import type {
   CreateBookmarkInput,
   UpdateBookmarkInput,
   StemInfo,
+  SpatialJam,
 } from "./types";
 
 // --- Jam operations ---
@@ -327,4 +328,11 @@ export async function cancelSeparation(): Promise<void> {
 
 export async function revealInFinder(path: string): Promise<void> {
   return invoke("reveal_in_finder", { path });
+}
+
+// --- Spatial explorer operations (Phase 6) ---
+
+/** Get all jams with analysis and metadata for the spatial explorer. */
+export async function getSpatialJams(): Promise<SpatialJam[]> {
+  return invoke("get_spatial_jams");
 }

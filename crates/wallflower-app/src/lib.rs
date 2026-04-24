@@ -498,6 +498,8 @@ pub fn run() {
             commands::export::export_stems,
             commands::export::cancel_separation,
             commands::export::reveal_in_finder,
+            // Spatial explorer (Phase 6)
+            commands::spatial::get_spatial_jams,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
