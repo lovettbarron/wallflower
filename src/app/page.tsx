@@ -37,7 +37,7 @@ export default function Home() {
   // When recording is active, lock navigation and show RecordingView
   if (isRecording) {
     return (
-      <main id="main-content" className="flex min-h-screen flex-col">
+      <main id="main-content" role="main" aria-label="Recording" className="flex min-h-screen flex-col">
         <RecordingView />
       </main>
     );
@@ -48,9 +48,9 @@ export default function Home() {
   };
 
   return (
-    <main id="main-content" className="flex min-h-screen flex-col">
+    <main id="main-content" role="main" aria-label="Main content" className="flex min-h-screen flex-col">
       {/* Tab bar -- persistent across all views (per D-04) */}
-      <nav className="flex items-center justify-between bg-[#1D2129] px-8">
+      <nav role="navigation" aria-label="Wallflower navigation" className="flex items-center justify-between bg-[#1D2129] px-8">
         <div role="tablist" className="flex items-center gap-1">
           {TAB_CONFIG.map(({ key, label }) => (
             <button

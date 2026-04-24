@@ -305,6 +305,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               <select
                 value={settings?.exportFormat ?? "wav"}
                 onChange={(e) => handleExportFormatChange(e.target.value)}
+                aria-label="Export format"
                 className="rounded-md border px-3 py-1.5 text-sm text-foreground"
                 style={{
                   background: "#272C36",
@@ -317,6 +318,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               <select
                 value={settings?.exportBitDepth ?? 24}
                 onChange={(e) => handleExportBitDepthChange(Number(e.target.value))}
+                aria-label="Export bit depth"
                 className="rounded-md border px-3 py-1.5 text-sm text-foreground"
                 style={{
                   background: "#272C36",
@@ -338,6 +340,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             <select
               value={settings?.separationModel ?? "htdemucs"}
               onChange={(e) => handleSeparationModelChange(e.target.value)}
+              aria-label="Source separation model"
               className="rounded-md border px-3 py-1.5 text-sm text-foreground"
               style={{
                 background: "#272C36",
@@ -357,6 +360,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             <select
               value={settings?.separationMemoryLimitGb ?? 4}
               onChange={(e) => handleMemoryLimitChange(Number(e.target.value))}
+              aria-label="Memory limit"
               className="rounded-md border px-3 py-1.5 text-sm text-foreground"
               style={{
                 background: "#272C36",
@@ -389,6 +393,20 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
         <AnalysisProfileSelector />
         <ModelManagement />
+      </div>
+
+      {/* Display settings card */}
+      <div
+        className="mb-4 rounded-xl border p-5"
+        style={{
+          background: "#1D2129",
+          borderColor: "#323844",
+        }}
+      >
+        <h2 className="mb-4 text-sm font-semibold text-foreground">Display</h2>
+        <p className="text-sm text-muted-foreground">
+          High contrast mode follows your macOS system setting (Accessibility &gt; Display &gt; Increase contrast).
+        </p>
       </div>
 
       {/* Slider styling */}

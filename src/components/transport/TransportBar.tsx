@@ -158,6 +158,7 @@ export function TransportBar() {
         >
           {/* Recording indicator dot */}
           <div
+            aria-hidden="true"
             className={deviceDisconnected ? "" : "animate-pulse-recording"}
             style={{
               width: "8px",
@@ -269,6 +270,8 @@ export function TransportBar() {
   // Playback mode
   return (
     <div
+      role="toolbar"
+      aria-label="Playback controls"
       className="fixed bottom-0 left-0 right-0 z-50 flex h-14 items-center border-t px-8"
       style={{
         background: "#1D2129",
@@ -344,7 +347,12 @@ export function TransportBar() {
       </div>
 
       {/* Time display */}
-      <span className="shrink-0 text-xs text-muted-foreground" style={{ fontFeatureSettings: '"tnum"' }}>
+      <span
+        aria-live="polite"
+        aria-label={`Playback position: ${formatDuration(currentTime)} of ${formatDuration(duration)}`}
+        className="shrink-0 text-xs text-muted-foreground"
+        style={{ fontFeatureSettings: '"tnum"' }}
+      >
         {formatDuration(currentTime)} / {formatDuration(duration)}
       </span>
 

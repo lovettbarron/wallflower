@@ -9,6 +9,7 @@ import type { JamRecord } from "@/lib/types";
 import { DateGroup } from "./DateGroup";
 import { FilterBar } from "./FilterBar";
 import { JamCard } from "./JamCard";
+import { useRovingTabIndex } from "@/components/accessibility";
 
 const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic"];
 
@@ -227,20 +228,34 @@ export function Timeline({ onImportClick }: TimelineProps) {
   }
 
   const groups = groupJamsByDate(jams);
+  const allJamIds = jams.map((j) => j.id);
+
+  const { getItemProps, focusedId } = useRovingTabIndex(allJamIds, null, {
+    orientation: "vertical",
+    onSelect: (id) => setSelectedJam(id),
+  });
 
   return (
-    <div className="pb-14">
+    <div className="pb-14" role="listbox" aria-label="Jam library">
       <FilterBar resultCount={jams.length} />
       {groups.map((group) => (
         <DateGroup key={group.label} label={group.label}>
-          {group.jams.map((jam) => (
-            <JamCard
-              key={jam.id}
-              jam={jam}
-              onClick={() => setSelectedJam(jam.id)}
-              isDropTarget={dropTargetJamId === jam.id}
-            />
-          ))}
+          {group.jams.map((jam) => {
+            const itemProps = getItemProps(jam.id);
+            return (
+              <JamCard
+                key={jam.id}
+                jam={jam}
+                onClick={() => setSelectedJam(jam.id)}
+                isDropTarget={dropTargetJamId === jam.id}
+                isSelected={focusedId === jam.id}
+                ref={itemProps.ref}
+                tabIndex={itemProps.tabIndex}
+                onKeyDown={itemProps.onKeyDown}
+                onFocus={itemProps.onFocus}
+              />
+            );
+          })}
         </DateGroup>
       ))}
     </div>

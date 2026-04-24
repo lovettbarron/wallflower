@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, forwardRef, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ImagePlus } from "lucide-react";
 import type { JamRecord, PeakData } from "@/lib/types";
@@ -14,6 +14,10 @@ interface JamCardProps {
   jam: JamRecord;
   onClick: () => void;
   isDropTarget?: boolean;
+  isSelected?: boolean;
+  tabIndex?: number;
+  onKeyDown?: (e: KeyboardEvent) => void;
+  onFocus?: () => void;
 }
 
 function MiniWaveform({ peaks }: { peaks: PeakData }) {
@@ -77,7 +81,10 @@ function WaveformSkeleton() {
   );
 }
 
-export function JamCard({ jam, onClick, isDropTarget }: JamCardProps) {
+export const JamCard = forwardRef<HTMLButtonElement, JamCardProps>(function JamCard(
+  { jam, onClick, isDropTarget, isSelected, tabIndex, onKeyDown, onFocus },
+  ref,
+) {
   const { data: peaks, isLoading } = useQuery<PeakData>({
     queryKey: ["peaks", jam.id],
     queryFn: () => getPeaks(jam.id),
@@ -91,12 +98,22 @@ export function JamCard({ jam, onClick, isDropTarget }: JamCardProps) {
     staleTime: 60000,
   });
 
+  const jamName = jam.originalFilename || jam.filename;
+  const durationText = formatDuration(jam.durationSeconds);
+
   return (
     <button
+      ref={ref}
       type="button"
+      role="option"
+      aria-selected={isSelected ?? false}
+      aria-label={`${jamName}, ${durationText}`}
       data-jam-id={jam.id}
-      data-jam-name={jam.originalFilename || jam.filename}
+      data-jam-name={jamName}
       onClick={onClick}
+      tabIndex={tabIndex}
+      onKeyDown={onKeyDown}
+      onFocus={onFocus}
       className={cn(
         "relative w-full cursor-pointer rounded-xl p-4 text-left transition-all focus:outline-none focus:ring-2 focus:ring-[#E8863A] focus:ring-offset-2 focus:ring-offset-[#151921]",
         isDropTarget
@@ -167,4 +184,4 @@ export function JamCard({ jam, onClick, isDropTarget }: JamCardProps) {
       </div>
     </button>
   );
-}
+});

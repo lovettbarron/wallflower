@@ -179,6 +179,8 @@ export function FilterBar({ resultCount }: FilterBarProps) {
 
   return (
     <div
+      role="search"
+      aria-label="Filter jams"
       className="sticky top-0 z-20 mb-4 rounded-xl p-4"
       style={{ background: "#1D2129" }}
     >
@@ -290,6 +292,13 @@ export function FilterBar({ resultCount }: FilterBarProps) {
           )}
         </div>
       )}
+
+      {/* Screen reader announcement for filter results */}
+      <div aria-live="polite" className="sr-only">
+        {resultCount !== undefined
+          ? `${resultCount} ${resultCount === 1 ? "jam" : "jams"} matching`
+          : ""}
+      </div>
     </div>
   );
 }

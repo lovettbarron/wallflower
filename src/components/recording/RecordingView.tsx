@@ -49,12 +49,18 @@ export function RecordingView() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* ARIA live region for recording state announcements */}
+      <div aria-live="assertive" className="sr-only">
+        {elapsedSeconds <= 1 ? "Recording started" : ""}
+      </div>
+
       {/* Header with disabled back nav */}
       <div className="px-12 pt-8">
         <button
           disabled
           className="text-muted-foreground cursor-not-allowed flex items-center gap-1 text-sm mb-4"
           title="Stop recording to return to library"
+          aria-label="Library — disabled during recording"
         >
           <ArrowLeft size={16} />
           Library
@@ -63,6 +69,7 @@ export function RecordingView() {
         {/* Recording title with pulsing dot */}
         <div className="flex items-center gap-3 mb-2">
           <span
+            aria-hidden="true"
             className="recording-dot inline-block w-2 h-2 rounded-full"
             style={{ backgroundColor: "#E53E3E" }}
           />
@@ -73,7 +80,7 @@ export function RecordingView() {
 
         {/* Elapsed time and device info */}
         <div className="flex items-center gap-4 mb-6 text-sm text-muted-foreground">
-          <span className="font-mono tabular-nums">
+          <span aria-live="polite" className="font-mono tabular-nums">
             {formatElapsed(elapsedSeconds)}
           </span>
           {deviceName && <span>{deviceName}</span>}
