@@ -72,7 +72,7 @@ Progress: [██████████] 97%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Roadmap]: 6 phases following dependency order: storage -> playback -> recording -> ML -> separation -> spatial
+- [Roadmap]: 7 phases following dependency order: storage -> playback -> recording -> ML -> separation -> accessibility/distribution -> sample browser
 - [Roadmap]: SQLite DB must be in ~/Library/Application Support/wallflower, never in sync folders
 - [Roadmap]: Design language wireframes required before UI implementation (Phase 2+)
 - [Revision]: Application is now a native macOS app using Tauri v2 from Phase 1 (not a standalone web app)
@@ -93,9 +93,8 @@ Recent decisions affecting current work:
 - [Phase 06]: GROUP_CONCAT with LEFT JOINs for single-query spatial data (avoids N+1)
 - [Phase 06]: useRovingTabIndex uses external state (activeIndex + onChange) for parent control
 - [Phase 06]: Push-to-main CI/CD trigger per D-14; draft releases for review; minimumSystemVersion 13.0 for SMAppService
-- [Phase 06]: No links in force graph -- clustering via positional forces only
-- [Phase 06]: Top two highest-weight dimensions drive X and Y axes for spatial layout
-- [Phase 06]: Peaks lazy-loaded on hover, cached in zustand store for waveform thumbnails
+- [Phase 06]: Spatial explorer removed — force graph not useful for musicians, replaced with sample browser (Phase 7)
+- [Phase 06]: PLAY-04 (spatial map) moved to Phase 7 as sample browser requirement
 - Web Audio API with AudioBufferSourceNode.loop and GainNode for synchronized stem playback
 
 ### Pending Todos

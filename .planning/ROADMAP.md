@@ -2,7 +2,7 @@
 
 ## Overview
 
-Wallflower delivers a local-first jam and sample manager as a native macOS app built with Tauri v2, in six phases. The Tauri shell is established in Phase 1 alongside storage and API foundations -- the Rust backend runs embedded in the Tauri process, and the React frontend renders in Tauri's WKWebView via static export. Each subsequent phase delivers a complete, verifiable capability. The build order follows component dependencies: storage underpins everything, playback verifies imported audio works, recording depends on the priority scheduler and adds menubar/hotkey integration, ML analysis validates the sidecar IPC pattern, source separation extends it to the heaviest workload, and the spatial explorer caps the experience with the signature differentiator plus distribution readiness.
+Wallflower delivers a local-first jam and sample manager as a native macOS app built with Tauri v2, in seven phases. The Tauri shell is established in Phase 1 alongside storage and API foundations -- the Rust backend runs embedded in the Tauri process, and the React frontend renders in Tauri's WKWebView via static export. Each subsequent phase delivers a complete, verifiable capability. The build order follows component dependencies: storage underpins everything, playback verifies imported audio works, recording depends on the priority scheduler and adds menubar/hotkey integration, ML analysis validates the sidecar IPC pattern, source separation extends it to the heaviest workload, Phase 6 adds accessibility and distribution readiness, and Phase 7 caps the experience with a sample browser for finding and extracting the interesting parts of recordings.
 
 ## Phases
 
@@ -17,7 +17,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: Recording Engine & System Integration** - Multi-channel audio capture, crash safety, dropout recovery, live metadata, priority scheduler, menubar status, and global hotkeys
 - [ ] **Phase 4: ML Analysis Pipeline** - Python sidecar, tempo/key/section detection, progressive results via SSE, model management, and search/filter
 - [x] **Phase 5: Source Separation & Export** - Demucs integration, bookmarking, stem export, DAW folder integration
-- [ ] **Phase 6: Spatial Explorer, Accessibility & Distribution** - Spatial similarity map, keyboard navigation, screen reader support, accessibility, auto-launch, code signing
+- [ ] **Phase 6: Accessibility & Distribution** - Keyboard navigation, screen reader support, accessibility, auto-launch, code signing
+- [ ] **Phase 7: Sample Browser & Extract** - Explore tab sample browser for bookmarks, loops, and sections from auto-analysis with search/filter by key, tempo, duration, tags
 
 ## Phase Details
 
@@ -121,40 +122,55 @@ Plans:
 - [x] 05-04-PLAN.md -- Frontend bookmarks: zustand store, wavesurfer regions, popover, list, context menu, waveform integration
 - [x] 05-05-PLAN.md -- Stem mixer panel, separation progress, export settings, Phase 5 verification checkpoint
 
-### Phase 6: Spatial Explorer, Accessibility & Distribution
-**Goal**: Users can browse their jam library through a spatial similarity map, the entire application is keyboard-navigable and accessible, and the app is distribution-ready with auto-launch and code signing
+### Phase 6: Accessibility & Distribution
+**Goal**: The entire application is keyboard-navigable and accessible, and the app is distribution-ready with auto-launch and code signing
 **Depends on**: Phase 5
-**Requirements**: PLAY-04, DES-02, DES-03, DES-04, INFRA-13, INFRA-14
+**Requirements**: DES-02, DES-03, DES-04, INFRA-13, INFRA-14
 **Success Criteria** (what must be TRUE):
-  1. User can browse jams in a spatial map where musically similar jams cluster together, with coloring by key, tempo, date, or instrumentation
-  2. User can navigate every feature of the application using only the keyboard
-  3. Screen readers can announce all interactive elements and application state
-  4. High contrast mode is available with accessible color choices throughout
-  5. Application can be configured to auto-launch on macOS login
-  6. Application is properly signed and notarized for distribution to other macOS users
+  1. User can navigate every feature of the application using only the keyboard
+  2. Screen readers can announce all interactive elements and application state
+  3. High contrast mode is available with accessible color choices throughout
+  4. Application can be configured to auto-launch on macOS login
+  5. Application is properly signed and notarized for distribution to other macOS users
 **Plans**: 5 plans
 **UI hint**: yes
 
 Plans:
-- [x] 06-01-PLAN.md -- Backend spatial data API, accessibility foundation (SkipLink, HighContrastProvider, useRovingTabIndex, high contrast CSS)
-- [x] 06-02-PLAN.md -- Spatial explorer frontend: force-directed graph, dimension sliders, color legend, accessibility overlay, Explore tab
-- [ ] 06-03-PLAN.md -- Accessibility retrofit: ARIA landmarks, keyboard navigation, screen reader support across all existing components
+- [x] 06-01-PLAN.md -- Accessibility foundation (SkipLink, HighContrastProvider, useRovingTabIndex, high contrast CSS)
+- [x] 06-02-PLAN.md -- Explore tab setup, accessibility overlay (spatial explorer removed post-execution)
+- [x] 06-03-PLAN.md -- Accessibility retrofit: ARIA landmarks, keyboard navigation, screen reader support across all existing components
 - [x] 06-04-PLAN.md -- GitHub Actions CI/CD pipeline for signed macOS distribution
-- [ ] 06-05-PLAN.md -- Auto-launch on login (Tauri autostart plugin), first-launch dialog, settings toggle
+- [x] 06-05-PLAN.md -- Auto-launch on login (Tauri autostart plugin), first-launch dialog, settings toggle
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Tauri App Shell, Storage & API Foundation | 3/4 | In progress | - |
-| 2. Playback, Metadata, Design System & Notifications | 0/4 | Not started | - |
-| 3. Recording Engine & System Integration | 5/6 | In Progress|  |
-| 4. ML Analysis Pipeline | 0/6 | Not started | - |
+| 2. Playback, Metadata, Design System & Notifications | 4/4 | Complete | - |
+| 3. Recording Engine & System Integration | 6/6 | Complete | - |
+| 4. ML Analysis Pipeline | 6/6 | Complete | - |
 | 5. Source Separation & Export | 5/5 | Complete | 2026-04-24 |
-| 6. Spatial Explorer, Accessibility & Distribution | 1/5 | In Progress|  |
+| 6. Accessibility & Distribution | 5/5 | Complete | 2026-04-24 |
+| 7. Sample Browser & Extract | 0/0 | Not started | - |
+
+### Phase 7: Sample Browser & Extract
+**Goal**: Users can browse the Explore tab as a sample browser — searching and filtering bookmarks, loops, and sections extracted from auto-analysis by key, tempo, duration, tags, and source recording, with inline preview
+**Depends on**: Phase 6
+**Requirements**: PLAY-04
+**Success Criteria** (what must be TRUE):
+  1. User can browse all bookmarks, loops, and detected sections across all recordings in a searchable list
+  2. User can filter by key, tempo, duration range, tags, and source recording
+  3. User can preview any sample inline without leaving the Explore tab
+  4. User can export a selected sample directly from the browser
+**Plans**: 0 plans
+**UI hint**: yes
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 7 to break down)
 
 ## Backlog
 
