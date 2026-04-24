@@ -47,7 +47,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **PLAY-01**: User can view waveforms for any recording, powered by pre-computed multi-resolution peaks served from the backend
 - [ ] **PLAY-02**: User can scrub and seek to any position in recordings up to 120 minutes via HTTP Range requests without loading the full file
 - [ ] **PLAY-03**: User can browse jam library in a chronological timeline view
-- [ ] **PLAY-04**: User can browse jam library in a spatial map/explorer view where jams cluster by musical similarity, temporal proximity, instrumentation, and collaborators
+- [x] **PLAY-04**: User can browse jam library in a spatial map/explorer view where jams cluster by musical similarity, temporal proximity, instrumentation, and collaborators
 - [ ] **PLAY-05**: Playback and scrubbing are never interrupted by background processing
 
 ### Metadata & Organization
@@ -74,8 +74,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Design & Accessibility
 
 - [ ] **DES-01**: UI follows a playful, clean, "big" design language inspired by Mutable Instruments (generous whitespace, bold accent colors, rounded organic shapes) and Intellijel (structured logical sections)
-- [ ] **DES-02**: Full keyboard navigation for all application features
-- [ ] **DES-03**: ARIA labels and screen reader support throughout the application
+- [x] **DES-02**: Full keyboard navigation for all application features
+- [x] **DES-03**: ARIA labels and screen reader support throughout the application
 - [ ] **DES-04**: High contrast mode and accessible color choices
 - [ ] **DES-05**: Wireframes are generated and approved before implementation of each UI component
 - [ ] **DES-06**: UI accepts photo sketches as design input that feed into the implementation approach
@@ -208,9 +208,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXP-04 | Phase 5 | Pending |
 | EXP-05 | Phase 5 | Pending |
 | EXP-06 | Phase 5 | Pending |
-| PLAY-04 | Phase 6 | Pending |
-| DES-02 | Phase 6 | Pending |
-| DES-03 | Phase 6 | Pending |
+| PLAY-04 | Phase 6 | Complete |
+| DES-02 | Phase 6 | Complete |
+| DES-03 | Phase 6 | Complete |
 | DES-04 | Phase 6 | Pending |
 | INFRA-13 | Phase 6 | Pending |
 | INFRA-14 | Phase 6 | Complete |

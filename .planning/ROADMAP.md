@@ -137,9 +137,9 @@ Plans:
 
 Plans:
 - [x] 06-01-PLAN.md -- Backend spatial data API, accessibility foundation (SkipLink, HighContrastProvider, useRovingTabIndex, high contrast CSS)
-- [ ] 06-02-PLAN.md -- Spatial explorer frontend: force-directed graph, dimension sliders, color legend, accessibility overlay, Explore tab
+- [x] 06-02-PLAN.md -- Spatial explorer frontend: force-directed graph, dimension sliders, color legend, accessibility overlay, Explore tab
 - [ ] 06-03-PLAN.md -- Accessibility retrofit: ARIA landmarks, keyboard navigation, screen reader support across all existing components
-- [ ] 06-04-PLAN.md -- GitHub Actions CI/CD pipeline for signed macOS distribution
+- [x] 06-04-PLAN.md -- GitHub Actions CI/CD pipeline for signed macOS distribution
 - [ ] 06-05-PLAN.md -- Auto-launch on login (Tauri autostart plugin), first-launch dialog, settings toggle
 
 ## Progress
