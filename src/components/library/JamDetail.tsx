@@ -3,8 +3,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ImagePlus } from "lucide-react";
-import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, prioritizeAnalysis, exportAudio, revealInFinder } from "@/lib/tauri";
-import type { JamDetail as JamDetailType, PeakData, BookmarkColor, SeparationProgressEvent } from "@/lib/types";
+import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, prioritizeAnalysis, exportAudio, revealInFinder, getAnalysisResults } from "@/lib/tauri";
+import type { JamDetail as JamDetailType, PeakData, BookmarkColor, SeparationProgressEvent, AnalysisResults } from "@/lib/types";
 import { WaveformOverview } from "@/components/waveform/WaveformOverview";
 import { WaveformDetail } from "@/components/waveform/WaveformDetail";
 import { MetadataEditor } from "@/components/metadata/MetadataEditor";
@@ -133,6 +133,13 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
     enabled: !!jamId && !!jam,
   });
 
+  const { data: analysis } = useQuery<AnalysisResults>({
+    queryKey: ["jam", jamId, "analysis"],
+    queryFn: () => getAnalysisResults(jamId),
+    enabled: !!jamId,
+    staleTime: 30000,
+  });
+
   useEffect(() => {
     if (jam) setTitle(jam.originalFilename || jam.filename);
   }, [jam]);
@@ -222,6 +229,32 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
       setEditingBookmarkId(id);
     },
     [],
+  );
+
+  const handleSectionClick = useCallback(
+    (section: { startSeconds: number; endSeconds: number; label: string }) => {
+      setCurrentTime(section.startSeconds);
+      setActiveLoop({
+        startSeconds: section.startSeconds,
+        endSeconds: section.endSeconds,
+        label: section.label,
+      });
+      setPlaying(true);
+    },
+    [setCurrentTime, setActiveLoop, setPlaying],
+  );
+
+  const handleLoopClick = useCallback(
+    (loop: { startSeconds: number; endSeconds: number; label: string }) => {
+      setCurrentTime(loop.startSeconds);
+      setActiveLoop({
+        startSeconds: loop.startSeconds,
+        endSeconds: loop.endSeconds,
+        label: loop.label,
+      });
+      setPlaying(true);
+    },
+    [setCurrentTime, setActiveLoop, setPlaying],
   );
 
   const handleBookmarkClick = useCallback(
@@ -382,10 +415,14 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
             peaks={peaks}
             onSeek={handleSeek}
             bookmarks={bookmarks}
+            sections={analysis?.sections ?? []}
+            loops={analysis?.loops ?? []}
             onBookmarkDragEnd={handleBookmarkDragEnd}
             onBookmarkUpdate={handleBookmarkUpdate}
             onBookmarkSelect={handleBookmarkSelect}
             onBookmarkEdit={handleBookmarkEdit}
+            onSectionClick={handleSectionClick}
+            onLoopClick={handleLoopClick}
           />
         </>
       )}

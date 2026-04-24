@@ -163,6 +163,19 @@ export function Timeline({ onImportClick }: TimelineProps) {
     queryFn: () => (hasActiveFilters ? searchJams(filter) : listJams()),
   });
 
+  const allJamIds = (jams ?? []).map((j) => j.id);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const { refs, handleKeyDown, getTabIndex } = useRovingTabIndex<HTMLButtonElement>(
+    allJamIds,
+    activeIndex,
+    (index) => {
+      setActiveIndex(index);
+      if (allJamIds[index]) setSelectedJam(allJamIds[index]);
+    },
+    { orientation: "vertical" },
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -228,19 +241,6 @@ export function Timeline({ onImportClick }: TimelineProps) {
   }
 
   const groups = groupJamsByDate(jams);
-  const allJamIds = jams.map((j) => j.id);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const { refs, handleKeyDown, getTabIndex } = useRovingTabIndex<HTMLButtonElement>(
-    allJamIds,
-    activeIndex,
-    (index) => {
-      setActiveIndex(index);
-      setSelectedJam(allJamIds[index]);
-    },
-    { orientation: "vertical" },
-  );
-
   let flatIndex = 0;
 
   return (

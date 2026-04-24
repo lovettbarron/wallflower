@@ -7,6 +7,8 @@ import { formatDuration } from "@/lib/format";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import type { PeakData, BookmarkRecord, BookmarkColor, SectionRecord, LoopRecord } from "@/lib/types";
 import { BOOKMARK_COLORS } from "@/lib/types";
+import { SectionMarkers } from "./SectionMarkers";
+import { LoopBrackets } from "./LoopBrackets";
 
 interface WaveformDetailProps {
   audioUrl: string;
@@ -19,6 +21,8 @@ interface WaveformDetailProps {
   onBookmarkUpdate?: (id: string, start: number, end: number) => void;
   onBookmarkSelect?: (id: string) => void;
   onBookmarkEdit?: (id: string) => void;
+  onSectionClick?: (section: SectionRecord) => void;
+  onLoopClick?: (loop: LoopRecord) => void;
 }
 
 export function WaveformDetail({
@@ -32,9 +36,22 @@ export function WaveformDetail({
   onBookmarkUpdate,
   onBookmarkSelect,
   onBookmarkEdit,
+  onSectionClick,
+  onLoopClick,
 }: WaveformDetailProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const regionsRef = useRef<RegionsPlugin | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setContainerWidth(entry.contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const flatPeaks = useMemo(
     () => {
@@ -338,6 +355,23 @@ export function WaveformDetail({
             display: "none",
           }}
         />
+        {sections.length > 0 && containerWidth > 0 && (
+          <SectionMarkers
+            sections={sections}
+            totalDuration={peaks.duration}
+            containerWidth={containerWidth}
+            showLabels
+            onSectionClick={onSectionClick}
+          />
+        )}
+        {loops.length > 0 && containerWidth > 0 && (
+          <LoopBrackets
+            loops={loops}
+            totalDuration={peaks.duration}
+            containerWidth={containerWidth}
+            onLoopClick={onLoopClick}
+          />
+        )}
       </div>
       {/* ARIA live region for seek announcements */}
       <div aria-live="polite" className="sr-only">{seekAnnouncement}</div>

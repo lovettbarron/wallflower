@@ -4,11 +4,18 @@ A local-first jam and sample manager for musicians who want to focus on creating
 
 ## Status
 
-**Phase 5 in progress** -- Source separation and export. Phases 1-4 complete (import, playback, recording, analysis). Phase 5 adds bookmarking, stem separation via demucs-mlx, and DAW-ready export.
+**Phase 6 in progress** -- Spatial explorer, accessibility, and distribution. Phases 1-5 complete (import, playback, recording, analysis, source separation & export).
 
 ## Features
 
-### Source Separation & Export (Phase 5 - in progress)
+### Spatial Explorer & Accessibility (Phase 6 - in progress)
+- Spatial similarity explorer with force-directed graph visualization
+- Accessibility retrofit: keyboard navigation, screen reader support, ARIA labels
+- Skip-to-content link for keyboard users
+- Auto-launch on login with first-launch dialog
+- Section and loop overlays on waveform with click-to-play
+
+### Source Separation & Export (Phase 5)
 - Bookmark regions on the waveform with drag-to-select and snap-to-section
 - Bookmark management: list, edit, delete, color coding, context menu
 - Export bookmarked audio as time-sliced WAV with JSON metadata sidecar
@@ -161,9 +168,9 @@ cargo build --release --workspace
 - ~~**Phase 1:** Foundation -- import, storage, CLI, Tauri shell~~ Done
 - ~~**Phase 2:** Timeline UI, metadata editing, audio playback~~ Done
 - ~~**Phase 3:** Recording with crash safety, silence detection~~ Done
-- **Phase 4:** Audio analysis (key, tempo, sections) via Python ML sidecar
-- **Phase 5:** Source separation (demucs-mlx on Apple Silicon)
-- **Phase 6:** Spatial explorer, export to DAW, polish
+- ~~**Phase 4:** Audio analysis (key, tempo, sections) via Python ML sidecar~~ Done
+- ~~**Phase 5:** Source separation (demucs-mlx on Apple Silicon)~~ Done
+- **Phase 6:** Spatial explorer, accessibility, distribution
 
 ## License
 
