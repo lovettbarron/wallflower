@@ -6,6 +6,7 @@ import { getSettings, updateSettings } from "@/lib/tauri";
 import type { AppSettings } from "@/lib/types";
 import { ModelManagement } from "./ModelManagement";
 import { AnalysisProfileSelector } from "./AnalysisProfileSelector";
+import { AutoLaunchSection } from "./AutoLaunchSection";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -389,6 +390,18 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
         <AnalysisProfileSelector />
         <ModelManagement />
+      </div>
+
+      {/* Startup settings card */}
+      <div
+        className="mb-4 rounded-xl border p-5"
+        style={{
+          background: "#1D2129",
+          borderColor: "#323844",
+        }}
+      >
+        <h2 className="mb-4 text-sm font-semibold text-foreground">Startup</h2>
+        <AutoLaunchSection />
       </div>
 
       {/* Slider styling */}

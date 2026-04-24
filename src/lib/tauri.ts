@@ -328,3 +328,35 @@ export async function cancelSeparation(): Promise<void> {
 export async function revealInFinder(path: string): Promise<void> {
   return invoke("reveal_in_finder", { path });
 }
+
+// --- Auto-launch dialog state ---
+
+/** Mark the auto-launch first-launch dialog as shown. */
+export async function setAutoLaunchDialogShown(): Promise<void> {
+  await invoke("update_settings", {
+    settings: { autoLaunchDialogShown: true },
+  }).catch(() => {
+    // Fall back to localStorage if backend setting not available
+    if (typeof window !== "undefined") {
+      localStorage.setItem("wallflower_auto_launch_dialog_shown", "true");
+    }
+  });
+}
+
+/** Check if the auto-launch first-launch dialog has been shown. */
+export async function getAutoLaunchDialogShown(): Promise<boolean> {
+  try {
+    const settings = await getSettings();
+    // Check if the settings object has this field (may not exist in older schemas)
+    if ("autoLaunchDialogShown" in settings) {
+      return !!(settings as Record<string, unknown>).autoLaunchDialogShown;
+    }
+  } catch {
+    // Fall through to localStorage
+  }
+  // Fall back to localStorage
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("wallflower_auto_launch_dialog_shown") === "true";
+  }
+  return false;
+}

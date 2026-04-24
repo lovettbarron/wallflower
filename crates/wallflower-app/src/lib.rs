@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tauri::{Emitter, Manager};
+use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_notification::NotificationExt;
 use wallflower_core::db::Database;
 use wallflower_core::recording::scheduler::PriorityScheduler;
@@ -330,6 +331,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--autostarted"])))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(move |app| {
             start_patches_watcher(app.handle().clone());

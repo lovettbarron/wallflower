@@ -6,16 +6,18 @@ import { Timeline } from "@/components/library/Timeline";
 import { JamDetail } from "@/components/library/JamDetail";
 import { DeviceImportDialog } from "@/components/device-import-dialog";
 import { SettingsPage } from "@/components/settings/SettingsPage";
+import { FirstLaunchDialog } from "@/components/settings/FirstLaunchDialog";
 import { useLibraryStore } from "@/lib/stores/library";
 import { RecordingView } from "@/components/recording/RecordingView";
 import { useRecordingStore } from "@/lib/stores/recording";
-import { queuePendingAnalysis } from "@/lib/tauri";
+import { queuePendingAnalysis, getAutoLaunchDialogShown } from "@/lib/tauri";
 
 type ActiveTab = "library" | "settings";
 
 export default function Home() {
   const [showDeviceDialog, setShowDeviceDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("library");
+  const [showFirstLaunchDialog, setShowFirstLaunchDialog] = useState(false);
   const { selectedJamId, setSelectedJam } = useLibraryStore();
   const isRecording = useRecordingStore((s) => s.isRecording);
   const startRec = useRecordingStore((s) => s.startRec);
@@ -25,6 +27,17 @@ export default function Home() {
     queuePendingAnalysis().catch(() => {
       // Silently ignore -- analysis may not be available
     });
+  }, []);
+
+  // Check if first-launch auto-launch dialog should be shown
+  useEffect(() => {
+    getAutoLaunchDialogShown()
+      .then((shown) => {
+        if (!shown) setShowFirstLaunchDialog(true);
+      })
+      .catch(() => {
+        // Silently ignore
+      });
   }, []);
 
   // When recording is active, lock navigation and show RecordingView
@@ -104,6 +117,12 @@ export default function Home() {
       {showDeviceDialog && (
         <DeviceImportDialog onClose={() => setShowDeviceDialog(false)} />
       )}
+
+      {/* First-launch auto-launch dialog */}
+      <FirstLaunchDialog
+        open={showFirstLaunchDialog}
+        onClose={() => setShowFirstLaunchDialog(false)}
+      />
     </main>
   );
 }
