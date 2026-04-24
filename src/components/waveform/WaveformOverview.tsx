@@ -125,11 +125,20 @@ export function WaveformOverview({
     onSeek(Math.max(0, Math.min(time, duration)));
   };
 
+  const currentTime = useTransportStore((s) => s.currentTime);
+  const duration = useTransportStore((s) => s.duration);
+
   return (
     <canvas
       ref={canvasRef}
       onClick={handleClick}
-      className="h-12 w-full cursor-crosshair rounded-lg"
+      role="slider"
+      tabIndex={0}
+      aria-label="Waveform overview — click to seek"
+      aria-valuemin={0}
+      aria-valuemax={duration > 0 ? duration : peaks.duration}
+      aria-valuenow={currentTime}
+      className="h-12 w-full cursor-crosshair rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E8863A]"
       style={{ background: "#1D2129" }}
     />
   );

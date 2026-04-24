@@ -271,55 +271,67 @@ export function MetadataEditor({ jam, onUpdate }: MetadataEditorProps) {
   return (
     <div className="space-y-4">
       {/* Tags */}
-      <ChipSection
-        label="Tags"
-        items={jam.tags.map((t) => ({ id: t.id, label: t.tag }))}
-        variant="tag"
-        placeholder="Add a tag..."
-        suggestionsQueryKey="allTags"
-        fetchSuggestions={listAllTags}
-        onAdd={(val) => addTagMutation.mutate(val)}
-        onRemove={(id) => removeTagMutation.mutate(id)}
-      />
+      <fieldset className="border-none p-0 m-0">
+        <legend className="text-xs text-muted-foreground mb-1.5">Tags</legend>
+        <ChipSection
+          label="Tags"
+          items={jam.tags.map((t) => ({ id: t.id, label: t.tag }))}
+          variant="tag"
+          placeholder="Add a tag..."
+          suggestionsQueryKey="allTags"
+          fetchSuggestions={listAllTags}
+          onAdd={(val) => addTagMutation.mutate(val)}
+          onRemove={(id) => removeTagMutation.mutate(id)}
+        />
+      </fieldset>
 
       {/* Collaborators */}
-      <ChipSection
-        label="Collaborators"
-        items={jam.collaborators.map((c) => ({ id: c.id, label: c.name }))}
-        variant="collaborator"
-        placeholder="Add a collaborator..."
-        suggestionsQueryKey="allCollaborators"
-        fetchSuggestions={listAllCollaborators}
-        onAdd={(val) => addCollaboratorMutation.mutate(val)}
-        onRemove={(id) => removeCollaboratorMutation.mutate(id)}
-      />
+      <fieldset className="border-none p-0 m-0">
+        <legend className="text-xs text-muted-foreground mb-1.5">Collaborators</legend>
+        <ChipSection
+          label="Collaborators"
+          items={jam.collaborators.map((c) => ({ id: c.id, label: c.name }))}
+          variant="collaborator"
+          placeholder="Add a collaborator..."
+          suggestionsQueryKey="allCollaborators"
+          fetchSuggestions={listAllCollaborators}
+          onAdd={(val) => addCollaboratorMutation.mutate(val)}
+          onRemove={(id) => removeCollaboratorMutation.mutate(id)}
+        />
+      </fieldset>
 
       {/* Gear */}
-      <ChipSection
-        label="Gear"
-        items={jam.instruments.map((i) => ({ id: i.id, label: i.name }))}
-        variant="instrument"
-        placeholder="Add gear..."
-        suggestionsQueryKey="allInstruments"
-        fetchSuggestions={listAllInstruments}
-        onAdd={(val) => addInstrumentMutation.mutate(val)}
-        onRemove={(id) => removeInstrumentMutation.mutate(id)}
-      />
+      <fieldset className="border-none p-0 m-0">
+        <legend className="text-xs text-muted-foreground mb-1.5">Gear</legend>
+        <ChipSection
+          label="Gear"
+          items={jam.instruments.map((i) => ({ id: i.id, label: i.name }))}
+          variant="instrument"
+          placeholder="Add gear..."
+          suggestionsQueryKey="allInstruments"
+          fetchSuggestions={listAllInstruments}
+          onAdd={(val) => addInstrumentMutation.mutate(val)}
+          onRemove={(id) => removeInstrumentMutation.mutate(id)}
+        />
+      </fieldset>
 
       {/* Location */}
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Location</span>
-          <SavedIndicator visible={location.showSaved} />
+      <fieldset className="border-none p-0 m-0">
+        <legend className="text-xs text-muted-foreground mb-1.5">Location</legend>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <SavedIndicator visible={location.showSaved} />
+          </div>
+          <Input
+            value={location.value}
+            onChange={(e) => location.onChange(e.target.value)}
+            onBlur={location.onBlur}
+            placeholder="Where was this recorded?"
+            aria-label="Location"
+            className="bg-secondary"
+          />
         </div>
-        <Input
-          value={location.value}
-          onChange={(e) => location.onChange(e.target.value)}
-          onBlur={location.onBlur}
-          placeholder="Where was this recorded?"
-          className="bg-secondary"
-        />
-      </div>
+      </fieldset>
 
       {/* Recorded date */}
       <div className="space-y-1.5">
@@ -328,47 +340,49 @@ export function MetadataEditor({ jam, onUpdate }: MetadataEditorProps) {
       </div>
 
       {/* Notes */}
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Notes</span>
+      <fieldset className="border-none p-0 m-0">
+        <legend className="text-xs text-muted-foreground mb-1.5">Notes</legend>
+        <div className="space-y-1.5">
           <SavedIndicator visible={notes.showSaved} />
+          <Textarea
+            value={notes.value}
+            onChange={(e) => notes.onChange(e.target.value)}
+            onBlur={notes.onBlur}
+            placeholder="Session notes..."
+            aria-label="Notes"
+            rows={4}
+            className="bg-secondary"
+          />
         </div>
-        <Textarea
-          value={notes.value}
-          onChange={(e) => notes.onChange(e.target.value)}
-          onBlur={notes.onBlur}
-          placeholder="Session notes..."
-          rows={4}
-          className="bg-secondary"
-        />
-      </div>
+      </fieldset>
 
       {/* Patch Notes */}
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Patch Notes</span>
+      <fieldset className="border-none p-0 m-0">
+        <legend className="text-xs text-muted-foreground mb-1.5">Patch Notes</legend>
+        <div className="space-y-1.5">
           <SavedIndicator visible={patchNotes.showSaved} />
+          <Textarea
+            value={patchNotes.value}
+            onChange={(e) => patchNotes.onChange(e.target.value)}
+            onBlur={patchNotes.onBlur}
+            placeholder="Describe your patch settings, signal chain, synth presets..."
+            aria-label="Patch Notes"
+            rows={4}
+            className="bg-secondary"
+          />
         </div>
-        <Textarea
-          value={patchNotes.value}
-          onChange={(e) => patchNotes.onChange(e.target.value)}
-          onBlur={patchNotes.onBlur}
-          placeholder="Describe your patch settings, signal chain, synth presets..."
-          rows={4}
-          className="bg-secondary"
-        />
-      </div>
+      </fieldset>
 
       {/* Photos */}
-      <div className="space-y-1.5">
-        <span className="text-xs text-muted-foreground">Photos</span>
+      <fieldset className="border-none p-0 m-0">
+        <legend className="text-xs text-muted-foreground mb-1.5">Photos</legend>
         <PhotoGallery
           photos={jam.photos}
           jamId={jam.id}
           jamName={jam.originalFilename || jam.filename}
           onUpdate={invalidateJam}
         />
-      </div>
+      </fieldset>
     </div>
   );
 }

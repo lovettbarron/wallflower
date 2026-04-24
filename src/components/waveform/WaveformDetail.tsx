@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, useEffect, useMemo, useCallback } from "react";
+import { useRef, useEffect, useMemo, useCallback, useState, type KeyboardEvent } from "react";
 import { useWavesurfer } from "@wavesurfer/react";
+import { useTransportStore } from "@/lib/stores/transport";
+import { formatDuration } from "@/lib/format";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.js";
 import type { PeakData, BookmarkRecord, BookmarkColor, SectionRecord, LoopRecord } from "@/lib/types";
 import { BOOKMARK_COLORS } from "@/lib/types";
@@ -274,6 +276,35 @@ export function WaveformDetail({
     }
   }, [bookmarks, isReady]);
 
+  // Keyboard seek state for ARIA live announcements
+  const [seekAnnouncement, setSeekAnnouncement] = useState("");
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      const currentTime = useTransportStore.getState().currentTime;
+      const dur = peaks.duration;
+      let seekTo: number | null = null;
+
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        const step = e.shiftKey ? 30 : 5;
+        seekTo = Math.max(0, currentTime - step);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        const step = e.shiftKey ? 30 : 5;
+        seekTo = Math.min(dur, currentTime + step);
+      }
+
+      if (seekTo !== null) {
+        onSeek(seekTo);
+        setSeekAnnouncement(formatDuration(seekTo));
+      }
+    },
+    [peaks.duration, onSeek],
+  );
+
+  const currentTime = useTransportStore((s) => s.currentTime);
+
   return (
     <div className="relative w-full">
       {!isReady && (
@@ -284,7 +315,15 @@ export function WaveformDetail({
       )}
       <div
         ref={containerRef}
-        className="relative w-full rounded-lg"
+        role="slider"
+        tabIndex={0}
+        aria-label="Waveform — use left and right arrow keys to seek"
+        aria-valuemin={0}
+        aria-valuemax={peaks.duration}
+        aria-valuenow={currentTime}
+        aria-valuetext={formatDuration(currentTime)}
+        onKeyDown={handleKeyDown}
+        className="relative w-full rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E8863A]"
         style={{
           background: "#1D2129",
           display: isReady ? "block" : "none",
@@ -300,6 +339,8 @@ export function WaveformDetail({
           }}
         />
       </div>
+      {/* ARIA live region for seek announcements */}
+      <div aria-live="polite" className="sr-only">{seekAnnouncement}</div>
     </div>
   );
 }
