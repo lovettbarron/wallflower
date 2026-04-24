@@ -6,7 +6,6 @@ import { Timeline } from "@/components/library/Timeline";
 import { JamDetail } from "@/components/library/JamDetail";
 import { DeviceImportDialog } from "@/components/device-import-dialog";
 import { SettingsPage } from "@/components/settings/SettingsPage";
-import { ExplorePage } from "@/components/explore/ExplorePage";
 import { FirstLaunchDialog } from "@/components/settings/FirstLaunchDialog";
 import { useLibraryStore } from "@/lib/stores/library";
 import { RecordingView } from "@/components/recording/RecordingView";
@@ -131,7 +130,16 @@ export default function Home() {
           </>
         )}
 
-        {activeTab === "explore" && <ExplorePage />}
+        {activeTab === "explore" && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-12 py-24">
+            <h2 className="text-xl font-semibold text-foreground">
+              Sample Browser
+            </h2>
+            <p className="max-w-md text-center text-sm text-muted-foreground">
+              Search and filter bookmarks, loops, and sections extracted from your recordings. Coming soon.
+            </p>
+          </div>
+        )}
 
         {activeTab === "settings" && (
           <SettingsPage onBack={() => setActiveTab("library")} />
