@@ -1,17 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Circle } from "lucide-react";
+import { Circle } from "lucide-react";
 import { Timeline } from "@/components/library/Timeline";
 import { JamDetail } from "@/components/library/JamDetail";
 import { DeviceImportDialog } from "@/components/device-import-dialog";
 import { SettingsPage } from "@/components/settings/SettingsPage";
+import { ExplorePage } from "@/components/explore/ExplorePage";
 import { useLibraryStore } from "@/lib/stores/library";
 import { RecordingView } from "@/components/recording/RecordingView";
 import { useRecordingStore } from "@/lib/stores/recording";
 import { queuePendingAnalysis } from "@/lib/tauri";
 
-type ActiveTab = "library" | "settings";
+type ActiveTab = "library" | "explore" | "settings";
+
+const TAB_CONFIG: { key: ActiveTab; label: string }[] = [
+  { key: "library", label: "Library" },
+  { key: "explore", label: "Explore" },
+  { key: "settings", label: "Settings" },
+];
 
 export default function Home() {
   const [showDeviceDialog, setShowDeviceDialog] = useState(false);
@@ -30,17 +37,8 @@ export default function Home() {
   // When recording is active, lock navigation and show RecordingView
   if (isRecording) {
     return (
-      <main className="flex min-h-screen flex-col">
+      <main id="main-content" className="flex min-h-screen flex-col">
         <RecordingView />
-      </main>
-    );
-  }
-
-  // Settings view
-  if (activeTab === "settings") {
-    return (
-      <main>
-        <SettingsPage onBack={() => setActiveTab("library")} />
       </main>
     );
   }
@@ -49,37 +47,41 @@ export default function Home() {
     setShowDeviceDialog(true);
   };
 
-  // Jam detail view
-  if (selectedJamId) {
-    return (
-      <main className="px-12 pt-6">
-        <JamDetail
-          jamId={selectedJamId}
-          onBack={() => setSelectedJam(null)}
-        />
-      </main>
-    );
-  }
-
-  // Library timeline view
   return (
-    <main className="px-12 pt-6">
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-foreground">Library</h1>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("settings")}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[#272C36] hover:text-foreground focus:outline-none focus:ring-2 focus:ring-[#E8863A]"
-            aria-label="Settings"
-          >
-            <Settings size={18} />
-          </button>
+    <main id="main-content" className="flex min-h-screen flex-col">
+      {/* Tab bar -- persistent across all views (per D-04) */}
+      <nav className="flex items-center justify-between bg-[#1D2129] px-8">
+        <div role="tablist" className="flex items-center gap-1">
+          {TAB_CONFIG.map(({ key, label }) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={activeTab === key}
+              onClick={() => {
+                setActiveTab(key);
+                // Clear jam detail selection when switching tabs
+                if (key !== "library") setSelectedJam(null);
+              }}
+              className={`relative px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === key
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+              {activeTab === key && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#E8863A]" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 py-2">
           <button
             type="button"
             onClick={() => startRec()}
-            className="flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#E53E3E] focus:ring-offset-2 focus:ring-offset-[#151921]"
+            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#E53E3E] focus:ring-offset-2 focus:ring-offset-[#1D2129]"
             style={{ background: "#E53E3E", color: "#fff" }}
             aria-label="Start Recording"
           >
@@ -89,16 +91,39 @@ export default function Home() {
           <button
             type="button"
             onClick={handleImportClick}
-            className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#E8863A] focus:ring-offset-2 focus:ring-offset-[#151921]"
+            className="rounded-lg px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#E8863A] focus:ring-offset-2 focus:ring-offset-[#1D2129]"
             style={{ background: "#E8863A" }}
           >
             Import Files
           </button>
         </div>
-      </div>
+      </nav>
 
-      {/* Timeline browser */}
-      <Timeline onImportClick={handleImportClick} />
+      {/* Tab content */}
+      <div className="flex flex-1 flex-col">
+        {activeTab === "library" && (
+          <>
+            {selectedJamId ? (
+              <div className="px-12 pt-6">
+                <JamDetail
+                  jamId={selectedJamId}
+                  onBack={() => setSelectedJam(null)}
+                />
+              </div>
+            ) : (
+              <div className="px-12 pt-6">
+                <Timeline onImportClick={handleImportClick} />
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === "explore" && <ExplorePage />}
+
+        {activeTab === "settings" && (
+          <SettingsPage onBack={() => setActiveTab("library")} />
+        )}
+      </div>
 
       {/* Device import dialog */}
       {showDeviceDialog && (
