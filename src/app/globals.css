@@ -69,6 +69,21 @@
   animation: recording-pulse 1.5s ease-in-out infinite;
 }
 
+@media (prefers-contrast: more) {
+  :root {
+    --border: hsl(220 14% 40%);
+    --foreground: hsl(0 0% 100%);
+    --muted-foreground: hsl(220 10% 70%);
+    --card: hsl(220 16% 8%);
+    --background: hsl(220 20% 5%);
+    --muted: hsl(220 14% 25%);
+    --input: hsl(220 14% 35%);
+    /* Spatial map specific */
+    --node-stroke-default: hsl(0 0% 60%);
+    --edge-line-opacity: 0.6;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

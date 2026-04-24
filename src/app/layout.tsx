@@ -6,6 +6,8 @@ import { Providers } from "@/components/providers";
 import { TransportBar } from "@/components/transport/TransportBar";
 import { Toaster } from "@/components/ui/sonner";
 import { TauriEventListener } from "@/components/tauri-event-listener";
+import { SkipLink } from "@/components/accessibility/SkipLink";
+import { HighContrastProvider } from "@/components/accessibility/HighContrastProvider";
 
 export const metadata: Metadata = {
   title: "Wallflower",
@@ -30,14 +32,17 @@ export default function RootLayout({
           color: "#E2E4E8",
         }}
       >
-        <Providers>
-          <div className="h-screen overflow-y-auto overscroll-none pb-14">
-            {children}
-          </div>
-          <TransportBar />
-          <TauriEventListener />
-          <Toaster position="bottom-right" />
-        </Providers>
+        <HighContrastProvider>
+          <SkipLink />
+          <Providers>
+            <div id="main-content" className="h-screen overflow-y-auto overscroll-none pb-14">
+              {children}
+            </div>
+            <TransportBar />
+            <TauriEventListener />
+            <Toaster position="bottom-right" />
+          </Providers>
+        </HighContrastProvider>
       </body>
     </html>
   );
