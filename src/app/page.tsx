@@ -30,7 +30,7 @@ export default function Home() {
   // When recording is active, lock navigation and show RecordingView
   if (isRecording) {
     return (
-      <main className="flex min-h-screen flex-col">
+      <main role="main" aria-label="Recording" className="flex min-h-screen flex-col">
         <RecordingView />
       </main>
     );
@@ -39,7 +39,7 @@ export default function Home() {
   // Settings view
   if (activeTab === "settings") {
     return (
-      <main>
+      <main role="main" aria-label="Settings">
         <SettingsPage onBack={() => setActiveTab("library")} />
       </main>
     );
@@ -52,7 +52,7 @@ export default function Home() {
   // Jam detail view
   if (selectedJamId) {
     return (
-      <main className="px-12 pt-6">
+      <main role="main" aria-label="Jam detail" className="px-12 pt-6">
         <JamDetail
           jamId={selectedJamId}
           onBack={() => setSelectedJam(null)}
@@ -63,9 +63,9 @@ export default function Home() {
 
   // Library timeline view
   return (
-    <main className="px-12 pt-6">
+    <main role="main" aria-label="Main content" className="px-12 pt-6">
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
+      <div role="banner" aria-label="Wallflower navigation" className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Library</h1>
         <div className="flex items-center gap-2">
           <button

@@ -305,7 +305,16 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const audioUrl = `http://localhost:23516/api/audio/${encodeURIComponent(jam.filename)}`;
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      aria-label={`Jam detail: ${jam.originalFilename || jam.filename}`}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onBack();
+        }
+      }}
+    >
       {/* Full-page drag overlay */}
       {isDragOver && (
         <div className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/60 backdrop-blur-sm">
