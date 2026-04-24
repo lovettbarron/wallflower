@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: Playback, Metadata, Design System & Notifications** - Waveform visualization, audio streaming, timeline browser, metadata CRUD, design language, and native macOS notifications
 - [ ] **Phase 3: Recording Engine & System Integration** - Multi-channel audio capture, crash safety, dropout recovery, live metadata, priority scheduler, menubar status, and global hotkeys
 - [ ] **Phase 4: ML Analysis Pipeline** - Python sidecar, tempo/key/section detection, progressive results via SSE, model management, and search/filter
-- [ ] **Phase 5: Source Separation & Export** - Demucs integration, bookmarking, stem export, DAW folder integration
+- [x] **Phase 5: Source Separation & Export** - Demucs integration, bookmarking, stem export, DAW folder integration
 - [ ] **Phase 6: Spatial Explorer, Accessibility & Distribution** - Spatial similarity map, keyboard navigation, screen reader support, accessibility, auto-launch, code signing
 
 ## Phase Details
@@ -118,8 +118,8 @@ Plans:
 - [x] 05-01-PLAN.md -- Backend foundation: SQLite V5 migration, bookmark CRUD, export pipeline (writer, sidecar, sanitizer)
 - [x] 05-02-PLAN.md -- gRPC proto extension with SeparateStems RPC, Python SeparationAnalyzer with chunked demucs-mlx
 - [x] 05-03-PLAN.md -- Tauri commands for bookmark CRUD, export, separation bridge, TypeScript types and invoke wrappers
-- [ ] 05-04-PLAN.md -- Frontend bookmarks: zustand store, wavesurfer regions, popover, list, context menu, waveform integration
-- [ ] 05-05-PLAN.md -- Stem mixer panel, separation progress, export settings, Phase 5 verification checkpoint
+- [x] 05-04-PLAN.md -- Frontend bookmarks: zustand store, wavesurfer regions, popover, list, context menu, waveform integration
+- [x] 05-05-PLAN.md -- Stem mixer panel, separation progress, export settings, Phase 5 verification checkpoint
 
 ### Phase 6: Spatial Explorer, Accessibility & Distribution
 **Goal**: Users can browse their jam library through a spatial similarity map, the entire application is keyboard-navigable and accessible, and the app is distribution-ready with auto-launch and code signing
@@ -153,7 +153,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 2. Playback, Metadata, Design System & Notifications | 0/4 | Not started | - |
 | 3. Recording Engine & System Integration | 5/6 | In Progress|  |
 | 4. ML Analysis Pipeline | 0/6 | Not started | - |
-| 5. Source Separation & Export | 1/5 | In Progress|  |
+| 5. Source Separation & Export | 5/5 | Complete | 2026-04-24 |
 | 6. Spatial Explorer, Accessibility & Distribution | 1/5 | In Progress|  |
 
 ## Backlog

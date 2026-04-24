@@ -52,7 +52,7 @@ metrics:
 - **Duration:** 2 min (tasks already committed from prior wave execution)
 - **Started:** 2026-04-24T15:12:49Z
 - **Completed:** 2026-04-24T15:14:34Z
-- **Tasks:** 2 auto tasks complete, 1 checkpoint pending
+- **Tasks:** 3/3 complete (2 auto + 1 checkpoint approved)
 - **Files modified:** 8
 
 ## Accomplishments
@@ -69,6 +69,7 @@ Each task was committed atomically:
 
 1. **Task 1: Separation store, StemMixer panel, and SeparationProgress** - `57f8928` (feat)
 2. **Task 2: Export settings section in Settings page** - `6a437d0` (feat)
+3. **Task 3: Phase 5 verification checkpoint** - N/A (checkpoint, no code changes)
 
 ## Files Created/Modified
 
@@ -106,10 +107,18 @@ None - no external service configuration required.
 - `cargo test --workspace`: PASSED (123 tests, 0 failures)
 - All acceptance criteria verified for both tasks
 
+## Checkpoint Resolution
+
+**Task 3: Phase 5 verification checkpoint** -- APPROVED by user on 2026-04-24.
+
+User notes:
+- High memory usage (~15GB) observed during separation -- confirmed as expected behavior from demucs-mlx models and ML dependencies, not a bug
+- `separation_memory_limit_gb` setting is cosmetic (not wired to sidecar) -- noted as a future fix but not blocking Phase 5 completion
+
 ## Next Phase Readiness
 
-- Task 3 (Phase 5 verification checkpoint) requires human verification of the complete source separation and export workflow
-- All 12 verification steps ready to be tested by user
+- Phase 5 complete. All 3 tasks finished (2 auto + 1 human-verify checkpoint approved).
+- Phase 6 can proceed with spatial explorer, accessibility, and distribution work.
 
 ## Self-Check: PASSED
 
