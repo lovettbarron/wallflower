@@ -132,13 +132,14 @@ Plans:
   4. High contrast mode is available with accessible color choices throughout
   5. Application can be configured to auto-launch on macOS login
   6. Application is properly signed and notarized for distribution to other macOS users
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
-- [ ] 06-03: TBD
+- [ ] 06-01-PLAN.md -- Backend spatial data API, accessibility foundation (SkipLink, HighContrastProvider, useRovingTabIndex, high contrast CSS)
+- [ ] 06-02-PLAN.md -- Spatial explorer frontend: force-directed graph, dimension sliders, color legend, accessibility overlay, Explore tab
+- [ ] 06-03-PLAN.md -- Accessibility retrofit: ARIA landmarks, keyboard navigation, screen reader support across all existing components
+- [ ] 06-04-PLAN.md -- Auto-launch on login (Tauri autostart plugin), GitHub Actions CI/CD for signed macOS distribution
 
 ## Progress
 
@@ -152,7 +153,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Recording Engine & System Integration | 5/6 | In Progress|  |
 | 4. ML Analysis Pipeline | 0/6 | Not started | - |
 | 5. Source Separation & Export | 1/5 | In Progress|  |
-| 6. Spatial Explorer, Accessibility & Distribution | 0/3 | Not started | - |
+| 6. Spatial Explorer, Accessibility & Distribution | 0/4 | Not started | - |
 
 ## Backlog
 
