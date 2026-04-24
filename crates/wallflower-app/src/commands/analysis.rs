@@ -64,6 +64,7 @@ pub async fn analyze_jam(app: AppHandle, jam_id: String) -> Result<(), String> {
 
     match stream_result {
         Ok(mut stream) => {
+            let mut stream_error = false;
             while let Some(progress) = stream.next().await {
                 match progress {
                     Ok(p) => {
@@ -227,9 +228,18 @@ pub async fn analyze_jam(app: AppHandle, jam_id: String) -> Result<(), String> {
                     }
                     Err(e) => {
                         tracing::error!("gRPC stream error: {}", e);
+                        stream_error = true;
                         break;
                     }
                 }
+            }
+
+            if stream_error {
+                let state = app.state::<AppState>();
+                let db = state.db.lock().map_err(|e| e.to_string())?;
+                wallflower_core::db::set_analysis_status(&db.conn, &jam_id, "failed", None)
+                    .map_err(|e| e.to_string())?;
+                return Err("Analysis failed: gRPC stream error".to_string());
             }
 
             // Mark analysis complete

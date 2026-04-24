@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, KeyboardEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { listJams, searchJams, attachPhoto } from "@/lib/tauri";
@@ -229,30 +229,37 @@ export function Timeline({ onImportClick }: TimelineProps) {
 
   const groups = groupJamsByDate(jams);
   const allJamIds = jams.map((j) => j.id);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const { getItemProps, focusedId } = useRovingTabIndex(allJamIds, null, {
-    orientation: "vertical",
-    onSelect: (id) => setSelectedJam(id),
-  });
+  const { refs, handleKeyDown, getTabIndex } = useRovingTabIndex<HTMLButtonElement>(
+    allJamIds,
+    activeIndex,
+    (index) => {
+      setActiveIndex(index);
+      setSelectedJam(allJamIds[index]);
+    },
+    { orientation: "vertical" },
+  );
+
+  let flatIndex = 0;
 
   return (
-    <div className="pb-14" role="listbox" aria-label="Jam library">
+    <div className="pb-14" role="listbox" aria-label="Jam library" onKeyDown={handleKeyDown}>
       <FilterBar resultCount={jams.length} />
       {groups.map((group) => (
         <DateGroup key={group.label} label={group.label}>
           {group.jams.map((jam) => {
-            const itemProps = getItemProps(jam.id);
+            const idx = flatIndex++;
             return (
               <JamCard
                 key={jam.id}
                 jam={jam}
                 onClick={() => setSelectedJam(jam.id)}
                 isDropTarget={dropTargetJamId === jam.id}
-                isSelected={focusedId === jam.id}
-                ref={itemProps.ref}
-                tabIndex={itemProps.tabIndex}
-                onKeyDown={itemProps.onKeyDown}
-                onFocus={itemProps.onFocus}
+                isSelected={activeIndex === idx}
+                ref={refs(idx)}
+                tabIndex={getTabIndex(idx)}
+                onKeyDown={() => {}}
               />
             );
           })}
