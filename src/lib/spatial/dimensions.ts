@@ -59,7 +59,7 @@ export function createDimensionForceX(
 
   return d3
     .forceX((node: any) => scale(getDimensionValue(node, dimension)))
-    .strength((weight / 100) * 0.3);
+    .strength((weight / 100) * 0.6);
 }
 
 /** Create a d3 forceY for a dimension. Strength proportional to weight/100. */
@@ -78,5 +78,5 @@ export function createDimensionForceY(
 
   return d3
     .forceY((node: any) => scale(getDimensionValue(node, dimension)))
-    .strength((weight / 100) * 0.3);
+    .strength((weight / 100) * 0.6);
 }

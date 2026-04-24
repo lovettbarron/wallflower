@@ -19,7 +19,6 @@ import {
 import { getPeaks } from "@/lib/tauri";
 import type { SpatialJam } from "@/lib/types";
 
-// react-force-graph-2d uses Canvas -- must be dynamically imported with SSR disabled
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
 });
@@ -42,17 +41,25 @@ export function SpatialCanvas({
 }: SpatialCanvasProps) {
   const fgRef = useRef<any>(null);
   const isHighContrast = useHighContrast();
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const weights = useExploreStore((s) => s.weights);
-  const hoveredNodeId = useExploreStore((s) => s.hoveredNodeId);
-  const selectedNodeId = useExploreStore((s) => s.selectedNodeId);
-  const focusedNodeId = useExploreStore((s) => s.focusedNodeId);
-  const peaksCache = useExploreStore((s) => s.peaksCache);
+  const hoveredNodeIdRef = useRef<string | null>(null);
+  const selectedNodeIdRef = useRef<string | null>(null);
+  const focusedNodeIdRef = useRef<string | null>(null);
+  const peaksCacheRef = useRef<Record<string, number[]>>({});
   const setPeaks = useExploreStore((s) => s.setPeaks);
   const setHoveredNode = useExploreStore((s) => s.setHoveredNode);
   const setSelectedNode = useExploreStore((s) => s.setSelectedNode);
 
-  // Build color scales
+  // Keep refs in sync with store
+  useExploreStore.subscribe((s) => {
+    hoveredNodeIdRef.current = s.hoveredNodeId;
+    selectedNodeIdRef.current = s.selectedNodeId;
+    focusedNodeIdRef.current = s.focusedNodeId;
+    peaksCacheRef.current = s.peaksCache;
+  });
+
   const colorScales = useMemo(() => {
     const dates = graphData.nodes
       .map((n) => new Date(n.createdAt ?? n.importedAt))
@@ -88,7 +95,6 @@ export function SpatialCanvas({
     const width = 800;
     const height = 600;
 
-    // Find top two non-zero dimensions for X and Y axes
     const sorted = Object.entries(weights)
       .filter(([, w]) => w > 0)
       .sort(([, a], [, b]) => b - a);
@@ -98,7 +104,6 @@ export function SpatialCanvas({
     const yDim = sorted[1]?.[0] ?? "tempo";
     const yWeight = sorted[1]?.[1] ?? 50;
 
-    // Apply positional forces
     fg.d3Force(
       "x",
       createDimensionForceX(xDim, xWeight, jams, width),
@@ -108,36 +113,40 @@ export function SpatialCanvas({
       createDimensionForceY(yDim, yWeight, jams, height),
     );
 
-    // Charge force for spacing
-    fg.d3Force("charge", d3.forceManyBody().strength(-30));
+    fg.d3Force("charge", d3.forceManyBody().strength(-15));
 
     fg.d3ReheatSimulation();
   }, [weights, graphData.nodes]);
 
-  // Load peaks when hovering a node
+  // Debounced hover handler
   const handleNodeHover = useCallback(
     (node: any) => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+
       if (node) {
-        setHoveredNode(node.id);
-        // Lazy-load peaks for waveform thumbnail
-        if (!peaksCache[node.id]) {
-          getPeaks(node.id)
-            .then((peakData) => {
-              // Flatten the [min, max] tuples to a single array of max values
-              const flatPeaks = peakData.peaks.map(([, max]) => max);
-              setPeaks(node.id, flatPeaks);
-            })
-            .catch(() => {
-              // Peaks may not be available -- fail silently
-            });
-        }
-        onNodeHover(node);
+        hoverTimerRef.current = setTimeout(() => {
+          setHoveredNode(node.id);
+          if (!peaksCacheRef.current[node.id]) {
+            getPeaks(node.id)
+              .then((peakData) => {
+                const flatPeaks = peakData.peaks.map(([, max]) => max);
+                setPeaks(node.id, flatPeaks);
+              })
+              .catch(() => {});
+          }
+          onNodeHover(node);
+        }, 50);
       } else {
-        setHoveredNode(null);
-        onNodeHover(null);
+        hoverTimerRef.current = setTimeout(() => {
+          setHoveredNode(null);
+          onNodeHover(null);
+        }, 30);
       }
     },
-    [peaksCache, setPeaks, setHoveredNode, onNodeHover],
+    [setPeaks, setHoveredNode, onNodeHover],
   );
 
   const handleNodeClick = useCallback(
@@ -151,27 +160,19 @@ export function SpatialCanvas({
     setSelectedNode(null);
   }, [setSelectedNode]);
 
-  // Custom node painter
+  // Stable painter — reads mutable state via refs, never recreated on hover/select
   const nodeCanvasObject = useMemo(
     () =>
       paintNode({
-        hoveredNodeId,
-        selectedNodeId,
-        focusedNodeId,
+        getHoveredNodeId: () => hoveredNodeIdRef.current,
+        getSelectedNodeId: () => selectedNodeIdRef.current,
+        getFocusedNodeId: () => focusedNodeIdRef.current,
         dominantDimension,
         colorScales,
         isHighContrast,
-        peaksCache,
+        getPeaksCache: () => peaksCacheRef.current,
       }),
-    [
-      hoveredNodeId,
-      selectedNodeId,
-      focusedNodeId,
-      dominantDimension,
-      colorScales,
-      isHighContrast,
-      peaksCache,
-    ],
+    [dominantDimension, colorScales, isHighContrast],
   );
 
   return (
