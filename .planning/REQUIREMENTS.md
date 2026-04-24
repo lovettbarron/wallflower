@@ -34,13 +34,15 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **AI-01**: Application detects tempo (BPM) from recordings using local AI models
 - [ ] **AI-02**: Application detects musical key and chord progressions from recordings
 - [ ] **AI-03**: Application identifies structural sections and phrase boundaries in recordings
-- [ ] **AI-04**: Application performs source separation (isolate drums, bass, vocals, synths) using demucs-mlx on Apple Silicon
+- [x] **AI-04
+**: Application performs source separation (isolate drums, bass, vocals, synths) using demucs-mlx on Apple Silicon
 - [ ] **AI-05**: Application identifies repeated sections/loops and detects when loops change substantially (e.g., parameter changes over same sequence)
 - [x] **AI-06**: Analysis runs as a background pipeline — UI is fully usable before analysis completes, with results populating progressively via SSE
 - [ ] **AI-07**: AI models are downloaded at runtime on first launch, cached in ~/Library/Application Support/wallflower/models, and reused across app updates unless model version changes
 - [ ] **AI-08**: Model interface is abstracted so models can be swapped via configuration as new capabilities emerge
 - [x] **AI-09**: Model downloads do not block any other application functionality — user can record and browse immediately
-- [ ] **AI-10**: Demucs processes long recordings in chunks with overlap-add to stay within memory limits (~8GB target for 60-min files)
+- [x] **AI-10
+**: Demucs processes long recordings in chunks with overlap-add to stay within memory limits (~8GB target for 60-min files)
 
 ### Playback & Visualization
 
@@ -65,11 +67,16 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Export & DAW Integration
 
 - [x] **EXP-01**: User can bookmark sections of a recording for later extraction
-- [ ] **EXP-02**: User can export bookmarked sections as audio files (time-sliced segments of the original)
-- [ ] **EXP-03**: User can export bookmarked sections as source-separated stems (individual instruments)
-- [ ] **EXP-04**: Exports are placed in a configurable folder that Ableton's browser can access
-- [ ] **EXP-05**: Exported files are self-contained and shareable with collaborators
-- [ ] **EXP-06**: 32-bit float recordings are downsampled to 24-bit on export for DAW compatibility
+- [x] **EXP-02
+**: User can export bookmarked sections as audio files (time-sliced segments of the original)
+- [x] **EXP-03
+**: User can export bookmarked sections as source-separated stems (individual instruments)
+- [x] **EXP-04
+**: Exports are placed in a configurable folder that Ableton's browser can access
+- [x] **EXP-05
+**: Exported files are self-contained and shareable with collaborators
+- [x] **EXP-06
+**: 32-bit float recordings are downsampled to 24-bit on export for DAW compatibility
 
 ### Design & Accessibility
 
