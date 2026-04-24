@@ -153,3 +153,20 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 4. ML Analysis Pipeline | 0/6 | Not started | - |
 | 5. Source Separation & Export | 1/5 | In Progress|  |
 | 6. Spatial Explorer, Accessibility & Distribution | 0/3 | Not started | - |
+
+## Backlog
+
+### Phase 999.1: Delete Recording (BACKLOG)
+
+**Goal:** Users can delete a jam from the library, with an option to also delete the audio file from disk
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Scope:
+- `delete_jam` DB function with cascade (tags, collaborators, instruments, photos, sections, loops, beats, tempo, key, search index, peaks cache)
+- Tauri command exposing delete to frontend
+- UI trigger (context menu on jam card and/or button in detail view)
+- Confirmation dialog with "delete from library only" vs "also delete audio file" options
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
