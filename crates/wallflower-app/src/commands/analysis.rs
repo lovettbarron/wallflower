@@ -325,6 +325,12 @@ pub async fn reanalyze_jam(app: AppHandle, jam_id: String) -> Result<(), String>
         // Note: save_tempo_result and save_key_result check manual_override,
         // so re-analysis won't overwrite manual values (D-18, D-19)
     }
+    // User-initiated retry gets fresh restart attempts
+    {
+        let state = app.state::<AppState>();
+        let mut sidecar = state.sidecar.lock().await;
+        sidecar.reset_restart_count();
+    }
     analyze_jam(app, jam_id).await
 }
 
