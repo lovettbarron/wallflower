@@ -479,6 +479,7 @@ pub fn run() {
             commands::recording::stop_recording,
             commands::recording::get_recording_status,
             commands::recording::list_audio_devices,
+            commands::recording::list_audio_devices_detailed,
             commands::recording::get_recording_level,
             // Analysis (Phase 4)
             commands::analysis::analyze_jam,
