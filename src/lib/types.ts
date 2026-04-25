@@ -38,6 +38,9 @@ export interface AppSettings {
   exportBitDepth: number;
   separationModel: string;
   separationMemoryLimitGb: number;
+  recordingDeviceName: string | null;
+  recordingChannels: number | null;
+  recordingChannelMap: number[] | null;
 }
 
 /** Progress information for an active import operation. */
@@ -143,6 +146,16 @@ export interface InputDeviceInfo {
   channelCount: number;
   sampleRate: number;
   isDefault: boolean;
+}
+
+/** Detailed information about an audio input device, including supported configurations. */
+export interface InputDeviceDetail {
+  name: string;
+  channelCount: number;
+  sampleRate: number;
+  isDefault: boolean;
+  supportedChannelCounts: number[];
+  supportedSampleRates: number[];
 }
 
 /** A detected silence region during recording. */

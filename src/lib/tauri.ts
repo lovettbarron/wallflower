@@ -15,6 +15,7 @@ import type {
   RecordingStopResult,
   RecordingStatus,
   InputDeviceInfo,
+  InputDeviceDetail,
   AnalysisResults,
   SearchFilter,
   FilterOptions,
@@ -221,6 +222,11 @@ export async function getRecordingStatus(): Promise<RecordingStatus> {
 /** List available audio input devices. */
 export async function listAudioDevices(): Promise<InputDeviceInfo[]> {
   return invoke("list_audio_devices");
+}
+
+/** List available audio input devices with detailed supported configurations. */
+export async function listAudioDevicesDetailed(): Promise<InputDeviceDetail[]> {
+  return invoke("list_audio_devices_detailed");
 }
 
 /** Get current recording input level (RMS in dB). */

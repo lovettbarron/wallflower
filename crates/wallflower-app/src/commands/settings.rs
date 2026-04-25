@@ -17,6 +17,9 @@ pub struct SettingsResponse {
     pub export_bit_depth: i32,
     pub separation_model: String,
     pub separation_memory_limit_gb: i32,
+    pub recording_device_name: Option<String>,
+    pub recording_channels: Option<u16>,
+    pub recording_channel_map: Option<Vec<u16>>,
 }
 
 impl From<&settings::AppConfig> for SettingsResponse {
@@ -31,6 +34,9 @@ impl From<&settings::AppConfig> for SettingsResponse {
             export_bit_depth: config.export_bit_depth,
             separation_model: config.separation_model.clone(),
             separation_memory_limit_gb: config.separation_memory_limit_gb,
+            recording_device_name: config.recording_device_name.clone(),
+            recording_channels: config.recording_channels,
+            recording_channel_map: config.recording_channel_map.clone(),
         }
     }
 }
@@ -76,6 +82,19 @@ pub async fn update_settings(
     }
     if let Some(v) = settings.get("separationMemoryLimitGb").and_then(|v| v.as_i64()) {
         config.separation_memory_limit_gb = v as i32;
+    }
+
+    // Audio device settings -- allow null to clear
+    if let Some(v) = settings.get("recordingDeviceName") {
+        config.recording_device_name = v.as_str().map(|s| s.to_string());
+    }
+    if let Some(v) = settings.get("recordingChannels") {
+        config.recording_channels = v.as_u64().map(|n| n as u16);
+    }
+    if let Some(v) = settings.get("recordingChannelMap") {
+        config.recording_channel_map = v
+            .as_array()
+            .map(|arr| arr.iter().filter_map(|n| n.as_u64().map(|n| n as u16)).collect());
     }
 
     settings::save_config(&db.conn, &config).map_err(|e| e.to_string())?;

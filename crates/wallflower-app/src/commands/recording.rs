@@ -4,7 +4,7 @@ use tauri::Emitter;
 use crate::AppState;
 use wallflower_core::import::hasher;
 use wallflower_core::recording::device;
-use wallflower_core::recording::RecordingState;
+use wallflower_core::recording::{ChannelMapping, RecordingState};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,10 +47,15 @@ pub async fn start_recording(
     let jam_id = uuid::Uuid::new_v4().to_string();
     let filename = format!("{}.wav", jam_id);
 
-    // Get storage dir from config
-    let storage_dir = {
+    // Get storage dir and audio device preferences from config
+    let (storage_dir, preferred_device_name, recording_channels, recording_channel_map) = {
         let config = state.config.lock().map_err(|e| e.to_string())?;
-        config.storage_dir.clone()
+        (
+            config.storage_dir.clone(),
+            config.recording_device_name.clone(),
+            config.recording_channels,
+            config.recording_channel_map.clone(),
+        )
     };
 
     // Create a placeholder jam record in the database
@@ -84,6 +89,17 @@ pub async fn start_recording(
         *current_jam = Some(jam_id.clone());
     }
 
+    // Build channel mapping from preferences
+    let channel_mapping = if let Some(channels) = recording_channels {
+        let map = recording_channel_map.unwrap_or_else(|| (0..channels).collect());
+        Some(ChannelMapping {
+            output_channels: channels,
+            channel_map: map,
+        })
+    } else {
+        None
+    };
+
     // Start the recording engine
     let device_name = {
         let engine = state
@@ -92,7 +108,12 @@ pub async fn start_recording(
             .map_err(|e| e.to_string())?;
         engine
             .0
-            .start(&storage_dir, &jam_id)
+            .start(
+                &storage_dir,
+                &jam_id,
+                preferred_device_name.as_deref(),
+                channel_mapping.as_ref(),
+            )
             .map_err(|e| format!("Failed to start recording: {}", e))?;
         engine.0.device_name()
     };
@@ -279,6 +300,12 @@ pub async fn get_recording_level(
     let rms_db = rms_raw as f32 / 100.0;
 
     Ok(RecordingLevelResult { rms_db })
+}
+
+/// List all available audio input devices with detailed supported configuration info.
+#[tauri::command]
+pub async fn list_audio_devices_detailed() -> Result<Vec<device::InputDeviceDetail>, String> {
+    Ok(device::list_input_devices_detailed())
 }
 
 /// Scan storage directory for WAV files not in the database (crash recovery).
