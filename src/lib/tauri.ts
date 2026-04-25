@@ -22,6 +22,9 @@ import type {
   CreateBookmarkInput,
   UpdateBookmarkInput,
   StemInfo,
+  SampleRecord,
+  SampleFilter,
+  SampleFilterOptions,
 } from "./types";
 
 // --- Jam operations ---
@@ -344,4 +347,36 @@ export async function getAutoLaunchDialogShown(): Promise<boolean> {
     return localStorage.getItem("wallflower_auto_launch_dialog_shown") === "true";
   }
   return false;
+}
+
+// --- Sample browser operations (Phase 7) ---
+
+/** Get all samples (bookmarks + sections + loops) across all jams, with filtering. */
+export async function getAllSamples(filter: SampleFilter): Promise<SampleRecord[]> {
+  return invoke("get_all_samples", { filter });
+}
+
+/** Get available filter options for the sample browser sidebar. */
+export async function getSampleFilterOptions(): Promise<SampleFilterOptions> {
+  return invoke("get_sample_filter_options");
+}
+
+/** Export audio for a sample identified by jam ID + time range (no bookmark required). */
+export async function exportSampleAudio(
+  jamId: string,
+  startSeconds: number,
+  endSeconds: number,
+  sampleName: string,
+): Promise<string> {
+  return invoke("export_sample_audio", { jamId, startSeconds, endSeconds, sampleName });
+}
+
+/** Separate stems for a sample identified by jam ID + time range (no bookmark required). */
+export async function separateSampleStems(
+  jamId: string,
+  startSeconds: number,
+  endSeconds: number,
+  sampleName: string,
+): Promise<StemInfo[]> {
+  return invoke("separate_sample_stems", { jamId, startSeconds, endSeconds, sampleName });
 }
