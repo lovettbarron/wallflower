@@ -25,6 +25,14 @@ pub struct AppConfig {
     pub separation_model: String,
     /// Memory limit for separation in GB. Default: 4.
     pub separation_memory_limit_gb: i32,
+    /// Preferred recording input device name. None = system default.
+    pub recording_device_name: Option<String>,
+    /// Preferred number of recording channels. None = device default.
+    pub recording_channels: Option<u16>,
+    /// Channel mapping: array of physical channel indices.
+    /// e.g. [0, 1] means output ch0 = physical ch0, output ch1 = physical ch1.
+    /// None = identity mapping (use first N channels).
+    pub recording_channel_map: Option<Vec<u16>>,
 }
 
 /// Load application configuration from the database settings table.
@@ -54,6 +62,13 @@ pub fn load_config(conn: &Connection) -> Result<AppConfig> {
         .and_then(|v| v.parse::<i32>().ok())
         .unwrap_or(4);
 
+    let recording_device_name = db::get_setting(conn, "recording_device_name")?
+        .and_then(|v| if v.is_empty() { None } else { Some(v) });
+    let recording_channels = db::get_setting(conn, "recording_channels")?
+        .and_then(|v| v.parse::<u16>().ok());
+    let recording_channel_map = db::get_setting(conn, "recording_channel_map")?
+        .and_then(|v| serde_json::from_str::<Vec<u16>>(&v).ok());
+
     let watch_folder = expand_tilde(&watch_raw);
     let export_root = expand_tilde(&export_root_raw);
 
@@ -73,6 +88,9 @@ pub fn load_config(conn: &Connection) -> Result<AppConfig> {
         export_bit_depth,
         separation_model,
         separation_memory_limit_gb,
+        recording_device_name,
+        recording_channels,
+        recording_channel_map,
     })
 }
 
@@ -110,6 +128,28 @@ pub fn save_config(conn: &Connection, config: &AppConfig) -> Result<()> {
         conn,
         "separation_memory_limit_gb",
         &config.separation_memory_limit_gb.to_string(),
+    )?;
+    db::set_setting(
+        conn,
+        "recording_device_name",
+        config.recording_device_name.as_deref().unwrap_or(""),
+    )?;
+    db::set_setting(
+        conn,
+        "recording_channels",
+        &config
+            .recording_channels
+            .map(|v| v.to_string())
+            .unwrap_or_default(),
+    )?;
+    db::set_setting(
+        conn,
+        "recording_channel_map",
+        &config
+            .recording_channel_map
+            .as_ref()
+            .map(|v| serde_json::to_string(v).unwrap_or_default())
+            .unwrap_or_default(),
     )?;
     Ok(())
 }
@@ -241,8 +281,45 @@ mod tests {
             export_bit_depth: 24,
             separation_model: "htdemucs".into(),
             separation_memory_limit_gb: 4,
+            recording_device_name: None,
+            recording_channels: None,
+            recording_channel_map: None,
         };
         ensure_storage_dir(&config).unwrap();
         assert!(config.storage_dir.exists());
+    }
+
+    #[test]
+    fn test_save_and_reload_audio_device_settings() {
+        let db = crate::db::Database::open_in_memory().unwrap();
+        let mut config = load_config(&db.conn).unwrap();
+
+        // Initially all None
+        assert!(config.recording_device_name.is_none());
+        assert!(config.recording_channels.is_none());
+        assert!(config.recording_channel_map.is_none());
+
+        // Set values
+        config.recording_device_name = Some("Scarlett 2i2".to_string());
+        config.recording_channels = Some(2);
+        config.recording_channel_map = Some(vec![0, 1]);
+        save_config(&db.conn, &config).unwrap();
+
+        // Reload and verify
+        let reloaded = load_config(&db.conn).unwrap();
+        assert_eq!(reloaded.recording_device_name, Some("Scarlett 2i2".to_string()));
+        assert_eq!(reloaded.recording_channels, Some(2));
+        assert_eq!(reloaded.recording_channel_map, Some(vec![0, 1]));
+
+        // Clear values
+        config.recording_device_name = None;
+        config.recording_channels = None;
+        config.recording_channel_map = None;
+        save_config(&db.conn, &config).unwrap();
+
+        let reloaded2 = load_config(&db.conn).unwrap();
+        assert!(reloaded2.recording_device_name.is_none());
+        assert!(reloaded2.recording_channels.is_none());
+        assert!(reloaded2.recording_channel_map.is_none());
     }
 }

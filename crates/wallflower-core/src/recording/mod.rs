@@ -29,6 +29,23 @@ pub enum RecordingEvent {
     StateChanged(RecordingState),
 }
 
+/// Channel mapping configuration for recording.
+///
+/// Maps physical input channels on the device to output recording slots.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChannelMapping {
+    /// Number of channels to write to the output WAV file.
+    pub output_channels: u16,
+    /// Maps output channel index -> physical input channel index.
+    /// Length must equal output_channels. Values are 0-based indices
+    /// into the device's physical input channels.
+    /// Example: [0, 1] = stereo from first two inputs
+    /// Example: [2, 3] = stereo from inputs 3 and 4
+    /// Example: [0] = mono from input 1
+    pub channel_map: Vec<u16>,
+}
+
 /// Configuration for a recording session.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -102,20 +119,35 @@ impl RecordingEngine {
         }
     }
 
-    /// Start recording audio from the default input device.
+    /// Start recording audio from the specified (or default) input device.
     ///
     /// Creates a new WAV file at `storage_dir/{jam_id}.wav` and begins
     /// capturing audio. The priority scheduler is set to recording mode,
     /// pausing all background processing (REC-08, D-13).
-    pub fn start(&self, storage_dir: &Path, jam_id: &str) -> anyhow::Result<()> {
+    ///
+    /// If `device_name` is provided, attempts to use that device; falls back
+    /// to the system default if not found. If `channel_mapping` is provided,
+    /// only the specified physical channels are written to the WAV file.
+    pub fn start(
+        &self,
+        storage_dir: &Path,
+        jam_id: &str,
+        device_name: Option<&str>,
+        channel_mapping: Option<&ChannelMapping>,
+    ) -> anyhow::Result<()> {
         // Set priority scheduler to recording mode (D-13, REC-08)
         self.scheduler.set_recording(true);
 
-        // Get the default input device
-        let cpal_device = device::get_default_cpal_device()
-            .ok_or_else(|| anyhow::anyhow!("No default input device available"))?;
+        // Get the input device (by name or default)
+        let cpal_device = if let Some(name) = device_name {
+            device::get_cpal_device_by_name(name)
+                .ok_or_else(|| anyhow::anyhow!("No input device available"))?
+        } else {
+            device::get_default_cpal_device()
+                .ok_or_else(|| anyhow::anyhow!("No default input device available"))?
+        };
 
-        let device_name = cpal_device
+        let actual_device_name = cpal_device
             .name()
             .unwrap_or_else(|_| "Unknown".to_string());
 
@@ -125,11 +157,18 @@ impl RecordingEngine {
             .map_err(|e| anyhow::anyhow!("Failed to get default input config: {}", e))?;
 
         let sample_rate = supported_config.sample_rate().0;
-        let channels = supported_config.channels();
+        let device_channels = supported_config.channels();
+
+        // Determine output WAV spec based on channel mapping
+        let wav_channels = if let Some(mapping) = channel_mapping {
+            mapping.output_channels
+        } else {
+            device_channels
+        };
 
         // Create WavSpec from device config
         let wav_spec = hound::WavSpec {
-            channels,
+            channels: wav_channels,
             sample_rate,
             bits_per_sample: 32,
             sample_format: hound::SampleFormat::Float,
@@ -147,7 +186,7 @@ impl RecordingEngine {
             *self.writer.lock().unwrap() = Some(crash_writer);
             *self.current_jam_id.lock().unwrap() = Some(jam_id.to_string());
             *self.current_file_path.lock().unwrap() = Some(file_path);
-            *self.current_device_name.lock().unwrap() = Some(device_name.clone());
+            *self.current_device_name.lock().unwrap() = Some(actual_device_name.clone());
         }
 
         // Build the cpal input stream
@@ -155,55 +194,125 @@ impl RecordingEngine {
         let event_tx = self.event_tx.clone();
         let silence_ref = Arc::clone(&self.silence_detector);
         let sample_offset = Arc::new(std::sync::atomic::AtomicU64::new(0));
-        let stream_channels = channels;
+
+        // The stream receives all physical channels from the device
+        let stream_channels = device_channels;
+
+        // Clone channel map for the data callback
+        let channel_map: Option<Vec<u16>> = channel_mapping.map(|m| m.channel_map.clone());
+        let output_ch_count = wav_channels;
 
         let stream_config: cpal::StreamConfig = supported_config.into();
 
         let data_callback = move |data: &[f32], _info: &cpal::InputCallbackInfo| {
-            // Write samples to crash-safe writer
-            if let Ok(guard) = writer_ref.try_lock() {
-                if let Some(ref w) = *guard {
-                    let _ = w.write_samples(data);
-                }
-            }
-
-            // Compute RMS for level metering
-            if !data.is_empty() {
-                let sum_sq: f32 = data.iter().map(|&s| s * s).sum();
-                let rms = (sum_sq / data.len() as f32).sqrt();
-                let rms_db = if rms > 0.0 {
-                    20.0 * rms.log10()
-                } else {
-                    -120.0
-                };
-                let _ = event_tx.try_send(RecordingEvent::LevelUpdate { rms_db });
-            }
-
-            // Update sample offset
-            let frames = data.len() as u64 / stream_channels as u64;
-            let offset = sample_offset.fetch_add(frames, std::sync::atomic::Ordering::Relaxed);
-
-            // Run silence detection
-            if let Ok(mut detector) = silence_ref.try_lock() {
-                let events = detector.process_samples(data, stream_channels, offset);
-                for event in events {
-                    match event {
-                        silence::SilenceEvent::Start { offset_samples } => {
-                            let _ = event_tx.try_send(RecordingEvent::SilenceStart { offset_samples });
-                        }
-                        silence::SilenceEvent::End { offset_samples } => {
-                            let _ = event_tx.try_send(RecordingEvent::SilenceEnd { offset_samples });
+            // Remap channels if a mapping is provided
+            if let Some(ref map) = channel_map {
+                // Extract only the mapped channels from each frame
+                let frame_count = data.len() / stream_channels as usize;
+                let mut mapped = Vec::with_capacity(frame_count * output_ch_count as usize);
+                for frame_idx in 0..frame_count {
+                    let frame_start = frame_idx * stream_channels as usize;
+                    for &phys_ch in map.iter() {
+                        let sample_idx = frame_start + phys_ch as usize;
+                        if sample_idx < data.len() {
+                            mapped.push(data[sample_idx]);
+                        } else {
+                            mapped.push(0.0);
                         }
                     }
                 }
-            }
 
-            // Send samples written event periodically (every ~1 second of audio)
-            let total = offset + frames;
-            if total % 48000 < frames {
-                let _ = event_tx.try_send(RecordingEvent::SamplesWritten {
-                    total_samples: total,
-                });
+                // Write mapped samples to crash-safe writer
+                if let Ok(guard) = writer_ref.try_lock() {
+                    if let Some(ref w) = *guard {
+                        let _ = w.write_samples(&mapped);
+                    }
+                }
+
+                // Compute RMS for level metering on mapped data
+                if !mapped.is_empty() {
+                    let sum_sq: f32 = mapped.iter().map(|&s| s * s).sum();
+                    let rms = (sum_sq / mapped.len() as f32).sqrt();
+                    let rms_db = if rms > 0.0 {
+                        20.0 * rms.log10()
+                    } else {
+                        -120.0
+                    };
+                    let _ = event_tx.try_send(RecordingEvent::LevelUpdate { rms_db });
+                }
+
+                // Update sample offset using mapped channel count for frames
+                let frames = mapped.len() as u64 / output_ch_count as u64;
+                let offset = sample_offset.fetch_add(frames, std::sync::atomic::Ordering::Relaxed);
+
+                // Run silence detection on mapped data
+                if let Ok(mut detector) = silence_ref.try_lock() {
+                    let events = detector.process_samples(&mapped, output_ch_count, offset);
+                    for event in events {
+                        match event {
+                            silence::SilenceEvent::Start { offset_samples } => {
+                                let _ = event_tx.try_send(RecordingEvent::SilenceStart { offset_samples });
+                            }
+                            silence::SilenceEvent::End { offset_samples } => {
+                                let _ = event_tx.try_send(RecordingEvent::SilenceEnd { offset_samples });
+                            }
+                        }
+                    }
+                }
+
+                // Send samples written event periodically
+                let total = offset + frames;
+                if total % 48000 < frames {
+                    let _ = event_tx.try_send(RecordingEvent::SamplesWritten {
+                        total_samples: total,
+                    });
+                }
+            } else {
+                // No channel mapping -- write all channels as before
+                if let Ok(guard) = writer_ref.try_lock() {
+                    if let Some(ref w) = *guard {
+                        let _ = w.write_samples(data);
+                    }
+                }
+
+                // Compute RMS for level metering
+                if !data.is_empty() {
+                    let sum_sq: f32 = data.iter().map(|&s| s * s).sum();
+                    let rms = (sum_sq / data.len() as f32).sqrt();
+                    let rms_db = if rms > 0.0 {
+                        20.0 * rms.log10()
+                    } else {
+                        -120.0
+                    };
+                    let _ = event_tx.try_send(RecordingEvent::LevelUpdate { rms_db });
+                }
+
+                // Update sample offset
+                let frames = data.len() as u64 / stream_channels as u64;
+                let offset = sample_offset.fetch_add(frames, std::sync::atomic::Ordering::Relaxed);
+
+                // Run silence detection
+                if let Ok(mut detector) = silence_ref.try_lock() {
+                    let events = detector.process_samples(data, stream_channels, offset);
+                    for event in events {
+                        match event {
+                            silence::SilenceEvent::Start { offset_samples } => {
+                                let _ = event_tx.try_send(RecordingEvent::SilenceStart { offset_samples });
+                            }
+                            silence::SilenceEvent::End { offset_samples } => {
+                                let _ = event_tx.try_send(RecordingEvent::SilenceEnd { offset_samples });
+                            }
+                        }
+                    }
+                }
+
+                // Send samples written event periodically
+                let total = offset + frames;
+                if total % 48000 < frames {
+                    let _ = event_tx.try_send(RecordingEvent::SamplesWritten {
+                        total_samples: total,
+                    });
+                }
             }
         };
 
@@ -233,10 +342,11 @@ impl RecordingEngine {
             .try_send(RecordingEvent::StateChanged(RecordingState::Recording));
 
         tracing::info!(
-            "Recording started: device={}, sample_rate={}, channels={}",
-            device_name,
+            "Recording started: device={}, sample_rate={}, channels={} (wav={})",
+            actual_device_name,
             sample_rate,
-            channels
+            device_channels,
+            wav_channels
         );
 
         Ok(())
