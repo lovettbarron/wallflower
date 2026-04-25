@@ -69,6 +69,11 @@
   animation: recording-pulse 1.5s ease-in-out infinite;
 }
 
+@keyframes play-bar {
+  from { height: 4px; }
+  to { height: 14px; }
+}
+
 @media (prefers-contrast: more) {
   :root {
     --border: hsl(220 14% 40%);
