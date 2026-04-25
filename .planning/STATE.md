@@ -106,6 +106,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260425-jzp | Audio interface selection with default channels and channel routing | 2026-04-25 | 65746f3 | [260425-jzp-audio-interface-selection](./quick/260425-jzp-audio-interface-selection/) |
+| 260425-k75 | Add the ability to delete a recording | 2026-04-25 | 035158b | [260425-k75-delete-recording](./quick/260425-k75-delete-recording/) |
 
 ### Blockers/Concerns
 
