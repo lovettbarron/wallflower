@@ -447,6 +447,7 @@ pub fn run() {
             commands::jams::get_jam,
             commands::jams::search_jams,
             commands::jams::get_filter_options,
+            commands::jams::delete_jam, // Delete
             // Import
             commands::import::import_files,
             commands::import::import_directory,
