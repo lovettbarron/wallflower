@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cpal::traits::{DeviceTrait, HostTrait};
 use serde::{Deserialize, Serialize};
 
@@ -233,6 +235,104 @@ pub fn list_input_devices_detailed() -> Vec<InputDeviceDetail> {
             })
         })
         .collect()
+}
+
+/// Capture a brief snapshot of per-channel RMS levels from a device.
+///
+/// Opens a temporary cpal input stream, captures ~100ms of audio, then
+/// returns one RMS-in-dB value per physical channel. Blocking — call
+/// from a background thread (e.g., `spawn_blocking`).
+pub fn monitor_device_levels(device_name: Option<&str>) -> anyhow::Result<Vec<f32>> {
+    let device = if let Some(name) = device_name {
+        get_cpal_device_by_name(name)
+            .ok_or_else(|| anyhow::anyhow!("Device not found: {}", name))?
+    } else {
+        get_default_cpal_device()
+            .ok_or_else(|| anyhow::anyhow!("No default input device"))?
+    };
+
+    let config = device
+        .default_input_config()
+        .map_err(|e| anyhow::anyhow!("Failed to get input config: {}", e))?;
+
+    let channels = config.channels() as usize;
+    let sample_rate = config.sample_rate().0 as usize;
+    let capture_samples = sample_rate / 10; // ~100ms worth of frames
+
+    let buffer = Arc::new(std::sync::Mutex::new(Vec::<f32>::with_capacity(
+        capture_samples * channels,
+    )));
+    let done = Arc::new(std::sync::atomic::AtomicBool::new(false));
+
+    let buf_ref = Arc::clone(&buffer);
+    let done_ref = Arc::clone(&done);
+    let ch = channels;
+
+    let stream_config: cpal::StreamConfig = config.into();
+    let stream = device
+        .build_input_stream(
+            &stream_config,
+            move |data: &[f32], _: &cpal::InputCallbackInfo| {
+                if done_ref.load(std::sync::atomic::Ordering::Relaxed) {
+                    return;
+                }
+                let mut buf = buf_ref.lock().unwrap();
+                let remaining = capture_samples * ch - buf.len();
+                if remaining > 0 {
+                    let take = remaining.min(data.len());
+                    buf.extend_from_slice(&data[..take]);
+                }
+                if buf.len() >= capture_samples * ch {
+                    done_ref.store(true, std::sync::atomic::Ordering::Relaxed);
+                }
+            },
+            |err| {
+                tracing::warn!("Level monitor stream error: {}", err);
+            },
+            None,
+        )
+        .map_err(|e| anyhow::anyhow!("Failed to build input stream: {}", e))?;
+
+    use cpal::traits::StreamTrait;
+    stream
+        .play()
+        .map_err(|e| anyhow::anyhow!("Failed to start stream: {}", e))?;
+
+    // Wait up to 500ms for capture to complete
+    let start = std::time::Instant::now();
+    while !done.load(std::sync::atomic::Ordering::Relaxed) {
+        if start.elapsed() > std::time::Duration::from_millis(500) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+
+    drop(stream);
+
+    let buf = buffer.lock().unwrap();
+    let frame_count = buf.len() / channels;
+    if frame_count == 0 {
+        return Ok(vec![-100.0; channels]);
+    }
+
+    let mut levels = Vec::with_capacity(channels);
+    for ch_idx in 0..channels {
+        let sum_sq: f64 = (0..frame_count)
+            .map(|f| {
+                let s = buf[f * channels + ch_idx] as f64;
+                s * s
+            })
+            .sum();
+        let rms = (sum_sq / frame_count as f64).sqrt();
+        let db = if rms > 0.0 {
+            (20.0 * rms.log10()) as f32
+        } else {
+            -100.0
+        };
+        levels.push(db);
+    }
+
+    Ok(levels)
 }
 
 /// Poll for a device to reconnect after a disconnect.

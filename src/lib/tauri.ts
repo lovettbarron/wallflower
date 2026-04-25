@@ -234,6 +234,13 @@ export async function getRecordingLevel(): Promise<{ rmsDb: number }> {
   return invoke("get_recording_level");
 }
 
+/** Get per-channel RMS levels from an input device (for level meter preview). */
+export async function monitorInputLevels(
+  deviceName: string | null,
+): Promise<number[]> {
+  return invoke("monitor_input_levels", { deviceName });
+}
+
 // --- Analysis operations (Phase 4) ---
 
 /** Trigger analysis for a specific jam. Progress streams via Tauri events. */

@@ -482,6 +482,7 @@ pub fn run() {
             commands::recording::list_audio_devices,
             commands::recording::list_audio_devices_detailed,
             commands::recording::get_recording_level,
+            commands::recording::monitor_input_levels,
             // Analysis (Phase 4)
             commands::analysis::analyze_jam,
             commands::analysis::queue_pending_analysis,

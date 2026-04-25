@@ -308,6 +308,23 @@ pub async fn list_audio_devices_detailed() -> Result<Vec<device::InputDeviceDeta
     Ok(device::list_input_devices_detailed())
 }
 
+/// Get per-channel RMS levels from an input device (for level meter preview).
+///
+/// Opens a temporary stream, captures ~100ms, and returns one dB value per
+/// physical channel. Pass `null` for `deviceName` to use the default device.
+#[tauri::command]
+pub async fn monitor_input_levels(
+    device_name: Option<String>,
+) -> Result<Vec<f32>, String> {
+    let name = device_name.clone();
+    tokio::task::spawn_blocking(move || {
+        device::monitor_device_levels(name.as_deref())
+    })
+    .await
+    .map_err(|e| format!("Join error: {}", e))?
+    .map_err(|e| e.to_string())
+}
+
 /// Scan storage directory for WAV files not in the database (crash recovery).
 ///
 /// Returns a list of (jam_id, duration_seconds) for each recovered recording.
