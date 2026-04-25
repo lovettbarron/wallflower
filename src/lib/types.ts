@@ -339,3 +339,52 @@ export interface AnalysisProgressPayload {
     }>;
   };
 }
+
+// -- Phase 7: Sample Browser types --
+
+export type SampleType = 'bookmark' | 'section' | 'loop';
+
+export type SortColumn = 'name' | 'type' | 'source' | 'key' | 'bpm' | 'duration';
+
+/** A unified sample record representing a bookmark, section, or loop from any jam. */
+export interface SampleRecord {
+  id: string;
+  sampleType: SampleType;
+  jamId: string;
+  name: string;
+  startSeconds: number;
+  endSeconds: number;
+  color: string | null;         // bookmark color, null for sections/loops
+  repeatCount: number | null;   // loop repeat count
+  evolving: boolean;            // loop evolving flag
+  sourceJamName: string;
+  jamImportedAt: string;
+  keyDisplay: string | null;    // "C minor" or null
+  tempoBpm: number | null;
+  durationSeconds: number;
+  notes: string | null;
+}
+
+/** Filter criteria for the sample browser sidebar. */
+export interface SampleFilter {
+  query?: string;
+  types?: SampleType[];
+  keys?: string[];
+  tempoMin?: number;
+  tempoMax?: number;
+  durationMin?: number;
+  durationMax?: number;
+  sourceJamId?: string;
+  tags?: string[];
+}
+
+/** Available filter option values for the sample browser sidebar dropdowns/sliders. */
+export interface SampleFilterOptions {
+  keys: string[];
+  tags: string[];
+  jams: [string, string][];     // [id, original_filename] tuples
+  tempoMin: number;
+  tempoMax: number;
+  durationMin: number;
+  durationMax: number;
+}
