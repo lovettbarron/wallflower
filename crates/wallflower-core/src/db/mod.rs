@@ -4,7 +4,8 @@ use crate::error::{Result, WallflowerError};
 use rusqlite::{params, Connection};
 use schema::{
     AnalysisResults, AnalysisStatus, JamCollaborator, JamInstrument, JamMetadata, JamPhoto,
-    JamRecord, JamTag, KeyResult, LoopRecord, NewJam, SectionRecord, SpatialJam, TempoResult,
+    JamRecord, JamTag, KeyResult, LoopRecord, NewJam, SampleFilter, SampleFilterOptions,
+    SampleRecord, SectionRecord, SpatialJam, TempoResult,
 };
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -1293,6 +1294,278 @@ pub fn list_jams_spatial(conn: &Connection) -> Result<Vec<SpatialJam>> {
         jams.push(row?);
     }
     Ok(jams)
+}
+
+// ── Sample browser ────────────────────────────────────────
+
+/// Map a row from the unified samples CTE to a SampleRecord.
+fn map_sample_row(row: &rusqlite::Row) -> rusqlite::Result<SampleRecord> {
+    Ok(SampleRecord {
+        id: row.get(0)?,
+        sample_type: row.get(1)?,
+        jam_id: row.get(2)?,
+        name: row.get(3)?,
+        start_seconds: row.get(4)?,
+        end_seconds: row.get(5)?,
+        color: row.get(6)?,
+        repeat_count: row.get(7)?,
+        evolving: row.get::<_, i32>(8)? != 0,
+        source_jam_name: row.get(9)?,
+        jam_imported_at: row.get(10)?,
+        key_display: row.get(11)?,
+        tempo_bpm: row.get(12)?,
+        duration_seconds: row.get(13)?,
+        notes: row.get(14)?,
+    })
+}
+
+/// Get all samples (bookmarks, sections, loops) across all jams with optional filtering.
+/// Uses a UNION ALL query to aggregate the three sample types into a single result set.
+/// All filter values are bound via positional parameters (T-07-01).
+/// Results are capped at 5000 rows (T-07-03).
+pub fn get_all_samples(conn: &Connection, filter: &SampleFilter) -> Result<Vec<SampleRecord>> {
+    let base_cte = "WITH all_samples AS (
+        SELECT
+            b.id,
+            'bookmark' AS sample_type,
+            b.jam_id,
+            b.name,
+            b.start_seconds,
+            b.end_seconds,
+            b.color,
+            NULL AS repeat_count,
+            0 AS evolving,
+            j.original_filename AS source_jam_name,
+            j.imported_at AS jam_imported_at,
+            (SELECT k.key_name || ' ' || k.scale FROM jam_key k WHERE k.jam_id = j.id) AS key_display,
+            (SELECT t.bpm FROM jam_tempo t WHERE t.jam_id = j.id) AS tempo_bpm,
+            (b.end_seconds - b.start_seconds) AS duration_seconds,
+            b.notes
+        FROM bookmarks b
+        INNER JOIN jams j ON b.jam_id = j.id
+
+        UNION ALL
+
+        SELECT
+            s.id,
+            'section' AS sample_type,
+            s.jam_id,
+            s.label AS name,
+            s.start_seconds,
+            s.end_seconds,
+            NULL AS color,
+            NULL AS repeat_count,
+            0 AS evolving,
+            j.original_filename AS source_jam_name,
+            j.imported_at AS jam_imported_at,
+            (SELECT k.key_name || ' ' || k.scale FROM jam_key k WHERE k.jam_id = j.id) AS key_display,
+            (SELECT t.bpm FROM jam_tempo t WHERE t.jam_id = j.id) AS tempo_bpm,
+            (s.end_seconds - s.start_seconds) AS duration_seconds,
+            j.notes
+        FROM jam_sections s
+        INNER JOIN jams j ON s.jam_id = j.id
+
+        UNION ALL
+
+        SELECT
+            l.id,
+            'loop' AS sample_type,
+            l.jam_id,
+            l.label AS name,
+            l.start_seconds,
+            l.end_seconds,
+            NULL AS color,
+            l.repeat_count,
+            l.evolving AS evolving,
+            j.original_filename AS source_jam_name,
+            j.imported_at AS jam_imported_at,
+            (SELECT k.key_name || ' ' || k.scale FROM jam_key k WHERE k.jam_id = j.id) AS key_display,
+            (SELECT t.bpm FROM jam_tempo t WHERE t.jam_id = j.id) AS tempo_bpm,
+            (l.end_seconds - l.start_seconds) AS duration_seconds,
+            j.notes
+        FROM jam_loops l
+        INNER JOIN jams j ON l.jam_id = j.id
+    )
+    SELECT * FROM all_samples";
+
+    let mut conditions = Vec::new();
+    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    let mut param_idx = 1usize;
+
+    // Filter by sample type
+    if let Some(ref types) = filter.types {
+        if !types.is_empty() {
+            let placeholders: Vec<String> = types
+                .iter()
+                .map(|_| {
+                    let p = format!("?{}", param_idx);
+                    param_idx += 1;
+                    p
+                })
+                .collect();
+            conditions.push(format!("sample_type IN ({})", placeholders.join(", ")));
+            for t in types {
+                param_values.push(Box::new(t.clone()));
+            }
+        }
+    }
+
+    // Filter by key
+    if let Some(ref keys) = filter.keys {
+        if !keys.is_empty() {
+            let placeholders: Vec<String> = keys
+                .iter()
+                .map(|_| {
+                    let p = format!("?{}", param_idx);
+                    param_idx += 1;
+                    p
+                })
+                .collect();
+            conditions.push(format!("key_display IN ({})", placeholders.join(", ")));
+            for k in keys {
+                param_values.push(Box::new(k.clone()));
+            }
+        }
+    }
+
+    // Filter by tempo range
+    if let Some(min) = filter.tempo_min {
+        conditions.push(format!("tempo_bpm >= ?{}", param_idx));
+        param_values.push(Box::new(min));
+        param_idx += 1;
+    }
+    if let Some(max) = filter.tempo_max {
+        conditions.push(format!("tempo_bpm <= ?{}", param_idx));
+        param_values.push(Box::new(max));
+        param_idx += 1;
+    }
+
+    // Filter by duration range
+    if let Some(min) = filter.duration_min {
+        conditions.push(format!("duration_seconds >= ?{}", param_idx));
+        param_values.push(Box::new(min));
+        param_idx += 1;
+    }
+    if let Some(max) = filter.duration_max {
+        conditions.push(format!("duration_seconds <= ?{}", param_idx));
+        param_values.push(Box::new(max));
+        param_idx += 1;
+    }
+
+    // Filter by source jam
+    if let Some(ref jam_id) = filter.source_jam_id {
+        conditions.push(format!("jam_id = ?{}", param_idx));
+        param_values.push(Box::new(jam_id.clone()));
+        param_idx += 1;
+    }
+
+    // Filter by tags (via EXISTS subquery)
+    if let Some(ref tags) = filter.tags {
+        if !tags.is_empty() {
+            let placeholders: Vec<String> = tags
+                .iter()
+                .map(|_| {
+                    let p = format!("?{}", param_idx);
+                    param_idx += 1;
+                    p
+                })
+                .collect();
+            conditions.push(format!(
+                "EXISTS (SELECT 1 FROM jam_tags WHERE jam_tags.jam_id = all_samples.jam_id AND jam_tags.tag IN ({}))",
+                placeholders.join(", ")
+            ));
+            for t in tags {
+                param_values.push(Box::new(t.clone()));
+            }
+        }
+    }
+
+    // Free-text search
+    if let Some(ref q) = filter.query {
+        let trimmed = q.trim();
+        if !trimmed.is_empty() {
+            let like_pattern = format!("%{}%", trimmed);
+            let p = param_idx;
+            conditions.push(format!(
+                "(name LIKE ?{p} OR source_jam_name LIKE ?{p} OR notes LIKE ?{p})"
+            ));
+            param_values.push(Box::new(like_pattern));
+            param_idx += 1;
+        }
+    }
+
+    // Build final SQL
+    let where_clause = if conditions.is_empty() {
+        String::new()
+    } else {
+        format!(" WHERE {}", conditions.join(" AND "))
+    };
+
+    let sql = format!(
+        "{}{} ORDER BY jam_imported_at DESC LIMIT 5000",
+        base_cte, where_clause
+    );
+
+    let params_refs: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
+
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(params_refs.as_slice(), |row| map_sample_row(row))?;
+
+    let mut samples = Vec::new();
+    for row in rows {
+        samples.push(row?);
+    }
+
+    // Suppress unused variable warning
+    let _ = param_idx;
+
+    Ok(samples)
+}
+
+/// Get available filter option values for the sample browser sidebar.
+/// Reuses existing helper functions and adds duration range from all sample types.
+pub fn get_sample_filter_options(conn: &Connection) -> Result<SampleFilterOptions> {
+    let keys = get_distinct_keys(conn)?;
+    let tags = list_all_tags(conn)?;
+    let (tempo_min, tempo_max) = get_tempo_range(conn)?;
+
+    // Source jam list
+    let mut stmt = conn.prepare("SELECT id, original_filename FROM jams ORDER BY imported_at DESC")?;
+    let jam_rows = stmt.query_map([], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    })?;
+    let mut jams = Vec::new();
+    for row in jam_rows {
+        jams.push(row?);
+    }
+
+    // Duration range across all sample types
+    let (duration_min, duration_max) = conn.query_row(
+        "SELECT MIN(duration_seconds), MAX(duration_seconds) FROM (
+            SELECT (end_seconds - start_seconds) AS duration_seconds FROM bookmarks
+            UNION ALL
+            SELECT (end_seconds - start_seconds) FROM jam_sections
+            UNION ALL
+            SELECT (end_seconds - start_seconds) FROM jam_loops
+        )",
+        [],
+        |row| {
+            let min: Option<f64> = row.get(0)?;
+            let max: Option<f64> = row.get(1)?;
+            Ok((min.unwrap_or(0.0), max.unwrap_or(0.0)))
+        },
+    )?;
+
+    Ok(SampleFilterOptions {
+        keys,
+        tags,
+        jams,
+        tempo_min,
+        tempo_max,
+        duration_min,
+        duration_max,
+    })
 }
 
 #[cfg(test)]

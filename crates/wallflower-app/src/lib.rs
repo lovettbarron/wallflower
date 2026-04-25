@@ -502,6 +502,11 @@ pub fn run() {
             commands::export::reveal_in_finder,
             // Spatial explorer (Phase 6)
             commands::spatial::get_spatial_jams,
+            // Sample browser (Phase 7)
+            commands::samples::get_all_samples,
+            commands::samples::get_sample_filter_options,
+            commands::export::export_sample_audio,
+            commands::export::separate_sample_stems,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
