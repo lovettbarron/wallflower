@@ -39,7 +39,7 @@ Plans:
 - [x] 01-01-PLAN.md -- Project scaffolding: Tauri v2 + Cargo workspace + SQLite + Next.js + shadcn
 - [x] 01-02-PLAN.md -- Import pipeline, Tauri IPC commands, CLI subcommands, settings module
 - [x] 01-03-PLAN.md -- Folder watcher, device detection, documentation, release verification
-- [ ] 01-04-PLAN.md -- Gap closure: 32-bit float downsampling utility, release build, v0.1.0 tag
+- [x] 01-04-PLAN.md -- Gap closure: 32-bit float downsampling utility, release build, v0.1.0 tag
 
 ### Phase 2: Playback, Metadata, Design System & Notifications
 **Goal**: Users can see waveforms, play and scrub audio, browse their library chronologically, edit metadata, experience the Wallflower design language, and receive native macOS notifications for key events
