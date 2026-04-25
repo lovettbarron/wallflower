@@ -10,6 +10,7 @@ import { FirstLaunchDialog } from "@/components/settings/FirstLaunchDialog";
 import { useLibraryStore } from "@/lib/stores/library";
 import { RecordingView } from "@/components/recording/RecordingView";
 import { useRecordingStore } from "@/lib/stores/recording";
+import { SampleBrowser } from "@/components/explore/SampleBrowser";
 import { queuePendingAnalysis, getAutoLaunchDialogShown } from "@/lib/tauri";
 
 type ActiveTab = "library" | "explore" | "settings";
@@ -131,14 +132,7 @@ export default function Home() {
         )}
 
         {activeTab === "explore" && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-12 py-24">
-            <h2 className="text-xl font-semibold text-foreground">
-              Sample Browser
-            </h2>
-            <p className="max-w-md text-center text-sm text-muted-foreground">
-              Search and filter bookmarks, loops, and sections extracted from your recordings. Coming soon.
-            </p>
-          </div>
+          <SampleBrowser onTabChange={setActiveTab} />
         )}
 
         {activeTab === "settings" && (
