@@ -12,15 +12,16 @@ A musician can go from "I just finished a 2-hour jam" to "here's the interesting
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Watch configurable folder (default ~/wallflower) for new audio files, with sync-folder safety (Dropbox, iCloud) — Validated in Phase 1
+- [x] Always COPY files to local storage before processing — never modify originals — Validated in Phase 1
+- [x] Process 32-bit float audio and downsample to 24-bit — Validated in Phase 1 (gap closure 01-04)
+- [x] Monitor for connected audio recorders (e.g., Zoom F3) and prompt to import new recordings — Validated in Phase 1
+- [x] API-driven backend with CLI for debugging and extension into services/daemons — Validated in Phase 1
+- [x] SQLite database for metadata, single-file backup — Validated in Phase 1
 
 ### Active
 
 - [ ] Record multi-channel audio (1-4 channels, default stereo) with incremental disk writes and crash safety
-- [ ] Monitor for connected audio recorders (e.g., Zoom F3) and prompt to import new recordings
-- [ ] Watch configurable folder (default ~/wallflower) for new audio files, with sync-folder safety (Dropbox, iCloud)
-- [ ] Always COPY files to local storage before processing — never modify originals
-- [ ] Process 32-bit float audio and downsample to 24-bit
 - [ ] Generate metadata file from whole-file analysis (no splitting during initial processing)
 - [ ] Detect key, chords, tempo, sections, and phrase boundaries using local AI models
 - [ ] Identify repeated sections/loops and detect when loops change substantially
@@ -42,9 +43,6 @@ A musician can go from "I just finished a 2-hour jam" to "here's the interesting
 - [ ] Non-blocking UX: model downloads don't block recording, features light up progressively as dependencies become ready
 - [ ] Download AI models at runtime on first launch, cache locally (not in repo), reuse across app updates unless model version changes
 - [ ] Abstract model interface so models can be swapped via configuration as new capabilities emerge
-- [ ] API-driven backend with CLI for debugging and extension into services/daemons
-- [ ] SQLite database for metadata, single-file backup
-
 ### Out of Scope
 
 - Mobile app — macOS-first native desktop experience
@@ -109,4 +107,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-19 — Phase 2 (Playback, Metadata, Design System & Notifications) complete. Timeline browser, waveform playback, metadata editing, photo drag-drop, patches folder watcher, and in-app toasts verified. Native macOS notifications tracked as gap (INFRA-11).*
+*Last updated: 2026-04-25 — Phase 1 gap closure complete (STOR-05 downsample utility, INFRA-05 release build + v0.1.0 tag). Phase 2 (Playback, Metadata, Design System & Notifications) complete. Timeline browser, waveform playback, metadata editing, photo drag-drop, patches folder watcher, and in-app toasts verified. Native macOS notifications tracked as gap (INFRA-11).*
