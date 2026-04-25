@@ -2,8 +2,8 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ImagePlus } from "lucide-react";
-import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, prioritizeAnalysis, exportAudio, revealInFinder, getAnalysisResults } from "@/lib/tauri";
+import { ArrowLeft, ImagePlus, Trash2 } from "lucide-react";
+import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, prioritizeAnalysis, exportAudio, revealInFinder, getAnalysisResults, deleteJam } from "@/lib/tauri";
 import type { JamDetail as JamDetailType, PeakData, BookmarkColor, SeparationProgressEvent, AnalysisResults } from "@/lib/types";
 import { WaveformOverview } from "@/components/waveform/WaveformOverview";
 import { WaveformDetail } from "@/components/waveform/WaveformDetail";
@@ -16,6 +16,8 @@ import { useRecordingStore } from "@/lib/stores/recording";
 import { useBookmarkStore } from "@/lib/stores/bookmarks";
 import { useSeparationStore } from "@/lib/stores/separation";
 import { AnalysisSummary } from "@/components/analysis/AnalysisSummary";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface JamDetailProps {
@@ -27,6 +29,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const isRecording = useRecordingStore((s) => s.isRecording);
   const recordingJamId = useRecordingStore((s) => s.recordingJamId);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const titleSaveTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -49,6 +52,21 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   // Separation state
   const mixerOpen = useSeparationStore((s) => s.mixerOpen);
   const separating = useSeparationStore((s) => s.separating);
+
+  const handleDeleteJam = useCallback(async () => {
+    try {
+      await deleteJam(jamId);
+      queryClient.invalidateQueries({ queryKey: ["jams"] });
+      queryClient.invalidateQueries({ queryKey: ["samples"] });
+      toast.success("Jam deleted");
+      onBack();
+    } catch (err) {
+      toast.error("Failed to delete jam", {
+        description: err instanceof Error ? err.message : "Unknown error",
+      });
+    }
+    setShowDeleteDialog(false);
+  }, [jamId, queryClient, onBack]);
 
   // Listen for separation-progress events from Tauri
   useEffect(() => {
@@ -363,16 +381,26 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
         </div>
       )}
 
-      {/* Back navigation */}
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-4 flex items-center gap-1 rounded text-sm transition-colors hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-[#E8863A]"
-        style={{ color: "#E8863A" }}
-      >
-        <ArrowLeft size={16} />
-        Library
-      </button>
+      {/* Back navigation + delete */}
+      <div className="mb-4 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1 rounded text-sm transition-colors hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-[#E8863A]"
+          style={{ color: "#E8863A" }}
+        >
+          <ArrowLeft size={16} />
+          Library
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowDeleteDialog(true)}
+          className="flex items-center gap-1 rounded px-2 py-1 text-sm text-muted-foreground transition-colors hover:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-400"
+          aria-label="Delete jam"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
 
       {/* Jam title (editable) */}
       <input
@@ -496,6 +524,26 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
         onClose={() => useSeparationStore.getState().closeMixer()}
         bookmark={null}
       />
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Delete {jam?.originalFilename || jam?.filename}?</DialogTitle>
+            <DialogDescription>
+              This will permanently remove the recording, all bookmarks, analysis data, and associated files. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowDeleteDialog(false)}>
+              Keep Recording
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteJam}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

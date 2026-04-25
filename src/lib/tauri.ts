@@ -318,6 +318,10 @@ export async function deleteBookmark(id: string): Promise<void> {
   return invoke("delete_bookmark", { id });
 }
 
+export async function deleteJam(id: string): Promise<void> {
+  return invoke("delete_jam", { id });
+}
+
 export async function exportAudio(bookmarkId: string): Promise<string> {
   return invoke("export_audio", { bookmarkId });
 }
