@@ -199,3 +199,54 @@ pub struct SpatialJam {
     pub collaborators: Vec<String>,
     pub instruments: Vec<String>,
 }
+
+/// A unified sample record representing a bookmark, section, or loop.
+/// Used by the cross-jam sample browser to display all sample types
+/// in a single sortable/filterable list.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SampleRecord {
+    pub id: String,
+    pub sample_type: String, // "bookmark", "section", or "loop"
+    pub jam_id: String,
+    pub name: String,
+    pub start_seconds: f64,
+    pub end_seconds: f64,
+    pub color: Option<String>,     // bookmark color, null for sections/loops
+    pub repeat_count: Option<i32>, // loop repeat count
+    pub evolving: bool,            // loop evolving flag
+    pub source_jam_name: String,
+    pub jam_imported_at: String,
+    pub key_display: Option<String>, // "C minor" or null
+    pub tempo_bpm: Option<f64>,
+    pub duration_seconds: f64,
+    pub notes: Option<String>, // bookmark notes, jam notes for others
+}
+
+/// Filter criteria for the sample browser.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SampleFilter {
+    pub query: Option<String>,
+    pub types: Option<Vec<String>>, // ["bookmark", "section", "loop"]
+    pub keys: Option<Vec<String>>,
+    pub tempo_min: Option<f64>,
+    pub tempo_max: Option<f64>,
+    pub duration_min: Option<f64>,
+    pub duration_max: Option<f64>,
+    pub source_jam_id: Option<String>,
+    pub tags: Option<Vec<String>>,
+}
+
+/// Available filter option values for the sample browser sidebar.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SampleFilterOptions {
+    pub keys: Vec<String>,
+    pub tags: Vec<String>,
+    pub jams: Vec<(String, String)>, // (id, original_filename)
+    pub tempo_min: f64,
+    pub tempo_max: f64,
+    pub duration_min: f64,
+    pub duration_max: f64,
+}
