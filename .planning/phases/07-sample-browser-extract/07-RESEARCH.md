@@ -525,22 +525,22 @@ function SamplePreviewPanel({ sample }: { sample: SampleRecord }) {
 | A2 | The transport store's `activeLoop` feature can constrain playback to a sample's time range | Pitfall 3 | If activeLoop doesn't work for preview, a separate audio element may be needed. Can be verified by reading transport store code. LOW risk -- store already has this feature. [VERIFIED: transport.ts has `activeLoop` with `startSeconds`/`endSeconds`] |
 | A3 | Sections and loops inherit key/tempo from their parent jam (no per-section key/tempo) | Pitfall 1 | If per-section key/tempo is needed, more complex data model required. LOW risk -- confirmed by schema. `jam_key` and `jam_tempo` are per-jam, not per-section. [VERIFIED: V4 migration SQL] |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Export command design for non-bookmark types**
    - What we know: Existing `export_audio` takes `bookmark_id`. Sections/loops don't have bookmark IDs. D-16 says export should work without creating a bookmark.
    - What's unclear: Whether to (a) create new Tauri commands that accept raw parameters, (b) extend existing commands with an optional alternative parameter, or (c) auto-create a temporary bookmark.
-   - Recommendation: Option (a) -- create `export_sample_audio` and `separate_sample_stems` commands. Cleanest separation of concerns. No temporary database records.
+   - RESOLVED: Option (a) — create `export_sample_audio` and `separate_sample_stems` commands. Cleanest separation of concerns. No temporary database records. Implemented in Plan 01, Task 2.
 
 2. **Text search scope for samples**
    - What we know: D-13 says search across sample name, source jam name, tags, and notes.
    - What's unclear: Whether "notes" means the jam's notes or the bookmark's notes. Sections and loops don't have notes.
-   - Recommendation: Search across sample `name` (label for sections/loops, name for bookmarks), source jam `original_filename`, jam `notes`, bookmark `notes` (where applicable), and jam tags.
+   - RESOLVED: Search across sample `name` (label for sections/loops, name for bookmarks), source jam `original_filename`, jam `notes`, bookmark `notes` (where applicable), and jam tags. Implemented in Plan 01, Task 1.
 
 3. **Duration range bounds for filter**
    - What we know: D-12 requires duration range slider.
    - What's unclear: What the min/max bounds should be. Need to compute from actual data.
-   - Recommendation: Backend computes min/max duration from the UNION of all sample types and returns in filter options. Frontend uses these as slider bounds.
+   - RESOLVED: Backend computes min/max duration from the UNION of all sample types and returns in filter options. Frontend uses these as slider bounds. Implemented in Plan 01, Task 1 (`get_sample_filter_options`).
 
 ## Validation Architecture
 
