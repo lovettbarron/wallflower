@@ -301,6 +301,23 @@ pub fn get_most_recent_jam(conn: &Connection) -> Result<Option<JamRecord>> {
     }
 }
 
+/// Delete a jam by ID. Removes the FTS5 entry (which does not cascade),
+/// then deletes the jams row (child tables cascade via ON DELETE CASCADE).
+/// Returns the deleted JamRecord so the caller can clean up associated files.
+pub fn delete_jam(conn: &Connection, id: &str) -> Result<JamRecord> {
+    // Fetch the jam first so we can return it for file cleanup
+    let jam = get_jam(conn, id)?
+        .ok_or_else(|| WallflowerError::Db(rusqlite::Error::QueryReturnedNoRows))?;
+
+    // FTS5 virtual table does not cascade -- delete manually
+    conn.execute("DELETE FROM jam_search WHERE jam_id = ?1", params![id])?;
+
+    // Delete the jam row; all child tables cascade
+    conn.execute("DELETE FROM jams WHERE id = ?1", params![id])?;
+
+    Ok(jam)
+}
+
 /// Get a single setting value by key.
 pub fn get_setting(conn: &Connection, key: &str) -> Result<Option<String>> {
     let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = ?1")?;
