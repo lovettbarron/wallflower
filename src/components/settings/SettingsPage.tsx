@@ -7,6 +7,7 @@ import type { AppSettings } from "@/lib/types";
 import { ModelManagement } from "./ModelManagement";
 import { AnalysisProfileSelector } from "./AnalysisProfileSelector";
 import { AutoLaunchSection } from "./AutoLaunchSection";
+import { AudioDeviceSettings } from "./AudioDeviceSettings";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -262,6 +263,20 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Audio Interface settings card */}
+      <div
+        className="mb-4 rounded-xl border p-5"
+        style={{
+          background: "#1D2129",
+          borderColor: "#323844",
+        }}
+      >
+        <h2 className="mb-4 text-sm font-semibold text-foreground">
+          Audio Interface
+        </h2>
+        <AudioDeviceSettings />
       </div>
 
       {/* Export settings card */}
