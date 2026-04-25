@@ -5,6 +5,7 @@ pub mod import;
 pub mod jams;
 pub mod metadata;
 pub mod recording;
+pub mod samples;
 pub mod settings;
 pub mod spatial;
 pub mod status;
