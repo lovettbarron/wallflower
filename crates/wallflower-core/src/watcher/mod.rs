@@ -96,10 +96,17 @@ pub fn start_watcher(
                     break;
                 }
 
-                // Drain all available events
-                while let Ok(event) = rx.try_recv() {
-                    match event.kind {
-                        EventKind::Create(_) | EventKind::Modify(_) => {
+                // Block until an event arrives or timeout expires.
+                // When nothing is pending, wait indefinitely to avoid wasting CPU.
+                let wait = if pending.is_empty() {
+                    Duration::from_secs(60)
+                } else {
+                    poll_interval
+                };
+
+                match rx.recv_timeout(wait) {
+                    Ok(event) => {
+                        if let EventKind::Create(_) | EventKind::Modify(_) = event.kind {
                             for path in event.paths {
                                 if path.is_file()
                                     && !import::is_under_any(&path, &exclude_dirs)
@@ -109,8 +116,22 @@ pub fn start_watcher(
                                 }
                             }
                         }
-                        _ => {}
+                        // Drain any additional buffered events
+                        while let Ok(event) = rx.try_recv() {
+                            if let EventKind::Create(_) | EventKind::Modify(_) = event.kind {
+                                for path in event.paths {
+                                    if path.is_file()
+                                        && !import::is_under_any(&path, &exclude_dirs)
+                                        && import::is_audio_file(&path)
+                                    {
+                                        pending.insert(path, Instant::now());
+                                    }
+                                }
+                            }
+                        }
                     }
+                    Err(mpsc::RecvTimeoutError::Timeout) => {}
+                    Err(mpsc::RecvTimeoutError::Disconnected) => break,
                 }
 
                 // Process debounced entries
@@ -145,8 +166,6 @@ pub fn start_watcher(
                         }
                     }
                 }
-
-                std::thread::sleep(poll_interval);
             }
 
             active_clone.store(false, Ordering::Relaxed);

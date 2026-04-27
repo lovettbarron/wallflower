@@ -2,24 +2,35 @@
 
 A local-first jam and sample manager for musicians who want to focus on creating music, not managing files. Wallflower records, imports, analyzes, and organizes musical explorations -- using local AI to automatically detect structure, separate sources, and tag metadata -- so you can quickly go from "I just finished a 2-hour jam" to "here's the interesting 8-bar synth loop in Bb minor at 120bpm" with minimal effort.
 
+![Wallflower — jam detail view with waveform, bookmarks, and transport bar](docs/wallflower-demo.png)
+
 ## Download
 
-**[Wallflower v0.1.0](https://github.com/lovettbarron/wallflower/releases/tag/v0.1.0)** -- macOS (Apple Silicon). Code-signed and notarized.
+**[Wallflower v0.2.0](https://github.com/lovettbarron/wallflower/releases/tag/v0.2.0)** -- macOS (Apple Silicon). Code-signed and notarized.
 
 ## Status
 
-**Phase 6 in progress** -- Spatial explorer, accessibility, and distribution. Phases 1-5 complete (import, playback, recording, analysis, source separation & export).
+**v0.2.0 released** -- All 7 phases complete. Import, playback, recording, ML analysis, source separation, spatial explorer, accessibility, sample browser, and export.
 
 ## Features
 
-### Spatial Explorer & Accessibility (Phase 6 - in progress)
+### Sample Browser & Extract (Phase 7)
+- Browse all bookmarks, loops, and detected sections across recordings in a searchable list
+- Filter by key, tempo, duration range, tags, and source recording
+- DAW-style sample browser with collapsible sidebar and sortable table
+- Type-coded badges for bookmarks, loops, and sections
+- Inline preview panel with waveform, constrained playback, and metadata
+- Export samples or stems directly from the browser
+- Keyboard navigation with arrow keys, Enter to select, Escape to close preview
+- Delete recordings from the library with confirmation dialog
+
+### Spatial Explorer & Accessibility (Phase 6)
 - Spatial similarity explorer with force-directed graph visualization
 - Accessibility retrofit: keyboard navigation, screen reader support, ARIA labels
 - Skip-to-content link for keyboard users
 - Auto-launch on login with first-launch dialog
 - Section and loop overlays on waveform with click-to-play
 - Audio interface selection with channel routing and live level meters
-- Delete recordings from the library with confirmation dialog
 
 ### Source Separation & Export (Phase 5)
 - Bookmark regions on the waveform with drag-to-select and snap-to-section
@@ -178,7 +189,8 @@ cargo build --release --workspace
 - ~~**Phase 3:** Recording with crash safety, silence detection~~ Done
 - ~~**Phase 4:** Audio analysis (key, tempo, sections) via Python ML sidecar~~ Done
 - ~~**Phase 5:** Source separation (demucs-mlx on Apple Silicon)~~ Done
-- **Phase 6:** Spatial explorer, accessibility, distribution
+- ~~**Phase 6:** Spatial explorer, accessibility, distribution~~ Done
+- ~~**Phase 7:** Sample browser & extract~~ Done
 
 ## License
 

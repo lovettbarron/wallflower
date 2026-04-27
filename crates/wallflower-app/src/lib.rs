@@ -212,15 +212,13 @@ fn start_recording_event_bridge(
             let level_throttle = std::time::Duration::from_millis(67); // ~15fps
 
             loop {
-                match event_rx.recv_timeout(std::time::Duration::from_millis(100)) {
+                match event_rx.recv() {
                     Ok(event) => match &event {
                         RecordingEvent::LevelUpdate { rms_db } => {
-                            // Store latest RMS for polling via get_recording_level
                             latest_rms.store(
                                 (*rms_db * 100.0) as i32,
                                 std::sync::atomic::Ordering::Relaxed,
                             );
-                            // Throttle level updates to ~15fps
                             if last_level_emit.elapsed() >= level_throttle {
                                 let _ = app_handle
                                     .emit("recording-level", serde_json::json!({ "rmsDb": rms_db }));
@@ -229,7 +227,6 @@ fn start_recording_event_bridge(
                         }
                         RecordingEvent::StateChanged(state) => {
                             let _ = app_handle.emit("recording-state-changed", state);
-                            // Update tray when state changes
                             match state {
                                 RecordingState::Recording => {
                                     tray::update_tray_for_recording(&app_handle, true, None);
@@ -268,10 +265,7 @@ fn start_recording_event_bridge(
                             );
                         }
                     },
-                    Err(crossbeam_channel::RecvTimeoutError::Timeout) => {
-                        // No events, continue polling
-                    }
-                    Err(crossbeam_channel::RecvTimeoutError::Disconnected) => {
+                    Err(_) => {
                         tracing::info!("Recording event bridge: channel disconnected");
                         break;
                     }

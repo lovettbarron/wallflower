@@ -23,97 +23,102 @@ export function WaveformOverview({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
 
-  useEffect(() => {
+  const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    const drawFrame = () => {
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+    const { currentTime, duration } = useTransportStore.getState();
 
-      const { currentTime, duration } = useTransportStore.getState();
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
 
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
+    const w = rect.width;
+    const h = rect.height;
+    const mid = h / 2;
 
-      const w = rect.width;
-      const h = rect.height;
-      const mid = h / 2;
+    ctx.clearRect(0, 0, w, h);
 
-      ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#E8863A";
+    const peakCount = peaks.peaks.length;
+    if (peakCount > 0) {
+      const step = peakCount / w;
+      for (let x = 0; x < w; x++) {
+        const idx = Math.floor(x * step);
+        if (idx >= peakCount) break;
+        const [min, max] = peaks.peaks[idx];
+        const top = mid + min * mid;
+        const bottom = mid + max * mid;
+        const barHeight = Math.max(1, bottom - top);
+        ctx.fillRect(x, top, 1, barHeight);
+      }
+    }
 
+    const totalDuration = duration > 0 ? duration : peaks.duration;
+    if (totalDuration > 0) {
+      for (const bookmark of bookmarks) {
+        const colorKey = bookmark.color as BookmarkColor;
+        const colorInfo = BOOKMARK_COLORS[colorKey] || BOOKMARK_COLORS.coral;
+        const startX = (bookmark.startSeconds / totalDuration) * w;
+        const endX = (bookmark.endSeconds / totalDuration) * w;
+        const spanPx = endX - startX;
+
+        if (spanPx > 4) {
+          ctx.fillStyle = colorInfo.fill.replace("0.25", "0.15");
+          ctx.fillRect(startX, 0, spanPx, h);
+          ctx.fillStyle = colorInfo.solid;
+          ctx.globalAlpha = 0.6;
+          ctx.fillRect(startX, 0, 2, h);
+          ctx.fillRect(endX - 2, 0, 2, h);
+          ctx.globalAlpha = 1;
+        } else {
+          ctx.fillStyle = colorInfo.solid;
+          ctx.globalAlpha = 0.6;
+          ctx.fillRect(startX, 0, 2, h);
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    if (
+      viewportStart !== undefined &&
+      viewportEnd !== undefined &&
+      duration > 0
+    ) {
+      const startX = (viewportStart / duration) * w;
+      const endX = (viewportEnd / duration) * w;
+      ctx.fillStyle = "rgba(232, 134, 58, 0.1)";
+      ctx.fillRect(startX, 0, endX - startX, h);
+    }
+
+    if (duration > 0) {
+      const posX = (currentTime / duration) * w;
       ctx.fillStyle = "#E8863A";
-      const peakCount = peaks.peaks.length;
-      if (peakCount > 0) {
-        const step = peakCount / w;
-        for (let x = 0; x < w; x++) {
-          const idx = Math.floor(x * step);
-          if (idx >= peakCount) break;
-          const [min, max] = peaks.peaks[idx];
-          const top = mid + min * mid;
-          const bottom = mid + max * mid;
-          const barHeight = Math.max(1, bottom - top);
-          ctx.fillRect(x, top, 1, barHeight);
-        }
-      }
-
-      // Draw bookmark indicators
-      const totalDuration = duration > 0 ? duration : peaks.duration;
-      if (totalDuration > 0) {
-        for (const bookmark of bookmarks) {
-          const colorKey = bookmark.color as BookmarkColor;
-          const colorInfo = BOOKMARK_COLORS[colorKey] || BOOKMARK_COLORS.coral;
-          const startX = (bookmark.startSeconds / totalDuration) * w;
-          const endX = (bookmark.endSeconds / totalDuration) * w;
-          const spanPx = endX - startX;
-
-          if (spanPx > 4) {
-            // Wide enough to render as a filled region
-            ctx.fillStyle = colorInfo.fill.replace("0.25", "0.15");
-            ctx.fillRect(startX, 0, spanPx, h);
-            // Left and right borders
-            ctx.fillStyle = colorInfo.solid;
-            ctx.globalAlpha = 0.6;
-            ctx.fillRect(startX, 0, 2, h);
-            ctx.fillRect(endX - 2, 0, 2, h);
-            ctx.globalAlpha = 1;
-          } else {
-            // Narrow: render as a single line
-            ctx.fillStyle = colorInfo.solid;
-            ctx.globalAlpha = 0.6;
-            ctx.fillRect(startX, 0, 2, h);
-            ctx.globalAlpha = 1;
-          }
-        }
-      }
-
-      if (
-        viewportStart !== undefined &&
-        viewportEnd !== undefined &&
-        duration > 0
-      ) {
-        const startX = (viewportStart / duration) * w;
-        const endX = (viewportEnd / duration) * w;
-        ctx.fillStyle = "rgba(232, 134, 58, 0.1)";
-        ctx.fillRect(startX, 0, endX - startX, h);
-      }
-
-      if (duration > 0) {
-        const posX = (currentTime / duration) * w;
-        ctx.fillStyle = "#E8863A";
-        ctx.fillRect(posX - 1, 0, 2, h);
-      }
-
-      rafRef.current = requestAnimationFrame(drawFrame);
-    };
-
-    rafRef.current = requestAnimationFrame(drawFrame);
-
-    return () => cancelAnimationFrame(rafRef.current);
+      ctx.fillRect(posX - 1, 0, 2, h);
+    }
   }, [peaks, viewportStart, viewportEnd, bookmarks]);
+
+  useEffect(() => {
+    rafRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [draw]);
+
+  useEffect(() => {
+    const unsub = useTransportStore.subscribe((state, prev) => {
+      if (
+        state.currentTime !== prev.currentTime ||
+        state.duration !== prev.duration
+      ) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(draw);
+      }
+    });
+    return unsub;
+  }, [draw]);
 
   const handleClick = (e: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
