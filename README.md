@@ -2,6 +2,10 @@
 
 A local-first jam and sample manager for musicians who want to focus on creating music, not managing files. Wallflower records, imports, analyzes, and organizes musical explorations -- using local AI to automatically detect structure, separate sources, and tag metadata -- so you can quickly go from "I just finished a 2-hour jam" to "here's the interesting 8-bar synth loop in Bb minor at 120bpm" with minimal effort.
 
+## Download
+
+**[Wallflower v0.1.0](https://github.com/lovettbarron/wallflower/releases/tag/v0.1.0)** -- macOS (Apple Silicon). Code-signed and notarized.
+
 ## Status
 
 **Phase 6 in progress** -- Spatial explorer, accessibility, and distribution. Phases 1-5 complete (import, playback, recording, analysis, source separation & export).
@@ -14,6 +18,8 @@ A local-first jam and sample manager for musicians who want to focus on creating
 - Skip-to-content link for keyboard users
 - Auto-launch on login with first-launch dialog
 - Section and loop overlays on waveform with click-to-play
+- Audio interface selection with channel routing and live level meters
+- Delete recordings from the library with confirmation dialog
 
 ### Source Separation & Export (Phase 5)
 - Bookmark regions on the waveform with drag-to-select and snap-to-section
@@ -72,11 +78,13 @@ A local-first jam and sample manager for musicians who want to focus on creating
 
 ## Installation
 
-### Prerequisites
+### Pre-built (recommended)
 
-- macOS (Apple Silicon recommended)
-- Rust toolchain (install via [rustup.rs](https://rustup.rs))
-- Node.js 20+ and npm
+Download the latest DMG from the [Releases page](https://github.com/lovettbarron/wallflower/releases). Open it and drag Wallflower to Applications. Requires macOS 13.0+ on Apple Silicon.
+
+### Build from Source
+
+**Prerequisites:** macOS, Rust toolchain ([rustup.rs](https://rustup.rs)), Node.js 20+, protobuf (`brew install protobuf`)
 
 ### Clone and Build
 
