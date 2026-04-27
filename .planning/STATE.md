@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-18)
 Phase: --phase (07) — EXECUTING
 Plan: 1 of --name
 Status: Executing Phase --phase
-Last activity: 2026-04-25 -- Completed quick task 260425-jzp: Audio interface selection
+Last activity: 2026-04-27 -- Completed quick task 260427-ggc: Fix UI reactivity after processing
 
 Progress: [██████████] 97%
 
@@ -107,7 +107,8 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260425-jzp | Audio interface selection with default channels and channel routing | 2026-04-25 | 65746f3 | [260425-jzp-audio-interface-selection](./quick/260425-jzp-audio-interface-selection/) |
 | 260425-k75 | Add the ability to delete a recording | 2026-04-25 | 035158b | [260425-k75-delete-recording](./quick/260425-k75-delete-recording/) |
-| 260425-19c | Channel selection UX: stereo default, sensible counts, live level meters | 2026-04-25 | pending | [260425-19c-channel-selection-ux](./quick/260425-19c-channel-selection-ux/) |
+| 260425-19c | Channel selection UX: stereo default, sensible counts, live level meters | 2026-04-25 | 2d8e342 | [260425-19c-channel-selection-ux](./quick/260425-19c-channel-selection-ux/) |
+| 260427-ggc | Fix UI reactivity: waveforms and loop points not updating after processing | 2026-04-27 | af6f8e9 | [260427-ggc-fix-ui-reactivity-waveforms-and-loop-poi](./quick/260427-ggc-fix-ui-reactivity-waveforms-and-loop-poi/) |
 
 ### Blockers/Concerns
 
