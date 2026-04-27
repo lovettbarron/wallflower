@@ -155,7 +155,6 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
     queryKey: ["jam", jamId, "analysis"],
     queryFn: () => getAnalysisResults(jamId),
     enabled: !!jamId,
-    staleTime: 30000,
   });
 
   useEffect(() => {

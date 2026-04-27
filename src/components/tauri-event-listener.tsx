@@ -250,11 +250,15 @@ export function TauriEventListener() {
         const unlistenStopped = await listen<RecordingStoppedPayload>(
           "recording-stopped",
           (event) => {
-            const { durationSeconds } = event.payload;
+            const { jamId, durationSeconds } = event.payload;
             toast.success(
               `Recording saved -- ${formatDuration(durationSeconds)} captured`,
               { duration: 4000 }
             );
+            queryClient.invalidateQueries({ queryKey: ["jams"] });
+            if (jamId) {
+              queryClient.invalidateQueries({ queryKey: ["jam", jamId] });
+            }
             queuePendingAnalysis().catch(() => {});
           }
         );
@@ -267,11 +271,12 @@ export function TauriEventListener() {
           (event) => {
             const { jamId, step, status } = event.payload;
 
-            // Invalidate react-query cache so components re-fetch
             queryClient.invalidateQueries({ queryKey: ["jam", jamId, "analysis"] });
+            queryClient.invalidateQueries({ queryKey: ["jam", jamId] });
+            queryClient.invalidateQueries({ queryKey: ["peaks", jamId] });
 
             if (status === "completed" && step === "loops") {
-              // All steps done
+              queryClient.invalidateQueries({ queryKey: ["jams"] });
               const result = event.payload.result;
               const keyStr = result?.key || "";
               const bpmStr = result?.bpm ? Math.round(result.bpm) : "";
