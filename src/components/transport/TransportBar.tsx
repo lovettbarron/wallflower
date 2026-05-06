@@ -58,8 +58,16 @@ export function TransportBar() {
     if (audio.src !== audioUrl) {
       audio.src = audioUrl;
       audio.load();
+      const { isPlaying: playing, activeLoop: loop } = useTransportStore.getState();
+      if (loop) {
+        audio.currentTime = loop.startSeconds;
+        setCurrentTime(loop.startSeconds);
+      }
+      if (playing) {
+        audio.play().catch(() => setPlaying(false));
+      }
     }
-  }, [audioUrl]);
+  }, [audioUrl, setCurrentTime, setPlaying]);
 
   const handleLoadedMetadata = useCallback(() => {
     const audio = audioRef.current;

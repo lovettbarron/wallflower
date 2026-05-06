@@ -58,14 +58,14 @@ export function SamplePreviewPanel({
   });
 
   const audioUrl = sample
-    ? `http://localhost:23516/api/audio/${encodeURIComponent(sample.sourceJamName)}`
+    ? `http://localhost:23516/api/audio/${encodeURIComponent(sample.sourceJamFilename)}`
     : "";
 
   // Load jam into transport and set active loop when sample changes
   useEffect(() => {
     if (!sample) return;
 
-    const url = `http://localhost:23516/api/audio/${encodeURIComponent(sample.sourceJamName)}`;
+    const url = `http://localhost:23516/api/audio/${encodeURIComponent(sample.sourceJamFilename)}`;
     useTransportStore.getState().loadJam(
       sample.jamId,
       sample.name,

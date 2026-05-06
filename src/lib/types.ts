@@ -371,6 +371,7 @@ export interface SampleRecord {
   repeatCount: number | null;   // loop repeat count
   evolving: boolean;            // loop evolving flag
   sourceJamName: string;
+  sourceJamFilename: string;
   jamImportedAt: string;
   keyDisplay: string | null;    // "C minor" or null
   tempoBpm: number | null;

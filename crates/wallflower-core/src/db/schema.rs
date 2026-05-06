@@ -216,6 +216,7 @@ pub struct SampleRecord {
     pub repeat_count: Option<i32>, // loop repeat count
     pub evolving: bool,            // loop evolving flag
     pub source_jam_name: String,
+    pub source_jam_filename: String,
     pub jam_imported_at: String,
     pub key_display: Option<String>, // "C minor" or null
     pub tempo_bpm: Option<f64>,

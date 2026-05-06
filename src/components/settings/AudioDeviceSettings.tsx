@@ -21,9 +21,22 @@ function buildChannelCountOptions(maxChannels: number): number[] {
   return counts;
 }
 
+function meterColor(db: number): string {
+  if (db > -6) return "#ef4444";
+  if (db > -18) return "#E8863A";
+  if (db > -60) return "#22c55e";
+  if (db > -90) return "#1a5c35";
+  return "#334155";
+}
+
+const METER_FLOOR_DB = -96;
+const METER_RANGE_DB = -METER_FLOOR_DB;
+
 function VerticalMeter({ db }: { db: number }) {
-  const pct = Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
-  const hasSignal = db > -60;
+  const pct = Math.max(
+    0,
+    Math.min(100, ((db - METER_FLOOR_DB) / METER_RANGE_DB) * 100),
+  );
 
   return (
     <div
@@ -34,13 +47,7 @@ function VerticalMeter({ db }: { db: number }) {
         className="w-full rounded-sm transition-[height] duration-75"
         style={{
           height: `${pct}%`,
-          background: hasSignal
-            ? db > -6
-              ? "#ef4444"
-              : db > -18
-                ? "#E8863A"
-                : "#22c55e"
-            : "#334155",
+          background: meterColor(db),
         }}
       />
     </div>
@@ -48,8 +55,10 @@ function VerticalMeter({ db }: { db: number }) {
 }
 
 function InlineLevelBar({ db }: { db: number }) {
-  const pct = Math.max(0, Math.min(100, ((db + 60) / 60) * 100));
-  const hasSignal = db > -60;
+  const pct = Math.max(
+    0,
+    Math.min(100, ((db - METER_FLOOR_DB) / METER_RANGE_DB) * 100),
+  );
 
   return (
     <div
@@ -60,13 +69,7 @@ function InlineLevelBar({ db }: { db: number }) {
         className="h-full rounded-sm transition-[width] duration-75"
         style={{
           width: `${pct}%`,
-          background: hasSignal
-            ? db > -6
-              ? "#ef4444"
-              : db > -18
-                ? "#E8863A"
-                : "#22c55e"
-            : "#334155",
+          background: meterColor(db),
         }}
       />
     </div>

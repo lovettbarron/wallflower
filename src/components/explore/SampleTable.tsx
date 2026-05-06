@@ -107,8 +107,8 @@ export function SampleTable({ samples, isLoaded, onNavigateToJam }: SampleTableP
       }
 
       // Load the jam audio and set active loop to sample's time range
-      const audioUrl = `http://localhost:23516/api/audio/${encodeURIComponent(sample.sourceJamName)}`;
-      loadJam(sample.jamId, sample.sourceJamName, audioUrl, sample.durationSeconds);
+      const audioUrl = `http://localhost:23516/api/audio/${encodeURIComponent(sample.sourceJamFilename)}`;
+      loadJam(sample.jamId, sample.name, audioUrl, sample.durationSeconds);
       setActiveLoop({
         startSeconds: sample.startSeconds,
         endSeconds: sample.endSeconds,
