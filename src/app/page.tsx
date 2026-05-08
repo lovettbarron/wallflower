@@ -11,6 +11,7 @@ import { useLibraryStore } from "@/lib/stores/library";
 import { RecordingView } from "@/components/recording/RecordingView";
 import { useRecordingStore } from "@/lib/stores/recording";
 import { SampleBrowser } from "@/components/explore/SampleBrowser";
+import { UpdateBadge } from "@/components/UpdateBadge";
 import { queuePendingAnalysis, getAutoLaunchDialogShown } from "@/lib/tauri";
 
 type ActiveTab = "library" | "explore" | "settings";
@@ -91,6 +92,7 @@ export default function Home() {
 
         {/* Action buttons */}
         <div className="flex items-center gap-2 py-2">
+          <UpdateBadge />
           <button
             type="button"
             onClick={() => startRec()}

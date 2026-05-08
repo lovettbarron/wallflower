@@ -20,6 +20,7 @@ pub struct SettingsResponse {
     pub recording_device_name: Option<String>,
     pub recording_channels: Option<u16>,
     pub recording_channel_map: Option<Vec<u16>>,
+    pub record_shortcut: String,
 }
 
 impl From<&settings::AppConfig> for SettingsResponse {
@@ -37,6 +38,7 @@ impl From<&settings::AppConfig> for SettingsResponse {
             recording_device_name: config.recording_device_name.clone(),
             recording_channels: config.recording_channels,
             recording_channel_map: config.recording_channel_map.clone(),
+            record_shortcut: config.record_shortcut.clone(),
         }
     }
 }
@@ -82,6 +84,10 @@ pub async fn update_settings(
     }
     if let Some(v) = settings.get("separationMemoryLimitGb").and_then(|v| v.as_i64()) {
         config.separation_memory_limit_gb = v as i32;
+    }
+
+    if let Some(v) = settings.get("recordShortcut").and_then(|v| v.as_str()) {
+        config.record_shortcut = v.to_string();
     }
 
     // Audio device settings -- allow null to clear

@@ -41,6 +41,7 @@ export interface AppSettings {
   recordingDeviceName: string | null;
   recordingChannels: number | null;
   recordingChannelMap: number[] | null;
+  recordShortcut: string;
 }
 
 /** Progress information for an active import operation. */

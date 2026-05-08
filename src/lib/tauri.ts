@@ -73,6 +73,11 @@ export async function updateSettings(
   return invoke("update_settings", { settings });
 }
 
+/** Update the global record shortcut. Re-registers the hotkey at runtime. */
+export async function updateRecordShortcut(shortcut: string): Promise<string> {
+  return invoke("update_record_shortcut", { shortcut });
+}
+
 // --- Status operations ---
 
 /** Get overall application status. */

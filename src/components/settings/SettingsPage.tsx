@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft } from "lucide-react";
-import { getSettings, updateSettings } from "@/lib/tauri";
+import { getSettings, updateSettings, updateRecordShortcut } from "@/lib/tauri";
 import type { AppSettings } from "@/lib/types";
 import { ModelManagement } from "./ModelManagement";
 import { AnalysisProfileSelector } from "./AnalysisProfileSelector";
@@ -14,9 +14,6 @@ import { toast } from "sonner";
 /** Default silence threshold in dB. */
 const DEFAULT_SILENCE_THRESHOLD_DB = -40;
 
-/** Default global hotkey for recording. */
-const RECORD_SHORTCUT = "Cmd+Shift+R";
-
 interface SettingsPageProps {
   onBack: () => void;
 }
@@ -27,6 +24,9 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     DEFAULT_SILENCE_THRESHOLD_DB,
   );
   const [loading, setLoading] = useState(true);
+  const [isRecordingShortcut, setIsRecordingShortcut] = useState(false);
+  const [pendingShortcut, setPendingShortcut] = useState<string | null>(null);
+  const shortcutRef = useRef<HTMLButtonElement>(null);
 
   // Load settings on mount
   useEffect(() => {
@@ -126,6 +126,76 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     },
     [],
   );
+
+  const formatKeyForDisplay = useCallback((e: KeyboardEvent): string | null => {
+    if (["Meta", "Shift", "Control", "Alt"].includes(e.key)) return null;
+
+    const parts: string[] = [];
+    if (e.metaKey) parts.push("Cmd");
+    if (e.ctrlKey) parts.push("Ctrl");
+    if (e.altKey) parts.push("Alt");
+    if (e.shiftKey) parts.push("Shift");
+
+    if (parts.length === 0) return null;
+
+    let key = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+    if (/^F\d{1,2}$/.test(key)) {
+      // F1–F12 as-is
+    } else if (/^\d$/.test(key)) {
+      // digit
+    } else if (key.length === 1 && /^[A-Z]$/.test(key)) {
+      // letter
+    } else {
+      return null;
+    }
+
+    parts.push(key);
+    return parts.join("+");
+  }, []);
+
+  useEffect(() => {
+    if (!isRecordingShortcut) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.key === "Escape") {
+        setIsRecordingShortcut(false);
+        setPendingShortcut(null);
+        return;
+      }
+
+      const formatted = formatKeyForDisplay(e);
+      if (formatted) {
+        setPendingShortcut(formatted);
+      }
+    };
+
+    const handleKeyUp = () => {
+      if (pendingShortcut) {
+        setIsRecordingShortcut(false);
+        updateRecordShortcut(pendingShortcut)
+          .then(() => {
+            setSettings((prev) =>
+              prev ? { ...prev, recordShortcut: pendingShortcut } : prev,
+            );
+            toast.success(`Shortcut updated to ${pendingShortcut}`);
+          })
+          .catch(() => {
+            toast.error("Failed to set shortcut");
+          })
+          .finally(() => setPendingShortcut(null));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("keyup", handleKeyUp, true);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keyup", handleKeyUp, true);
+    };
+  }, [isRecordingShortcut, pendingShortcut, formatKeyForDisplay]);
 
   if (loading) {
     return (
@@ -246,21 +316,34 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               Record Shortcut
             </label>
             <p className="mb-2 text-xs text-muted-foreground">
-              Start and stop recording from any app. Default: Cmd+Shift+R
+              Start and stop recording from any app.
             </p>
-            <span
-              className="inline-block rounded-md border px-3 py-1 text-sm"
-              style={{
-                background: "#272C36",
-                borderColor: "#323844",
-                fontSize: "14px",
-              }}
-            >
-              {RECORD_SHORTCUT}
-            </span>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Shortcut customization coming in a future update.
-            </p>
+            <div className="flex items-center gap-3">
+              <button
+                ref={shortcutRef}
+                type="button"
+                onClick={() => {
+                  setPendingShortcut(null);
+                  setIsRecordingShortcut(true);
+                }}
+                className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#E8863A] focus:ring-offset-2 focus:ring-offset-[#1D2129]"
+                style={{
+                  background: isRecordingShortcut ? "#323844" : "#272C36",
+                  borderColor: isRecordingShortcut ? "#E8863A" : "#323844",
+                  fontSize: "14px",
+                  minWidth: "140px",
+                }}
+              >
+                {isRecordingShortcut
+                  ? pendingShortcut ?? "Press shortcut..."
+                  : settings?.recordShortcut ?? "Cmd+Shift+R"}
+              </button>
+              {isRecordingShortcut && (
+                <span className="text-xs text-muted-foreground">
+                  Esc to cancel
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

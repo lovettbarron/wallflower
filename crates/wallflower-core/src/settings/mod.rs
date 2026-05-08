@@ -33,6 +33,8 @@ pub struct AppConfig {
     /// e.g. [0, 1] means output ch0 = physical ch0, output ch1 = physical ch1.
     /// None = identity mapping (use first N channels).
     pub recording_channel_map: Option<Vec<u16>>,
+    /// Global record shortcut string, e.g. "Cmd+Shift+R". Default: "Cmd+Shift+R".
+    pub record_shortcut: String,
 }
 
 /// Load application configuration from the database settings table.
@@ -69,6 +71,9 @@ pub fn load_config(conn: &Connection) -> Result<AppConfig> {
     let recording_channel_map = db::get_setting(conn, "recording_channel_map")?
         .and_then(|v| serde_json::from_str::<Vec<u16>>(&v).ok());
 
+    let record_shortcut = db::get_setting(conn, "record_shortcut")?
+        .unwrap_or_else(|| "Cmd+Shift+R".to_string());
+
     let watch_folder = expand_tilde(&watch_raw);
     let export_root = expand_tilde(&export_root_raw);
 
@@ -91,6 +96,7 @@ pub fn load_config(conn: &Connection) -> Result<AppConfig> {
         recording_device_name,
         recording_channels,
         recording_channel_map,
+        record_shortcut,
     })
 }
 
@@ -151,6 +157,7 @@ pub fn save_config(conn: &Connection, config: &AppConfig) -> Result<()> {
             .map(|v| serde_json::to_string(v).unwrap_or_default())
             .unwrap_or_default(),
     )?;
+    db::set_setting(conn, "record_shortcut", &config.record_shortcut)?;
     Ok(())
 }
 
@@ -284,6 +291,7 @@ mod tests {
             recording_device_name: None,
             recording_channels: None,
             recording_channel_map: None,
+            record_shortcut: "Cmd+Shift+R".into(),
         };
         ensure_storage_dir(&config).unwrap();
         assert!(config.storage_dir.exists());

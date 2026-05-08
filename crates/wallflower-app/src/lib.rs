@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tauri::{Emitter, Manager};
 use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_notification::NotificationExt;
 use wallflower_core::db::Database;
 use wallflower_core::recording::scheduler::PriorityScheduler;
@@ -50,6 +51,104 @@ fn notify(app: &tauri::AppHandle, title: &str, body: &str) {
         .title(title)
         .body(body)
         .show();
+}
+
+/// Parse a shortcut string like "Cmd+Shift+R" into a `Shortcut`.
+fn parse_shortcut(s: &str) -> Option<Shortcut> {
+    let parts: Vec<&str> = s.split('+').map(|p| p.trim()).collect();
+    if parts.is_empty() {
+        return None;
+    }
+
+    let mut mods = Modifiers::empty();
+    let key_str = parts.last()?;
+
+    for part in &parts[..parts.len() - 1] {
+        match part.to_lowercase().as_str() {
+            "cmd" | "meta" | "command" | "super" => mods |= Modifiers::META,
+            "ctrl" | "control" => mods |= Modifiers::CONTROL,
+            "shift" => mods |= Modifiers::SHIFT,
+            "alt" | "option" | "opt" => mods |= Modifiers::ALT,
+            _ => return None,
+        }
+    }
+
+    let code = match key_str.to_uppercase().as_str() {
+        "A" => Code::KeyA, "B" => Code::KeyB, "C" => Code::KeyC, "D" => Code::KeyD,
+        "E" => Code::KeyE, "F" => Code::KeyF, "G" => Code::KeyG, "H" => Code::KeyH,
+        "I" => Code::KeyI, "J" => Code::KeyJ, "K" => Code::KeyK, "L" => Code::KeyL,
+        "M" => Code::KeyM, "N" => Code::KeyN, "O" => Code::KeyO, "P" => Code::KeyP,
+        "Q" => Code::KeyQ, "R" => Code::KeyR, "S" => Code::KeyS, "T" => Code::KeyT,
+        "U" => Code::KeyU, "V" => Code::KeyV, "W" => Code::KeyW, "X" => Code::KeyX,
+        "Y" => Code::KeyY, "Z" => Code::KeyZ,
+        "0" => Code::Digit0, "1" => Code::Digit1, "2" => Code::Digit2, "3" => Code::Digit3,
+        "4" => Code::Digit4, "5" => Code::Digit5, "6" => Code::Digit6, "7" => Code::Digit7,
+        "8" => Code::Digit8, "9" => Code::Digit9,
+        "F1" => Code::F1, "F2" => Code::F2, "F3" => Code::F3, "F4" => Code::F4,
+        "F5" => Code::F5, "F6" => Code::F6, "F7" => Code::F7, "F8" => Code::F8,
+        "F9" => Code::F9, "F10" => Code::F10, "F11" => Code::F11, "F12" => Code::F12,
+        _ => return None,
+    };
+
+    let mods_opt = if mods.is_empty() { None } else { Some(mods) };
+    Some(Shortcut::new(mods_opt, code))
+}
+
+/// Handle a global recording shortcut press.
+fn handle_record_shortcut(app: &tauri::AppHandle) {
+    let state: tauri::State<'_, AppState> = app.state();
+    let status = {
+        let engine = state.recording_engine.lock().unwrap();
+        engine.0.status()
+    };
+    match status {
+        RecordingState::Idle => {
+            let handle = app.clone();
+            tauri::async_runtime::spawn(async move {
+                let state: tauri::State<'_, AppState> = handle.state();
+                match commands::recording::start_recording(handle.clone(), state).await {
+                    Ok(result) => {
+                        tracing::info!(
+                            "Global shortcut: recording started (jam {})",
+                            result.jam_id
+                        );
+                        let device_desc =
+                            result.device_name.as_deref().unwrap_or("default device");
+                        notify(
+                            &handle,
+                            "Recording Started",
+                            &format!("Wallflower is now recording from {}.", device_desc),
+                        );
+                    }
+                    Err(e) => {
+                        tracing::error!("Global shortcut: failed to start recording: {}", e);
+                    }
+                }
+            });
+        }
+        RecordingState::Recording => {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+            let _ = app.emit("show-stop-dialog", ());
+        }
+        _ => {}
+    }
+}
+
+/// Register the global recording shortcut from a shortcut string.
+fn register_record_shortcut(app: &tauri::AppHandle, shortcut_str: &str) -> Result<(), String> {
+    let shortcut = parse_shortcut(shortcut_str)
+        .ok_or_else(|| format!("Invalid shortcut: {}", shortcut_str))?;
+
+    app.global_shortcut()
+        .on_shortcut(shortcut, move |app_handle, _shortcut, event| {
+            if event.state() == ShortcutState::Pressed {
+                handle_record_shortcut(app_handle);
+            }
+        })
+        .map_err(|e| e.to_string())
 }
 
 /// Check if a file extension is an image type we care about for patch photos.
@@ -275,6 +374,39 @@ fn start_recording_event_bridge(
         .ok();
 }
 
+#[tauri::command]
+async fn update_record_shortcut(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    shortcut: String,
+) -> Result<String, String> {
+    // Validate the new shortcut parses
+    parse_shortcut(&shortcut)
+        .ok_or_else(|| format!("Invalid shortcut: {shortcut}"))?;
+
+    // Get the old shortcut to unregister
+    let old_str = {
+        let cfg = state.config.lock().map_err(|e| e.to_string())?;
+        cfg.record_shortcut.clone()
+    };
+    if let Some(old) = parse_shortcut(&old_str) {
+        let _ = app.global_shortcut().unregister(old);
+    }
+
+    // Register the new shortcut
+    register_record_shortcut(&app, &shortcut)?;
+
+    // Persist to config
+    {
+        let db = state.db.lock().map_err(|e| e.to_string())?;
+        let mut cfg = state.config.lock().map_err(|e| e.to_string())?;
+        cfg.record_shortcut = shortcut.clone();
+        wallflower_core::settings::save_config(&db.conn, &cfg).map_err(|e| e.to_string())?;
+    }
+
+    Ok(shortcut)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let db = Database::open_default().expect("failed to open database");
@@ -333,73 +465,15 @@ pub fn run() {
             // Set up system tray (D-07)
             tray::setup_tray(app)?;
 
-            // Register global shortcut Cmd+Shift+R (D-08)
+            // Register global record shortcut from config (D-08)
             {
-                use tauri_plugin_global_shortcut::{
-                    Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
+                let shortcut_str = {
+                    let state: tauri::State<'_, AppState> = app.state();
+                    let cfg = state.config.lock().unwrap();
+                    cfg.record_shortcut.clone()
                 };
-                let shortcut =
-                    Shortcut::new(Some(Modifiers::META | Modifiers::SHIFT), Code::KeyR);
-                app.global_shortcut()
-                    .on_shortcut(shortcut, move |_app, _shortcut, event| {
-                        if event.state() == ShortcutState::Pressed {
-                            let state: tauri::State<'_, AppState> = _app.state();
-                            let status = {
-                                let engine = state.recording_engine.lock().unwrap();
-                                engine.0.status()
-                            };
-                            match status {
-                                RecordingState::Idle => {
-                                    // Start recording via async runtime
-                                    let handle = _app.clone();
-                                    tauri::async_runtime::spawn(async move {
-                                        let state: tauri::State<'_, AppState> = handle.state();
-                                        match commands::recording::start_recording(
-                                            handle.clone(),
-                                            state,
-                                        )
-                                        .await
-                                        {
-                                            Ok(result) => {
-                                                tracing::info!(
-                                                    "Global shortcut: recording started (jam {})",
-                                                    result.jam_id
-                                                );
-                                                let device_desc = result
-                                                    .device_name
-                                                    .as_deref()
-                                                    .unwrap_or("default device");
-                                                notify(
-                                                    &handle,
-                                                    "Recording Started",
-                                                    &format!(
-                                                        "Wallflower is now recording from {}.",
-                                                        device_desc
-                                                    ),
-                                                );
-                                            }
-                                            Err(e) => {
-                                                tracing::error!(
-                                                    "Global shortcut: failed to start recording: {}",
-                                                    e
-                                                );
-                                            }
-                                        }
-                                    });
-                                }
-                                RecordingState::Recording => {
-                                    // Show stop confirmation dialog (D-12)
-                                    if let Some(window) = _app.get_webview_window("main") {
-                                        let _ = window.show();
-                                        let _ = window.set_focus();
-                                    }
-                                    let _ = _app.emit("show-stop-dialog", ());
-                                }
-                                _ => {}
-                            }
-                        }
-                    })
-                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+                register_record_shortcut(&app.handle().clone(), &shortcut_str)
+                    .map_err(|e| Box::<dyn std::error::Error>::from(e))?;
             }
 
             // Notify about recovered recordings (D-06)
@@ -449,6 +523,7 @@ pub fn run() {
             // Settings
             commands::settings::get_settings,
             commands::settings::update_settings,
+            update_record_shortcut,
             // Status
             commands::status::get_status,
             commands::status::get_connected_devices,
