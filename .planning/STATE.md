@@ -109,6 +109,7 @@ None yet.
 | 260425-k75 | Add the ability to delete a recording | 2026-04-25 | 035158b | [260425-k75-delete-recording](./quick/260425-k75-delete-recording/) |
 | 260425-19c | Channel selection UX: stereo default, sensible counts, live level meters | 2026-04-25 | 2d8e342 | [260425-19c-channel-selection-ux](./quick/260425-19c-channel-selection-ux/) |
 | 260427-ggc | Fix UI reactivity: waveforms and loop points not updating after processing | 2026-04-27 | af6f8e9 | [260427-ggc-fix-ui-reactivity-waveforms-and-loop-poi](./quick/260427-ggc-fix-ui-reactivity-waveforms-and-loop-poi/) |
+| 20260508 | Add unobtrusive update notification polling GitHub releases 1x/day | 2026-05-08 | — | [20260508-update-checker](./quick/20260508-update-checker/) |
 
 ### Blockers/Concerns
 
