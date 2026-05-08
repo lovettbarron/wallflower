@@ -6,7 +6,7 @@ import { ArrowLeft, ImagePlus, Trash2 } from "lucide-react";
 import { getJamWithMetadata, getPeaks, generatePeaksForJam, updateJamMetadata, prioritizeAnalysis, exportAudio, revealInFinder, getAnalysisResults, deleteJam } from "@/lib/tauri";
 import type { JamDetail as JamDetailType, PeakData, BookmarkColor, SeparationProgressEvent, AnalysisResults } from "@/lib/types";
 import { WaveformOverview } from "@/components/waveform/WaveformOverview";
-import { WaveformDetail } from "@/components/waveform/WaveformDetail";
+import { WaveformDetail, type WaveformDetailHandle } from "@/components/waveform/WaveformDetail";
 import { MetadataEditor } from "@/components/metadata/MetadataEditor";
 import { BookmarkList } from "@/components/bookmarks/BookmarkList";
 import { BookmarkPopover } from "@/components/bookmarks/BookmarkPopover";
@@ -39,6 +39,16 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const isPlaying = useTransportStore((s) => s.isPlaying);
   const setPlaying = useTransportStore((s) => s.setPlaying);
   const setActiveLoop = useTransportStore((s) => s.setActiveLoop);
+
+  // Waveform zoom state
+  const waveformRef = useRef<WaveformDetailHandle>(null);
+  const [viewportStart, setViewportStart] = useState(0);
+  const [viewportEnd, setViewportEnd] = useState(0);
+
+  const handleViewportChange = useCallback((start: number, end: number) => {
+    setViewportStart(start);
+    setViewportEnd(end);
+  }, []);
 
   // Bookmark state
   const bookmarks = useBookmarkStore((s) => s.bookmarks);
@@ -237,15 +247,28 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const handleBookmarkSelect = useCallback(
     (id: string) => {
       selectBookmark(id);
+      const bookmark = bookmarks.find((b) => b.id === id);
+      if (bookmark) {
+        setCurrentTime(bookmark.startSeconds);
+        setActiveLoop({
+          startSeconds: bookmark.startSeconds,
+          endSeconds: bookmark.endSeconds,
+          label: bookmark.name || "Bookmark",
+        });
+        setPlaying(true);
+      }
     },
-    [selectBookmark],
+    [selectBookmark, bookmarks, setCurrentTime, setActiveLoop, setPlaying],
   );
 
   const handleBookmarkEdit = useCallback(
     (id: string) => {
-      setEditingBookmarkId(id);
+      const bookmark = bookmarks.find((b) => b.id === id);
+      if (bookmark && waveformRef.current) {
+        waveformRef.current.zoomToRange(bookmark.startSeconds, bookmark.endSeconds);
+      }
     },
-    [],
+    [bookmarks],
   );
 
   const handleSectionClick = useCallback(
@@ -427,17 +450,20 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
 
       {peaks && (
         <>
-          {/* Overview waveform */}
+          {/* Overview waveform — shows viewport indicator when zoomed */}
           <WaveformOverview
             peaks={peaks}
             onSeek={handleSeek}
             bookmarks={bookmarks}
+            viewportStart={viewportStart}
+            viewportEnd={viewportEnd}
           />
 
           <div className="h-6" />
 
-          {/* Detail waveform */}
+          {/* Detail waveform — supports zoom via Ctrl+scroll/pinch */}
           <WaveformDetail
+            ref={waveformRef}
             audioUrl={audioUrl}
             peaks={peaks}
             onSeek={handleSeek}
@@ -450,6 +476,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
             onBookmarkEdit={handleBookmarkEdit}
             onSectionClick={handleSectionClick}
             onLoopClick={handleLoopClick}
+            onViewportChange={handleViewportChange}
           />
         </>
       )}

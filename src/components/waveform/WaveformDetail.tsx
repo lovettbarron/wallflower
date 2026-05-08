@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useMemo, useCallback, useState, type KeyboardEvent } from "react";
+import { useRef, useEffect, useMemo, useCallback, useState, forwardRef, useImperativeHandle, type KeyboardEvent } from "react";
 import { useWavesurfer } from "@wavesurfer/react";
 import { useTransportStore } from "@/lib/stores/transport";
 import { formatDuration } from "@/lib/format";
@@ -9,6 +9,11 @@ import type { PeakData, BookmarkRecord, BookmarkColor, SectionRecord, LoopRecord
 import { BOOKMARK_COLORS } from "@/lib/types";
 import { SectionMarkers } from "./SectionMarkers";
 import { LoopBrackets } from "./LoopBrackets";
+
+export interface WaveformDetailHandle {
+  zoomToRange: (start: number, end: number) => void;
+  resetZoom: () => void;
+}
 
 interface WaveformDetailProps {
   audioUrl: string;
@@ -23,9 +28,13 @@ interface WaveformDetailProps {
   onBookmarkEdit?: (id: string) => void;
   onSectionClick?: (section: SectionRecord) => void;
   onLoopClick?: (loop: LoopRecord) => void;
+  onViewportChange?: (start: number, end: number) => void;
 }
 
-export function WaveformDetail({
+const MAX_PX_PER_SEC = 500;
+const ZOOM_SENSITIVITY = 0.005;
+
+export const WaveformDetail = forwardRef<WaveformDetailHandle, WaveformDetailProps>(function WaveformDetail({
   audioUrl,
   peaks,
   onSeek,
@@ -38,10 +47,18 @@ export function WaveformDetail({
   onBookmarkEdit,
   onSectionClick,
   onLoopClick,
-}: WaveformDetailProps) {
+  onViewportChange,
+}, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const regionsRef = useRef<RegionsPlugin | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const overlayTransformRef = useRef<HTMLDivElement>(null);
+  const pxPerSecRef = useRef(0);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [totalScrollWidth, setTotalScrollWidth] = useState(0);
+  const dragOverlayRef = useRef<HTMLDivElement>(null);
+  // Track the drag selection as a time range so it survives zoom/scroll changes
+  const selectionRangeRef = useRef<{ startTime: number; endTime: number } | null>(null);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -81,7 +98,7 @@ export function WaveformDetail({
     [isStereo],
   );
 
-  const { isReady } = useWavesurfer({
+  const { wavesurfer, isReady } = useWavesurfer({
     container: containerRef,
     peaks: flatPeaks,
     duration: peaks.duration,
@@ -97,6 +114,150 @@ export function WaveformDetail({
     plugins,
   });
 
+  const getBasePxPerSec = useCallback(() => {
+    if (peaks.duration <= 0 || containerWidth <= 0) return 1;
+    return containerWidth / peaks.duration;
+  }, [peaks.duration, containerWidth]);
+
+  // Read viewport from wavesurfer's actual scroll container (not the wrapper).
+  // wavesurfer.getScroll() = scrollContainer.scrollLeft
+  // wavesurfer.getWidth()  = scrollContainer.clientWidth (visible area)
+  // wrapper.clientWidth     = total waveform width (scrollWidth of the scroll container)
+  const computeViewport = useCallback((): { start: number; end: number } => {
+    if (!wavesurfer) return { start: 0, end: peaks.duration };
+    const visibleWidth = wavesurfer.getWidth();
+    const wrapperWidth = wavesurfer.getWrapper()?.clientWidth ?? visibleWidth;
+    if (wrapperWidth <= visibleWidth) return { start: 0, end: peaks.duration };
+    const scrollLeft = wavesurfer.getScroll();
+    const start = (scrollLeft / wrapperWidth) * peaks.duration;
+    const end = ((scrollLeft + visibleWidth) / wrapperWidth) * peaks.duration;
+    return { start, end };
+  }, [wavesurfer, peaks.duration]);
+
+  const syncOverlayTransform = useCallback(() => {
+    if (!wavesurfer || !overlayTransformRef.current) return;
+    const scrollLeft = wavesurfer.getScroll();
+    const wrapperWidth = wavesurfer.getWrapper()?.clientWidth ?? containerWidth;
+    overlayTransformRef.current.style.width = `${wrapperWidth}px`;
+    overlayTransformRef.current.style.transform = `translateX(-${scrollLeft}px)`;
+    setTotalScrollWidth(wrapperWidth);
+  }, [wavesurfer, containerWidth]);
+
+  // Reposition the drag overlay from the stored time range
+  const repositionSelectionOverlay = useCallback(() => {
+    const overlay = dragOverlayRef.current;
+    const container = containerRef.current;
+    const range = selectionRangeRef.current;
+    if (!overlay || !container || !range) return;
+    const viewport = computeViewport();
+    const visibleDuration = viewport.end - viewport.start;
+    if (visibleDuration <= 0) return;
+    const rect = container.getBoundingClientRect();
+    const left = ((range.startTime - viewport.start) / visibleDuration) * rect.width;
+    const right = ((range.endTime - viewport.start) / visibleDuration) * rect.width;
+    overlay.style.left = `${Math.max(0, left)}px`;
+    overlay.style.width = `${Math.min(rect.width, right) - Math.max(0, left)}px`;
+  }, [computeViewport]);
+
+  const reportViewport = useCallback(() => {
+    const viewport = computeViewport();
+    onViewportChange?.(viewport.start, viewport.end);
+    const zoomed = viewport.end - viewport.start < peaks.duration * 0.99;
+    setIsZoomed(zoomed);
+    repositionSelectionOverlay();
+  }, [computeViewport, onViewportChange, peaks.duration, repositionSelectionOverlay]);
+
+  // After wavesurfer.zoom(), its reRender() adjusts scroll based on the playback
+  // cursor — not the mouse. We override by listening for the 'zoom' event (which
+  // fires synchronously after reRender finishes) and then forcing our target scroll.
+  // A second pass via rAF catches any async scroll resets from the renderer.
+  const zoomAndScroll = useCallback((newPxPerSec: number, targetScrollLeft: number) => {
+    if (!wavesurfer) return;
+    const applyScroll = () => {
+      wavesurfer.setScroll(targetScrollLeft);
+      syncOverlayTransform();
+      reportViewport();
+    };
+    wavesurfer.once("zoom", applyScroll);
+    wavesurfer.zoom(newPxPerSec);
+    // rAF pass to override any async scroll resets from the renderer
+    requestAnimationFrame(applyScroll);
+  }, [wavesurfer, syncOverlayTransform, reportViewport]);
+
+  // Zoom to a specific time range with padding
+  const zoomToRange = useCallback((start: number, end: number) => {
+    if (!wavesurfer || !containerRef.current) return;
+    const padding = (end - start) * 0.1;
+    const rangeStart = Math.max(0, start - padding);
+    const rangeEnd = Math.min(peaks.duration, end + padding);
+    const rangeDuration = rangeEnd - rangeStart;
+    if (rangeDuration <= 0) return;
+
+    const newPxPerSec = Math.min(MAX_PX_PER_SEC, containerWidth / rangeDuration);
+    pxPerSecRef.current = newPxPerSec;
+    zoomAndScroll(newPxPerSec, rangeStart * newPxPerSec);
+  }, [wavesurfer, peaks.duration, containerWidth, zoomAndScroll]);
+
+  const resetZoom = useCallback(() => {
+    if (!wavesurfer) return;
+    const base = getBasePxPerSec();
+    pxPerSecRef.current = base;
+    zoomAndScroll(base, 0);
+  }, [wavesurfer, getBasePxPerSec, zoomAndScroll]);
+
+  useImperativeHandle(ref, () => ({ zoomToRange, resetZoom }), [zoomToRange, resetZoom]);
+
+  // Wheel zoom handler
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!isReady || !wavesurfer || !container) return;
+
+    const basePxPerSec = getBasePxPerSec();
+    if (pxPerSecRef.current === 0) pxPerSecRef.current = basePxPerSec;
+
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+
+      const rect = container.getBoundingClientRect();
+      const cursorRelX = (e.clientX - rect.left) / rect.width;
+
+      const viewportBefore = computeViewport();
+      const cursorTime = viewportBefore.start + cursorRelX * (viewportBefore.end - viewportBefore.start);
+
+      const zoomDelta = -e.deltaY * ZOOM_SENSITIVITY;
+      const factor = Math.pow(2, zoomDelta);
+      const newPxPerSec = Math.max(basePxPerSec, Math.min(MAX_PX_PER_SEC, pxPerSecRef.current * factor));
+      pxPerSecRef.current = newPxPerSec;
+
+      const visibleWidth = wavesurfer.getWidth();
+      const totalWidth = peaks.duration * newPxPerSec;
+      const cursorPx = cursorTime * newPxPerSec;
+      const targetScroll = totalWidth <= visibleWidth ? 0 : cursorPx - cursorRelX * visibleWidth;
+
+      zoomAndScroll(newPxPerSec, Math.max(0, targetScroll));
+    };
+
+    container.addEventListener("wheel", onWheel, { passive: false });
+    return () => container.removeEventListener("wheel", onWheel);
+  }, [isReady, wavesurfer, peaks.duration, getBasePxPerSec, computeViewport, zoomAndScroll]);
+
+  // Track viewport via wavesurfer's scroll event (fires on the real scroll container)
+  useEffect(() => {
+    if (!wavesurfer || !isReady) return;
+
+    const onScroll = () => {
+      syncOverlayTransform();
+      reportViewport();
+    };
+
+    wavesurfer.on("scroll", onScroll);
+    // Initial sync
+    syncOverlayTransform();
+    reportViewport();
+    return () => { wavesurfer.un("scroll", onScroll); };
+  }, [wavesurfer, isReady, syncOverlayTransform, reportViewport]);
+
   // Snap helper: find nearest section/loop boundary within threshold
   const snapToNearestBoundary = useCallback(
     (time: number, altKeyHeld: boolean): number => {
@@ -104,7 +265,9 @@ export function WaveformDetail({
 
       const container = containerRef.current;
       if (!container || peaks.duration <= 0) return time;
-      const pixelsPerSecond = container.clientWidth / peaks.duration;
+      const viewport = computeViewport();
+      const visibleDuration = viewport.end - viewport.start;
+      const pixelsPerSecond = container.clientWidth / (visibleDuration > 0 ? visibleDuration : peaks.duration);
       const snapThreshold = 20 / pixelsPerSecond;
 
       let nearest = time;
@@ -138,14 +301,10 @@ export function WaveformDetail({
 
       return nearest;
     },
-    [sections, loops, peaks.duration],
+    [sections, loops, peaks.duration, computeViewport],
   );
 
   // Drag-to-select bookmark creation + click-to-seek
-  // Uses pointer events on the container (outside shadow DOM) to avoid
-  // lifecycle conflicts with wavesurfer's internal enableDragSelection.
-  const dragOverlayRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const container = containerRef.current;
     const overlay = dragOverlayRef.current;
@@ -154,26 +313,33 @@ export function WaveformDetail({
     const DRAG_THRESHOLD = 4;
     let startX = 0;
     let isDragging = false;
+    let dragStartTime = 0;
 
     const pxToTime = (px: number): number => {
       const rect = container.getBoundingClientRect();
       const relX = Math.max(0, Math.min(1, (px - rect.left) / rect.width));
-      return relX * peaks.duration;
+      const viewport = computeViewport();
+      return viewport.start + relX * (viewport.end - viewport.start);
     };
 
-    const updateOverlay = (currentX: number) => {
+    const updateOverlayFromTime = (t0: number, t1: number) => {
+      const viewport = computeViewport();
+      const visibleDuration = viewport.end - viewport.start;
+      if (visibleDuration <= 0) return;
       const rect = container.getBoundingClientRect();
-      const left = Math.min(startX, currentX) - rect.left;
-      const width = Math.abs(currentX - startX);
-      overlay.style.left = `${left}px`;
-      overlay.style.width = `${width}px`;
+      const left = ((Math.min(t0, t1) - viewport.start) / visibleDuration) * rect.width;
+      const right = ((Math.max(t0, t1) - viewport.start) / visibleDuration) * rect.width;
+      overlay.style.left = `${Math.max(0, left)}px`;
+      overlay.style.width = `${Math.min(rect.width, right) - Math.max(0, left)}px`;
       overlay.style.display = "block";
     };
 
     const onPointerDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
       overlay.style.display = "none";
+      selectionRangeRef.current = null;
       startX = e.clientX;
+      dragStartTime = pxToTime(e.clientX);
       isDragging = false;
     };
 
@@ -183,7 +349,12 @@ export function WaveformDetail({
         isDragging = true;
       }
       if (isDragging) {
-        updateOverlay(e.clientX);
+        const currentTime = pxToTime(e.clientX);
+        selectionRangeRef.current = {
+          startTime: Math.min(dragStartTime, currentTime),
+          endTime: Math.max(dragStartTime, currentTime),
+        };
+        updateOverlayFromTime(dragStartTime, currentTime);
       }
     };
 
@@ -191,22 +362,22 @@ export function WaveformDetail({
       if (startX === 0) return;
 
       if (isDragging) {
-        // Keep overlay visible — it hides on next pointerdown
-        const startTime = pxToTime(startX);
         const endTime = pxToTime(e.clientX);
-        const t0 = Math.min(startTime, endTime);
-        const t1 = Math.max(startTime, endTime);
+        const t0 = Math.min(dragStartTime, endTime);
+        const t1 = Math.max(dragStartTime, endTime);
+        selectionRangeRef.current = { startTime: t0, endTime: t1 };
         if (t1 - t0 > 0.1 && onBookmarkDragEnd) {
           const snappedStart = snapToNearestBoundary(t0, e.altKey);
           const snappedEnd = snapToNearestBoundary(t1, e.altKey);
-          // Delay callback to next frame so pointer/click event cycle
-          // completes before the popover mounts its outside-click handler
+          selectionRangeRef.current = { startTime: snappedStart, endTime: snappedEnd };
+          updateOverlayFromTime(snappedStart, snappedEnd);
           requestAnimationFrame(() => {
             onBookmarkDragEnd(snappedStart, snappedEnd);
           });
         }
       } else {
         overlay.style.display = "none";
+        selectionRangeRef.current = null;
         onSeek(pxToTime(e.clientX));
       }
 
@@ -223,7 +394,7 @@ export function WaveformDetail({
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerup", onPointerUp);
     };
-  }, [isReady, peaks.duration, onSeek, onBookmarkDragEnd, snapToNearestBoundary]);
+  }, [isReady, peaks.duration, onSeek, onBookmarkDragEnd, snapToNearestBoundary, computeViewport]);
 
   // Handle region events (resize, click, dblclick on existing bookmark regions)
   useEffect(() => {
@@ -293,11 +464,33 @@ export function WaveformDetail({
     }
   }, [bookmarks, isReady]);
 
+  // Handle double-click on sections/loops to zoom
+  const handleSectionDoubleClick = useCallback(
+    (section: SectionRecord) => {
+      zoomToRange(section.startSeconds, section.endSeconds);
+    },
+    [zoomToRange],
+  );
+
+  const handleLoopDoubleClick = useCallback(
+    (loop: LoopRecord) => {
+      zoomToRange(loop.startSeconds, loop.endSeconds);
+    },
+    [zoomToRange],
+  );
+
   // Keyboard seek state for ARIA live announcements
   const [seekAnnouncement, setSeekAnnouncement] = useState("");
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isZoomed) {
+        e.preventDefault();
+        e.stopPropagation();
+        resetZoom();
+        return;
+      }
+
       const currentTime = useTransportStore.getState().currentTime;
       const dur = peaks.duration;
       let seekTo: number | null = null;
@@ -317,7 +510,7 @@ export function WaveformDetail({
         setSeekAnnouncement(formatDuration(seekTo));
       }
     },
-    [peaks.duration, onSeek],
+    [peaks.duration, onSeek, isZoomed, resetZoom],
   );
 
   const currentTime = useTransportStore((s) => s.currentTime);
@@ -334,7 +527,7 @@ export function WaveformDetail({
         ref={containerRef}
         role="slider"
         tabIndex={0}
-        aria-label="Waveform — use left and right arrow keys to seek"
+        aria-label="Waveform — scroll to zoom, use arrow keys to seek"
         aria-valuemin={0}
         aria-valuemax={peaks.duration}
         aria-valuenow={currentTime}
@@ -355,26 +548,51 @@ export function WaveformDetail({
             display: "none",
           }}
         />
-        {sections.length > 0 && containerWidth > 0 && (
-          <SectionMarkers
-            sections={sections}
-            totalDuration={peaks.duration}
-            containerWidth={containerWidth}
-            showLabels
-            onSectionClick={onSectionClick}
-          />
-        )}
-        {loops.length > 0 && containerWidth > 0 && (
-          <LoopBrackets
-            loops={loops}
-            totalDuration={peaks.duration}
-            containerWidth={containerWidth}
-            onLoopClick={onLoopClick}
-          />
-        )}
+        {/* Scrolling overlay container for section/loop markers */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div
+            ref={overlayTransformRef}
+            className="relative h-full"
+            style={{ width: `${totalScrollWidth || containerWidth}px` }}
+          >
+            {(totalScrollWidth || containerWidth) > 0 && sections.length > 0 && (
+              <div className="pointer-events-auto">
+                <SectionMarkers
+                  sections={sections}
+                  totalDuration={peaks.duration}
+                  containerWidth={totalScrollWidth || containerWidth}
+                  showLabels
+                  onSectionClick={onSectionClick}
+                  onSectionDoubleClick={handleSectionDoubleClick}
+                />
+              </div>
+            )}
+            {(totalScrollWidth || containerWidth) > 0 && loops.length > 0 && (
+              <div className="pointer-events-auto">
+                <LoopBrackets
+                  loops={loops}
+                  totalDuration={peaks.duration}
+                  containerWidth={totalScrollWidth || containerWidth}
+                  onLoopClick={onLoopClick}
+                  onLoopDoubleClick={handleLoopDoubleClick}
+                />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+      {/* Reset zoom button */}
+      {isZoomed && (
+        <button
+          type="button"
+          onClick={resetZoom}
+          className="absolute right-2 top-2 z-20 rounded bg-[#1D2129]/80 px-2 py-1 text-xs text-[#E8863A] transition-opacity hover:bg-[#1D2129] hover:text-white"
+        >
+          Reset Zoom
+        </button>
+      )}
       {/* ARIA live region for seek announcements */}
       <div aria-live="polite" className="sr-only">{seekAnnouncement}</div>
     </div>
   );
-}
+});

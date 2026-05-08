@@ -12,6 +12,7 @@ interface LoopBracketsProps {
   containerWidth: number;
   activeLoopLabel?: string | null;
   onLoopClick?: (loop: LoopRecord) => void;
+  onLoopDoubleClick?: (loop: LoopRecord) => void;
 }
 
 export function LoopBrackets({
@@ -20,6 +21,7 @@ export function LoopBrackets({
   containerWidth,
   activeLoopLabel,
   onLoopClick,
+  onLoopDoubleClick,
 }: LoopBracketsProps) {
   const brackets = useMemo(() => {
     if (totalDuration <= 0 || containerWidth <= 0) return [];
@@ -49,6 +51,7 @@ export function LoopBrackets({
             className="absolute cursor-pointer"
             style={{ left: `${startX}px`, width: `${width}px`, height: "12px" }}
             onClick={() => onLoopClick?.(loop)}
+            onDoubleClick={() => onLoopDoubleClick?.(loop)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
@@ -57,7 +60,7 @@ export function LoopBrackets({
                 onLoopClick?.(loop);
               }
             }}
-            title={`Play ${label}`}
+            title={`Click to play ${label}, double-click to zoom`}
           >
             {/* Horizontal bracket line */}
             <div

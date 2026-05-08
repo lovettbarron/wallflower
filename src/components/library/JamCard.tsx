@@ -45,13 +45,20 @@ function MiniWaveform({ peaks }: { peaks: PeakData }) {
     const peakCount = peaks.peaks.length;
     if (peakCount === 0) return;
 
+    let maxAbs = 0;
+    for (const [mn, mx] of peaks.peaks) {
+      const a = Math.max(Math.abs(mn), Math.abs(mx));
+      if (a > maxAbs) maxAbs = a;
+    }
+    const scale = maxAbs > 0 ? 1 / maxAbs : 1;
+
     const step = peakCount / w;
     for (let x = 0; x < w; x++) {
       const idx = Math.floor(x * step);
       if (idx >= peakCount) break;
       const [min, max] = peaks.peaks[idx];
-      const top = mid + min * mid;
-      const bottom = mid + max * mid;
+      const top = mid + min * scale * mid;
+      const bottom = mid + max * scale * mid;
       const barHeight = Math.max(1, bottom - top);
       ctx.fillRect(x, top, 1, barHeight);
     }

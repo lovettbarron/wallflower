@@ -46,13 +46,20 @@ export function WaveformOverview({
     ctx.fillStyle = "#E8863A";
     const peakCount = peaks.peaks.length;
     if (peakCount > 0) {
+      let maxAbs = 0;
+      for (const [mn, mx] of peaks.peaks) {
+        const a = Math.max(Math.abs(mn), Math.abs(mx));
+        if (a > maxAbs) maxAbs = a;
+      }
+      const scale = maxAbs > 0 ? 1 / maxAbs : 1;
+
       const step = peakCount / w;
       for (let x = 0; x < w; x++) {
         const idx = Math.floor(x * step);
         if (idx >= peakCount) break;
         const [min, max] = peaks.peaks[idx];
-        const top = mid + min * mid;
-        const bottom = mid + max * mid;
+        const top = mid + min * scale * mid;
+        const bottom = mid + max * scale * mid;
         const barHeight = Math.max(1, bottom - top);
         ctx.fillRect(x, top, 1, barHeight);
       }
@@ -87,12 +94,17 @@ export function WaveformOverview({
     if (
       viewportStart !== undefined &&
       viewportEnd !== undefined &&
-      duration > 0
+      duration > 0 &&
+      (viewportEnd - viewportStart) < duration * 0.99
     ) {
       const startX = (viewportStart / duration) * w;
       const endX = (viewportEnd / duration) * w;
-      ctx.fillStyle = "rgba(232, 134, 58, 0.1)";
-      ctx.fillRect(startX, 0, endX - startX, h);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+      ctx.fillRect(0, 0, startX, h);
+      ctx.fillRect(endX, 0, w - endX, h);
+      ctx.strokeStyle = "rgba(232, 134, 58, 0.8)";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(startX, 0, endX - startX, h);
     }
 
     if (duration > 0) {

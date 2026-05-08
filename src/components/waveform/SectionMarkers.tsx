@@ -26,6 +26,7 @@ interface SectionMarkersProps {
   containerWidth: number;
   showLabels?: boolean;
   onSectionClick?: (section: SectionRecord) => void;
+  onSectionDoubleClick?: (section: SectionRecord) => void;
 }
 
 export function SectionMarkers({
@@ -34,6 +35,7 @@ export function SectionMarkers({
   containerWidth,
   showLabels = false,
   onSectionClick,
+  onSectionDoubleClick,
 }: SectionMarkersProps) {
   const markers = useMemo(() => {
     if (totalDuration <= 0 || containerWidth <= 0) return [];
@@ -80,6 +82,7 @@ export function SectionMarkers({
                 opacity: 0.8,
               }}
               onClick={() => onSectionClick?.(section)}
+              onDoubleClick={() => onSectionDoubleClick?.(section)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
@@ -88,7 +91,7 @@ export function SectionMarkers({
                   onSectionClick?.(section);
                 }
               }}
-              title={`Jump to ${section.label}`}
+              title={`Click to play ${section.label}, double-click to zoom`}
             >
               {section.label}
             </span>
