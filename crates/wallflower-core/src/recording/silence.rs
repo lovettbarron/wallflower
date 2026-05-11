@@ -62,17 +62,28 @@ impl SilenceDetector {
         channel_count: u16,
         current_sample_offset: u64,
     ) -> Vec<SilenceEvent> {
-        let mut events = Vec::new();
-
         if samples.is_empty() || channel_count == 0 {
-            return events;
+            return Vec::new();
         }
 
-        // Compute RMS across all samples in the buffer
         let sum_sq: f32 = samples.iter().map(|&s| s * s).sum();
         let rms = (sum_sq / samples.len() as f32).sqrt();
-
         let frame_count = samples.len() as u64 / channel_count as u64;
+
+        self.process_with_rms(rms, frame_count, current_sample_offset)
+    }
+
+    /// Process a buffer using a pre-computed RMS value.
+    ///
+    /// Use this when the caller has already computed RMS (e.g., for level
+    /// metering) to avoid iterating the buffer a second time.
+    pub fn process_with_rms(
+        &mut self,
+        rms: f32,
+        frame_count: u64,
+        current_sample_offset: u64,
+    ) -> Vec<SilenceEvent> {
+        let mut events = Vec::new();
 
         if rms < self.threshold_rms {
             // Below threshold

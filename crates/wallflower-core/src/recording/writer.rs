@@ -133,7 +133,6 @@ impl CrashSafeWriter {
             Err(_) => {
                 // Flush in progress -- drop samples rather than block audio thread.
                 // This is acceptable: flush happens every 5-10 seconds and takes <1ms.
-                // In practice, sample loss from try_lock contention is negligible.
                 tracing::trace!("Writer locked during flush, dropping {} samples", samples.len());
                 Ok(())
             }

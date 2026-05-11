@@ -204,23 +204,36 @@ impl RecordingEngine {
 
         let stream_config: cpal::StreamConfig = supported_config.into();
 
+        // Pre-allocate remap buffer outside the closure to avoid heap allocation per callback.
+        // 2048 frames * 16 channels = generous upper bound; resized once if needed.
+        let mut remap_buf: Vec<f32> = if channel_map.is_some() {
+            Vec::with_capacity(2048 * output_ch_count as usize)
+        } else {
+            Vec::new()
+        };
+
         let data_callback = move |data: &[f32], _info: &cpal::InputCallbackInfo| {
             // Remap channels if a mapping is provided
             if let Some(ref map) = channel_map {
                 // Extract only the mapped channels from each frame
                 let frame_count = data.len() / stream_channels as usize;
-                let mut mapped = Vec::with_capacity(frame_count * output_ch_count as usize);
+                remap_buf.clear();
+                let needed = frame_count * output_ch_count as usize;
+                if remap_buf.capacity() < needed {
+                    remap_buf.reserve(needed - remap_buf.capacity());
+                }
                 for frame_idx in 0..frame_count {
                     let frame_start = frame_idx * stream_channels as usize;
                     for &phys_ch in map.iter() {
                         let sample_idx = frame_start + phys_ch as usize;
                         if sample_idx < data.len() {
-                            mapped.push(data[sample_idx]);
+                            remap_buf.push(data[sample_idx]);
                         } else {
-                            mapped.push(0.0);
+                            remap_buf.push(0.0);
                         }
                     }
                 }
+                let mapped = &remap_buf;
 
                 // Write mapped samples to crash-safe writer
                 if let Ok(guard) = writer_ref.try_lock() {
@@ -229,25 +242,23 @@ impl RecordingEngine {
                     }
                 }
 
-                // Compute RMS for level metering on mapped data
-                if !mapped.is_empty() {
+                // Compute RMS once for both level metering and silence detection
+                let (rms, rms_db, frames) = if !mapped.is_empty() {
                     let sum_sq: f32 = mapped.iter().map(|&s| s * s).sum();
-                    let rms = (sum_sq / mapped.len() as f32).sqrt();
-                    let rms_db = if rms > 0.0 {
-                        20.0 * rms.log10()
-                    } else {
-                        -120.0
-                    };
-                    let _ = event_tx.try_send(RecordingEvent::LevelUpdate { rms_db });
-                }
+                    let r = (sum_sq / mapped.len() as f32).sqrt();
+                    let db = if r > 0.0 { 20.0 * r.log10() } else { -120.0 };
+                    let f = mapped.len() as u64 / output_ch_count as u64;
+                    (r, db, f)
+                } else {
+                    (0.0, -120.0, 0u64)
+                };
+                let _ = event_tx.try_send(RecordingEvent::LevelUpdate { rms_db });
 
-                // Update sample offset using mapped channel count for frames
-                let frames = mapped.len() as u64 / output_ch_count as u64;
                 let offset = sample_offset.fetch_add(frames, std::sync::atomic::Ordering::Relaxed);
 
-                // Run silence detection on mapped data
+                // Pass pre-computed RMS to silence detector (avoids re-iterating buffer)
                 if let Ok(mut detector) = silence_ref.try_lock() {
-                    let events = detector.process_samples(&mapped, output_ch_count, offset);
+                    let events = detector.process_with_rms(rms, frames, offset);
                     for event in events {
                         match event {
                             silence::SilenceEvent::Start { offset_samples } => {
@@ -275,25 +286,23 @@ impl RecordingEngine {
                     }
                 }
 
-                // Compute RMS for level metering
-                if !data.is_empty() {
+                // Compute RMS once for both level metering and silence detection
+                let (rms, rms_db, frames) = if !data.is_empty() {
                     let sum_sq: f32 = data.iter().map(|&s| s * s).sum();
-                    let rms = (sum_sq / data.len() as f32).sqrt();
-                    let rms_db = if rms > 0.0 {
-                        20.0 * rms.log10()
-                    } else {
-                        -120.0
-                    };
-                    let _ = event_tx.try_send(RecordingEvent::LevelUpdate { rms_db });
-                }
+                    let r = (sum_sq / data.len() as f32).sqrt();
+                    let db = if r > 0.0 { 20.0 * r.log10() } else { -120.0 };
+                    let f = data.len() as u64 / stream_channels as u64;
+                    (r, db, f)
+                } else {
+                    (0.0, -120.0, 0u64)
+                };
+                let _ = event_tx.try_send(RecordingEvent::LevelUpdate { rms_db });
 
-                // Update sample offset
-                let frames = data.len() as u64 / stream_channels as u64;
                 let offset = sample_offset.fetch_add(frames, std::sync::atomic::Ordering::Relaxed);
 
-                // Run silence detection
+                // Pass pre-computed RMS to silence detector (avoids re-iterating buffer)
                 if let Ok(mut detector) = silence_ref.try_lock() {
-                    let events = detector.process_samples(data, stream_channels, offset);
+                    let events = detector.process_with_rms(rms, frames, offset);
                     for event in events {
                         match event {
                             silence::SilenceEvent::Start { offset_samples } => {
