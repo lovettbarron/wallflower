@@ -5,7 +5,7 @@ milestone_name: milestone
 status: complete
 stopped_at: Milestone v0.2.0 released
 last_updated: "2026-04-27T14:09:00.000Z"
-last_activity: "2026-04-27 -- Released v0.2.0: all 7 phases complete, sample browser shipped"
+last_activity: "2026-05-11 -- Completed quick task 260511-eq6: Optimize audio callback hot path"
 progress:
   total_phases: 8
   completed_phases: 8
@@ -110,6 +110,7 @@ None yet.
 | 260425-19c | Channel selection UX: stereo default, sensible counts, live level meters | 2026-04-25 | 2d8e342 | [260425-19c-channel-selection-ux](./quick/260425-19c-channel-selection-ux/) |
 | 260427-ggc | Fix UI reactivity: waveforms and loop points not updating after processing | 2026-04-27 | af6f8e9 | [260427-ggc-fix-ui-reactivity-waveforms-and-loop-poi](./quick/260427-ggc-fix-ui-reactivity-waveforms-and-loop-poi/) |
 | 20260508 | Add unobtrusive update notification polling GitHub releases 1x/day | 2026-05-08 | — | [20260508-update-checker](./quick/20260508-update-checker/) |
+| 260511-eq6 | Optimize audio callback hot path | 2026-05-11 | — | [260511-eq6-optimize-audio-callback-hot-path](./quick/260511-eq6-optimize-audio-callback-hot-path/) |
 
 ### Blockers/Concerns
 
