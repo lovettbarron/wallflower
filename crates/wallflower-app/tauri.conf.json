@@ -16,9 +16,7 @@
       "signingIdentity": null,
       "entitlements": "./entitlements.plist",
       "minimumSystemVersion": "13.0",
-      "infoPlist": {
-        "NSMicrophoneUsageDescription": "Wallflower needs microphone access to record audio from your instruments and jam sessions."
-      }
+      "infoPlist": "./Info.plist"
     }
   },
   "app": {
