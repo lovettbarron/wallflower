@@ -1,3 +1,5 @@
+use std::sync::atomic::Ordering;
+
 use serde::Serialize;
 
 use crate::AppState;
@@ -35,4 +37,9 @@ pub async fn get_status(state: tauri::State<'_, AppState>) -> Result<StatusRespo
 #[tauri::command]
 pub async fn get_connected_devices() -> Result<Vec<device::DeviceInfo>, String> {
     Ok(device::detect_devices())
+}
+
+#[tauri::command]
+pub async fn get_sidecar_status(state: tauri::State<'_, AppState>) -> Result<bool, String> {
+    Ok(state.sidecar_ready.load(Ordering::Acquire))
 }

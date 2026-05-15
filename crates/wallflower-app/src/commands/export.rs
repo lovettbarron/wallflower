@@ -263,6 +263,10 @@ pub async fn separate_stems(
         .join(&bookmark_id);
     std::fs::create_dir_all(&stem_cache_dir).map_err(|e| e.to_string())?;
 
+    if !state.sidecar_ready.load(Ordering::Acquire) {
+        return Err("Analysis engine is being set up (first launch only). Please try again in a few minutes.".into());
+    }
+
     // Ensure sidecar is running
     let port = {
         let mut sidecar = state.sidecar.lock().await;
@@ -783,6 +787,10 @@ pub async fn separate_sample_stems(
         .join("stem_cache")
         .join(&cache_key);
     std::fs::create_dir_all(&stem_cache_dir).map_err(|e| e.to_string())?;
+
+    if !state.sidecar_ready.load(Ordering::Acquire) {
+        return Err("Analysis engine is being set up (first launch only). Please try again in a few minutes.".into());
+    }
 
     // Ensure sidecar is running
     let port = {

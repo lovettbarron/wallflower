@@ -29,3 +29,7 @@ tsconfig.tsbuildinfo
 *.swp
 *.swo
 .claude/worktrees/
+
+# Sidecar build artifacts
+sidecar-bundle/
+sidecar-venv/

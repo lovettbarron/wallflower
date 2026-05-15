@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/niclas-niclas/tauri-v2-schema/main/schema.json",
   "productName": "Wallflower",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "identifier": "com.wallflower.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -12,6 +12,7 @@
   "bundle": {
     "active": true,
     "targets": ["dmg", "app"],
+    "resources": {"../../sidecar-bundle/*": "./sidecar-bundle/"},
     "macOS": {
       "signingIdentity": null,
       "entitlements": "./entitlements.plist",

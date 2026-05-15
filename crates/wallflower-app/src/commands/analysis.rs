@@ -1,3 +1,5 @@
+use std::sync::atomic::Ordering;
+
 use tauri::{command, AppHandle, Emitter, Manager};
 use tokio_stream::StreamExt;
 
@@ -21,6 +23,14 @@ pub async fn analyze_jam(app: AppHandle, jam_id: String) -> Result<(), String> {
             .unwrap_or_else(|| "full".to_string());
         (jam.file_path.clone(), profile_str)
     };
+
+    // Check if analysis engine is provisioned
+    {
+        let state = app.state::<AppState>();
+        if !state.sidecar_ready.load(Ordering::Acquire) {
+            return Err("Analysis engine is being set up (first launch only). Please try again in a few minutes.".into());
+        }
+    }
 
     // Ensure sidecar is running (D-06: lazy start)
     let port = {

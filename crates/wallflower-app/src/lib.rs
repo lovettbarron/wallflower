@@ -4,7 +4,7 @@ mod sidecar;
 mod tray;
 
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, AtomicI32};
+use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::sync::{Arc, Mutex};
 
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
@@ -40,6 +40,7 @@ pub struct AppState {
     pub scheduler: PriorityScheduler,
     pub current_recording_jam_id: Mutex<Option<String>>,
     pub sidecar: tokio::sync::Mutex<sidecar::SidecarManager>,
+    pub sidecar_ready: Arc<AtomicBool>,
     pub separation_cancel: Arc<AtomicBool>,
 }
 
@@ -493,6 +494,47 @@ pub fn run() {
                 latest_rms.clone(),
             );
 
+            // Resolve sidecar mode now that we have the app handle
+            let mode = sidecar::resolve_sidecar_mode(Some(app.handle()));
+            let is_ready = match &mode {
+                sidecar::SidecarMode::Dev { project_dir } => project_dir.exists(),
+                sidecar::SidecarMode::Bundled { venv_dir } => venv_dir.join("bin/python").exists(),
+            };
+
+            {
+                let state: tauri::State<'_, AppState> = app.state();
+                state.sidecar_ready.store(is_ready, Ordering::Release);
+                let mut sidecar_mgr = state.sidecar.blocking_lock();
+                *sidecar_mgr = sidecar::SidecarManager::new(50051, mode.clone());
+            }
+
+            tracing::info!("Sidecar mode: {:?}, ready: {}", mode, is_ready);
+
+            if !is_ready {
+                if let sidecar::SidecarMode::Bundled { .. } = &mode {
+                    let handle = app.handle().clone();
+                    let ready_flag = app.state::<AppState>().sidecar_ready.clone();
+                    tauri::async_runtime::spawn(async move {
+                        tracing::info!("Starting background sidecar provisioning...");
+                        match sidecar::provision_venv(&handle).await {
+                            Ok(()) => {
+                                let resolved = sidecar::resolve_sidecar_mode(Some(&handle));
+                                let state = handle.state::<AppState>();
+                                let mut sidecar_mgr = state.sidecar.lock().await;
+                                *sidecar_mgr = sidecar::SidecarManager::new(50051, resolved);
+                                ready_flag.store(true, Ordering::Release);
+                                let _ = handle.emit("sidecar-provisioned", true);
+                                tracing::info!("Sidecar provisioning complete");
+                            }
+                            Err(e) => {
+                                tracing::error!("Sidecar provisioning failed: {}", e);
+                                let _ = handle.emit("sidecar-provision-failed", e.to_string());
+                            }
+                        }
+                    });
+                }
+            }
+
             Ok(())
         })
         .manage(AppState {
@@ -503,10 +545,10 @@ pub fn run() {
             latest_rms_db: latest_rms_for_state,
             scheduler,
             current_recording_jam_id: Mutex::new(None),
-            sidecar: tokio::sync::Mutex::new({
-                let sidecar_dir = sidecar::resolve_sidecar_dir(None);
-                sidecar::SidecarManager::new(50051, sidecar_dir)
-            }),
+            sidecar: tokio::sync::Mutex::new(
+                sidecar::SidecarManager::new(50051, sidecar::resolve_sidecar_mode(None))
+            ),
+            sidecar_ready: Arc::new(AtomicBool::new(false)),
             separation_cancel: Arc::new(AtomicBool::new(false)),
         })
         .invoke_handler(tauri::generate_handler![
@@ -527,6 +569,7 @@ pub fn run() {
             // Status
             commands::status::get_status,
             commands::status::get_connected_devices,
+            commands::status::get_sidecar_status,
             // Metadata (Phase 2)
             commands::metadata::get_jam_with_metadata,
             commands::metadata::add_tag,

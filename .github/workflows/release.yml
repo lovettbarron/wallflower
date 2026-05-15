@@ -34,6 +34,11 @@ jobs:
       - name: Install system dependencies
         run: brew install protobuf
 
+      - name: Prepare sidecar bundle
+        run: |
+          chmod +x scripts/prepare-sidecar-bundle.sh
+          ./scripts/prepare-sidecar-bundle.sh
+
       - name: Install frontend dependencies
         run: npm ci
 
