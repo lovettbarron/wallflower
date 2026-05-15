@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v0.2.0
 milestone_name: milestone
-status: complete
-stopped_at: Milestone v0.2.0 released
-last_updated: "2026-04-27T14:09:00.000Z"
-last_activity: "2026-05-11 -- Completed quick task 260511-eq6: Optimize audio callback hot path"
+status: Released
+stopped_at: context exhaustion at 75% (2026-05-14)
+last_updated: "2026-05-14T08:52:14.103Z"
+last_activity: 2026-04-27 -- Released v0.2.0
 progress:
   total_phases: 8
-  completed_phases: 8
+  completed_phases: 7
   total_plans: 34
   completed_plans: 34
   percent: 100
@@ -121,8 +121,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 7 UI-SPEC approved
-Resume file: --resume-file
+Last session: 2026-05-14T08:52:14.100Z
+Stopped at: context exhaustion at 75% (2026-05-14)
+Resume file: None
 
 **Planned Phase:** 7 (Sample Browser & Extract) — 4 plans — 2026-04-27T14:08:40.559Z
