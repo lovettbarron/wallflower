@@ -38,6 +38,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const setCurrentTime = useTransportStore((s) => s.setCurrentTime);
   const isPlaying = useTransportStore((s) => s.isPlaying);
   const setPlaying = useTransportStore((s) => s.setPlaying);
+  const setJamName = useTransportStore((s) => s.setJamName);
   const setActiveLoop = useTransportStore((s) => s.setActiveLoop);
 
   // Waveform zoom state
@@ -48,6 +49,14 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   const handleViewportChange = useCallback((start: number, end: number) => {
     setViewportStart(start);
     setViewportEnd(end);
+  }, []);
+
+  const handleViewportPan = useCallback((newStartTime: number) => {
+    waveformRef.current?.scrollToTime(newStartTime);
+  }, []);
+
+  const handleViewportResize = useCallback((newStart: number, newEnd: number) => {
+    waveformRef.current?.zoomToRangeExact(newStart, newEnd);
   }, []);
 
   // Bookmark state
@@ -191,15 +200,15 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
   );
 
   useEffect(() => {
-    if (!jam || currentJamId === jam.id) return;
+    if (!jam) return;
+    const jamName = jam.originalFilename || jam.filename;
+    if (currentJamId === jam.id) {
+      setJamName(jamName);
+      return;
+    }
     const audioUrl = `http://localhost:23516/api/audio/${encodeURIComponent(jam.filename)}`;
-    loadJam(
-      jam.id,
-      jam.originalFilename || jam.filename,
-      audioUrl,
-      jam.durationSeconds || 0,
-    );
-  }, [jam, currentJamId, loadJam]);
+    loadJam(jam.id, jamName, audioUrl, jam.durationSeconds || 0);
+  }, [jam, currentJamId, loadJam, setJamName]);
 
   const handleSeek = useCallback(
     (time: number) => {
@@ -457,6 +466,8 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
             bookmarks={bookmarks}
             viewportStart={viewportStart}
             viewportEnd={viewportEnd}
+            onViewportPan={handleViewportPan}
+            onViewportResize={handleViewportResize}
           />
 
           <div className="h-6" />
@@ -520,6 +531,7 @@ export function JamDetail({ jamId, onBack }: JamDetailProps) {
           setPendingBookmarkRange(null);
           setActiveLoop(null);
           setPlaying(false);
+          waveformRef.current?.clearSelection();
         }}
         onSave={handleBookmarkSave}
         initialName={getNextName()}

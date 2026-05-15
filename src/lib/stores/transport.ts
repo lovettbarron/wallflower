@@ -24,6 +24,7 @@ export interface TransportState {
   setPlaying: (playing: boolean) => void;
   setCurrentTime: (time: number) => void;
   setDuration: (duration: number) => void;
+  setJamName: (name: string) => void;
   setActiveLoop: (loop: ActiveLoop | null) => void;
   stop: () => void;
 }
@@ -53,6 +54,8 @@ export const useTransportStore = create<TransportState>((set) => ({
   setCurrentTime: (time) => set({ currentTime: time }),
 
   setDuration: (duration) => set({ duration }),
+
+  setJamName: (name) => set({ currentJamName: name }),
 
   setActiveLoop: (loop) => set({ activeLoop: loop }),
 

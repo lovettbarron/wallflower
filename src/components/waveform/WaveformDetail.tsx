@@ -12,7 +12,10 @@ import { LoopBrackets } from "./LoopBrackets";
 
 export interface WaveformDetailHandle {
   zoomToRange: (start: number, end: number) => void;
+  zoomToRangeExact: (start: number, end: number) => void;
   resetZoom: () => void;
+  scrollToTime: (time: number) => void;
+  clearSelection: () => void;
 }
 
 interface WaveformDetailProps {
@@ -155,8 +158,15 @@ export const WaveformDetail = forwardRef<WaveformDetailHandle, WaveformDetailPro
     const rect = container.getBoundingClientRect();
     const left = ((range.startTime - viewport.start) / visibleDuration) * rect.width;
     const right = ((range.endTime - viewport.start) / visibleDuration) * rect.width;
-    overlay.style.left = `${Math.max(0, left)}px`;
-    overlay.style.width = `${Math.min(rect.width, right) - Math.max(0, left)}px`;
+    if (right <= 0 || left >= rect.width) {
+      overlay.style.display = "none";
+      return;
+    }
+    overlay.style.display = "block";
+    const clippedLeft = Math.max(0, left);
+    const clippedRight = Math.min(rect.width, right);
+    overlay.style.left = `${clippedLeft}px`;
+    overlay.style.width = `${clippedRight - clippedLeft}px`;
   }, [computeViewport]);
 
   const reportViewport = useCallback(() => {
@@ -198,6 +208,18 @@ export const WaveformDetail = forwardRef<WaveformDetailHandle, WaveformDetailPro
     zoomAndScroll(newPxPerSec, rangeStart * newPxPerSec);
   }, [wavesurfer, peaks.duration, containerWidth, zoomAndScroll]);
 
+  const zoomToRangeExact = useCallback((start: number, end: number) => {
+    if (!wavesurfer || !containerRef.current) return;
+    const rangeStart = Math.max(0, start);
+    const rangeEnd = Math.min(peaks.duration, end);
+    const rangeDuration = rangeEnd - rangeStart;
+    if (rangeDuration <= 0) return;
+
+    const newPxPerSec = Math.min(MAX_PX_PER_SEC, containerWidth / rangeDuration);
+    pxPerSecRef.current = newPxPerSec;
+    zoomAndScroll(newPxPerSec, rangeStart * newPxPerSec);
+  }, [wavesurfer, peaks.duration, containerWidth, zoomAndScroll]);
+
   const resetZoom = useCallback(() => {
     if (!wavesurfer) return;
     const base = getBasePxPerSec();
@@ -205,7 +227,20 @@ export const WaveformDetail = forwardRef<WaveformDetailHandle, WaveformDetailPro
     zoomAndScroll(base, 0);
   }, [wavesurfer, getBasePxPerSec, zoomAndScroll]);
 
-  useImperativeHandle(ref, () => ({ zoomToRange, resetZoom }), [zoomToRange, resetZoom]);
+  const clearSelection = useCallback(() => {
+    selectionRangeRef.current = null;
+    if (dragOverlayRef.current) dragOverlayRef.current.style.display = "none";
+  }, []);
+
+  const scrollToTime = useCallback((time: number) => {
+    if (!wavesurfer) return;
+    const scrollLeft = time * pxPerSecRef.current;
+    wavesurfer.setScroll(Math.max(0, scrollLeft));
+    syncOverlayTransform();
+    reportViewport();
+  }, [wavesurfer, syncOverlayTransform, reportViewport]);
+
+  useImperativeHandle(ref, () => ({ zoomToRange, zoomToRangeExact, resetZoom, scrollToTime, clearSelection }), [zoomToRange, zoomToRangeExact, resetZoom, scrollToTime, clearSelection]);
 
   // Wheel zoom handler
   useEffect(() => {

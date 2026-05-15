@@ -1,9 +1,13 @@
 "use client";
 
-import { useRef, useEffect, useCallback, type MouseEvent } from "react";
+import { useRef, useEffect, useCallback, type PointerEvent } from "react";
 import type { PeakData, BookmarkRecord, BookmarkColor } from "@/lib/types";
 import { BOOKMARK_COLORS } from "@/lib/types";
 import { useTransportStore } from "@/lib/stores/transport";
+
+const EDGE_HIT_ZONE = 6;
+
+type DragMode = "none" | "pan" | "resize-left" | "resize-right";
 
 interface WaveformOverviewProps {
   peaks: PeakData;
@@ -11,6 +15,8 @@ interface WaveformOverviewProps {
   viewportStart?: number;
   viewportEnd?: number;
   bookmarks?: BookmarkRecord[];
+  onViewportPan?: (newStartTime: number) => void;
+  onViewportResize?: (newStart: number, newEnd: number) => void;
 }
 
 export function WaveformOverview({
@@ -19,9 +25,18 @@ export function WaveformOverview({
   viewportStart,
   viewportEnd,
   bookmarks = [],
+  onViewportPan,
+  onViewportResize,
 }: WaveformOverviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
+  const dragRef = useRef<{
+    mode: DragMode;
+    startX: number;
+    originStart: number;
+    originEnd: number;
+    moved: boolean;
+  } | null>(null);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -105,6 +120,11 @@ export function WaveformOverview({
       ctx.strokeStyle = "rgba(232, 134, 58, 0.8)";
       ctx.lineWidth = 1.5;
       ctx.strokeRect(startX, 0, endX - startX, h);
+
+      // Draw edge handles
+      ctx.fillStyle = "rgba(232, 134, 58, 0.9)";
+      ctx.fillRect(startX - 1, 0, 3, h);
+      ctx.fillRect(endX - 2, 0, 3, h);
     }
 
     if (duration > 0) {
@@ -132,15 +152,111 @@ export function WaveformOverview({
     return unsub;
   }, [draw]);
 
-  const handleClick = (e: MouseEvent<HTMLCanvasElement>) => {
+  const isZoomed = viewportStart !== undefined && viewportEnd !== undefined &&
+    useTransportStore.getState().duration > 0 &&
+    (viewportEnd - viewportStart) < useTransportStore.getState().duration * 0.99;
+
+  const getHitZone = useCallback((clientX: number): DragMode => {
     const canvas = canvasRef.current;
+    if (!canvas || viewportStart === undefined || viewportEnd === undefined) return "none";
     const { duration } = useTransportStore.getState();
-    if (!canvas || duration <= 0) return;
+    if (duration <= 0 || (viewportEnd - viewportStart) >= duration * 0.99) return "none";
+
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const time = (x / rect.width) * duration;
-    onSeek(Math.max(0, Math.min(time, duration)));
-  };
+    const x = clientX - rect.left;
+    const startX = (viewportStart / duration) * rect.width;
+    const endX = (viewportEnd / duration) * rect.width;
+
+    if (Math.abs(x - startX) <= EDGE_HIT_ZONE) return "resize-left";
+    if (Math.abs(x - endX) <= EDGE_HIT_ZONE) return "resize-right";
+    if (x > startX && x < endX) return "pan";
+    return "none";
+  }, [viewportStart, viewportEnd]);
+
+  const handlePointerDown = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas || viewportStart === undefined || viewportEnd === undefined) return;
+
+    const mode = getHitZone(e.clientX);
+    if (mode === "none") return;
+
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    dragRef.current = {
+      mode,
+      startX: e.clientX,
+      originStart: viewportStart,
+      originEnd: viewportEnd,
+      moved: false,
+    };
+  }, [getHitZone, viewportStart, viewportEnd]);
+
+  const handlePointerMove = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const drag = dragRef.current;
+
+    // Update cursor based on hit zone when not dragging
+    if (!drag) {
+      const zone = getHitZone(e.clientX);
+      if (zone === "resize-left" || zone === "resize-right") {
+        canvas!.style.cursor = "ew-resize";
+      } else if (zone === "pan") {
+        canvas!.style.cursor = "grab";
+      } else {
+        canvas!.style.cursor = "crosshair";
+      }
+      return;
+    }
+
+    if (!canvas) return;
+    const { duration } = useTransportStore.getState();
+    if (duration <= 0) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const dx = e.clientX - drag.startX;
+    if (Math.abs(dx) > 2) drag.moved = true;
+
+    const timeDelta = (dx / rect.width) * duration;
+    const viewportSpan = drag.originEnd - drag.originStart;
+
+    if (drag.mode === "pan") {
+      canvas.style.cursor = "grabbing";
+      let newStart = drag.originStart + timeDelta;
+      newStart = Math.max(0, Math.min(newStart, duration - viewportSpan));
+      onViewportPan?.(newStart);
+    } else if (drag.mode === "resize-left") {
+      let newStart = drag.originStart + timeDelta;
+      newStart = Math.max(0, Math.min(newStart, drag.originEnd - 0.5));
+      onViewportResize?.(newStart, drag.originEnd);
+    } else if (drag.mode === "resize-right") {
+      let newEnd = drag.originEnd + timeDelta;
+      newEnd = Math.max(drag.originStart + 0.5, Math.min(newEnd, duration));
+      onViewportResize?.(drag.originStart, newEnd);
+    }
+  }, [getHitZone, onViewportPan, onViewportResize]);
+
+  const handlePointerUp = useCallback((e: PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const drag = dragRef.current;
+    dragRef.current = null;
+
+    if (canvas) {
+      canvas.releasePointerCapture(e.pointerId);
+      const zone = getHitZone(e.clientX);
+      canvas.style.cursor = zone === "pan" ? "grab" : zone !== "none" ? "ew-resize" : "crosshair";
+    }
+
+    // If the user didn't drag, treat as a click-to-seek
+    if (!drag || !drag.moved) {
+      if (!canvas) return;
+      const { duration } = useTransportStore.getState();
+      if (duration <= 0) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const time = (x / rect.width) * duration;
+      onSeek(Math.max(0, Math.min(time, duration)));
+    }
+  }, [getHitZone, onSeek]);
 
   const currentTime = useTransportStore((s) => s.currentTime);
   const duration = useTransportStore((s) => s.duration);
@@ -148,14 +264,16 @@ export function WaveformOverview({
   return (
     <canvas
       ref={canvasRef}
-      onClick={handleClick}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
       role="slider"
       tabIndex={0}
-      aria-label="Waveform overview — click to seek"
+      aria-label="Waveform overview — click to seek, drag viewport to pan"
       aria-valuemin={0}
       aria-valuemax={duration > 0 ? duration : peaks.duration}
       aria-valuenow={currentTime}
-      className="h-12 w-full cursor-crosshair rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E8863A]"
+      className="h-12 w-full cursor-crosshair rounded-lg touch-none focus:outline-none focus:ring-2 focus:ring-[#E8863A]"
       style={{ background: "#1D2129" }}
     />
   );
