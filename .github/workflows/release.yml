@@ -60,6 +60,14 @@ jobs:
             -s -k "$KEYCHAIN_PASSWORD" build.keychain
           rm certificate.p12
 
+      - name: Sign bundled uv binary for notarization
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          codesign --force --options runtime --timestamp \
+            --sign "$APPLE_SIGNING_IDENTITY" \
+            sidecar-bundle/uv
+
       - name: Build and release Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
